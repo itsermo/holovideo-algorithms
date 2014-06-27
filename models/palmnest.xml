@@ -1,0 +1,75 @@
+<holoren>
+   <render double_camera="false" pseudo="true" wireframe="true" recenter="true">
+      <screen_resolution width="383" height="144"/>
+      <nviews horiz="140" vert="1"/>
+      <far_clip z="5000"/>
+      <near_clip_scale zinverse="1000"/>
+      <preview_eyez_scale val="1"/>
+      <camera_track_size width="38.3" />
+      <hologram_size width="7.54" height="5.65" />
+      <eyez z="59.6" />
+   </render>
+   <lighting nlights="3">
+      <globalambient r="0.1" g="0.1" b="0.1" a="1.0"/>
+      <light num="0">
+         <position x="0.0" y="0.0" z="20.0" w="0.0"/>
+         <direction x="0.0" y="0.0" z="1.0" w="1.0"/>
+         <ambient r="0.1" g="0.1" b="0.1" w="0.0"/>
+         <diffuse r="0.3" g="0.3" b="0.3" w="0.0"/>
+         <specular r="0.4" g="0.4" b="0.4" w="0.1"/>
+      </light>
+      <light num="1">
+         <position x="-20.5" y="25.0" z="0.0" w="0.0"/>
+         <direction x="0.0" y="0.0" z="1.0" w="1.0"/>
+         <ambient r="0.0" g="0.0" b="0.0" w="0.1"/>
+         <diffuse r="0.5" g="0.5" b="0.5" w="0.0"/>
+         <specular r="0.4" g="0.4" b="0.4" w="0.1"/>
+      </light>
+      <light num="2">
+         <position x="0.0" y="25.0" z="0.0" w="0.0"/>
+         <direction x="0.0" y="0.0" z="1.0" w="1.0"/>
+         <ambient r="0.0" g="0.0" b="0.0" w="0.2"/>
+         <diffuse r="0.0" g="0.0" b="0.0" w="0.0"/>
+         <specular r="0.4" g="0.4" b="0.4" w="0.1"/>
+      </light>
+   </lighting>
+
+    <textures ntextures="1"	>
+      <texture num="0">
+          <data file="/models/dotsNlines.tif" />
+      </texture>
+    </textures>
+
+   <materials nmaterials="1">
+      <material num="0">
+         <ambient r="0.0" g="0.0" b="0.0" w="0.0"/>
+         <diffuse r="0.4" g="0.4" b="0.4" w="0.3"/>
+         <specular r="1.0" g="1.0" b="1.0" w="1.0"/>
+         <shininess val="85.0"/>
+      </material>
+   </materials>
+
+   <models nmodels="1">
+      <model num="0">
+         <orientation>
+            <magnification val="1.0"/>
+            <scale x="2.0" y="2.0" z="2.0"/>
+            <rotate x="0.0" y="0.0" z="0.0"/>
+            <translate x="0.0" y="0.0" z="0.0"/>
+         </orientation>
+         <objects nobjects="1" path="/models/">
+            <object num="0">
+               <orientation>
+                  <magnification val="1.0"/>
+                  <scale x="7.00" y="7.00" z="7.00"/>
+                  <rotate x="90.0" y="0.0" z="-180.0"/>
+                  <translate x="0.0" y="0.0" z="0.0"/>
+               </orientation>
+                  <data format="raw" file="palmnest.raw" />
+                  <material num="0" />
+
+            </object>
+         </objects>
+      </model>
+   </models>
+</holoren>

@@ -1,0 +1,73 @@
+<holoren>
+   <render double_camera="false" pseudo="true" wireframe="true" recenter="true">
+      <screen_resolution width="383" height="144"/>
+      <nviews horiz="140" vert="1"/>
+      <far_clip z="5000"/>
+      <near_clip_scale zinverse="1000"/>
+      <preview_eyez_scale val="1"/>
+      <camera_track_size width="38.3" />
+      <hologram_size width="7.54" height="5.65" />
+      <eyez z="59.6" />
+   </render>
+   <lighting nlights="1">
+      <globalambient r="1.0" g="1.0" b="1.0" a="1.0"/>
+      <light num="0">
+         <position x="0.0" y="0.0" z="20.0" w="0.0"/>
+         <direction x="0.0" y="0.0" z="1.0" w="1.0"/>
+         <ambient r="0.0" g="0.0" b="0.0" w="0.0"/>
+         <diffuse r="0.0" g="0.0" b="0.0" w="0.0"/>
+         <specular r="0.0" g="0.0" b="0.0" w="0.0"/>
+      </light>
+   </lighting>
+
+    <textures ntextures="1"	>
+      <texture num="0">
+          <data file="/models/letters/SLOAN/H.tif" />
+      </texture>
+    </textures>
+
+   <materials nmaterials="1">
+      <material num="0">
+         <ambient r="0.6" g="0.6" b="0.6" w="0.0"/>
+         <diffuse r="1.0" g="1.0" b="1.0" w="1.0"/>
+         <specular r="0.9" g="0.9" b="0.9" w="0.0"/>
+         <shininess val="85.0"/>	 
+
+         <textures ntextures="1">
+            <texture num="0" tex="0" />
+         </textures>
+      </material>                        
+
+   </materials>
+
+   <models nmodels="1">
+      <model num="0">
+         <orientation>
+            <magnification val="1.0"/>
+            <scale x="1.0" y="1.0" z="1.0"/>
+            <rotate x="0.0" y="0.0" z="0.0"/>
+            <translate x="0.0" y="0.0" z="0.0"/>
+         </orientation>
+
+         <objects nobjects="1" path="/models/">
+            <object num="0">
+               <orientation>
+                  <magnification val="1.75"/>
+                  <scale x="1.0" y="1.0" z="1.0"/>
+                  <rotate x="0.0" y="0.0" z="180.0"/>
+                  <translate x="0.0" y="0.0" z="0.0"/>
+               </orientation>
+               <data format="square"/>
+               <material num="0"/>
+
+               <texcoords ntexcoords="1">
+                   <texcoord num="0">
+                      <type mode="file" file="ground.tcd" format="tcd" />
+                        <combination val="modulate" />
+                   </texcoord>
+               </texcoords>
+
+         </objects>
+      </model>
+   </models>
+</holoren>

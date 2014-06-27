@@ -1,0 +1,493 @@
+<holoren>
+   <render double_camera="true" pseudo="false" wireframe="false" recenter="true">
+      <screen_resolution width="800" height="600"/>
+      <hologram_size width="84" height="70"/>
+      <nviews horiz="640" vert="480"/>
+      <eyez z="120.0"/>
+      <far_clip z="5000"/>
+      <near_clip_scale zinverse="500"/>
+      <preview_eyez_scale val="1"/>
+      <eye_separation val="8"/>
+   </render>
+   <lighting nlights="4">
+      <globalambient r="0.5" g="0.5" b="0.5" a="1.0"/>
+      <light num="0">
+         <position x="0.0" y="0.0" z="1.0" w="0.0"/>
+         <direction x="0.0" y="0.0" z="1.0" w="1.0"/>
+         <ambient r="0.2" g="0.2" b="0.2" w="0.2"/>
+         <diffuse r="0.0" g="0.0" b="0.0" w="0.0"/>
+         <specular r="0.0" g="0.0" b="0.0" w="0.0"/>
+      </light>
+      <light num="1">
+         <position x="-20.5" y="25.0" z="0.0" w="0.0"/>
+         <direction x="0.0" y="0.0" z="1.0" w="1.0"/>
+         <ambient r="0.1" g="0.1" b="0.1" w="0.1"/>
+         <diffuse r="0.8" g="0.9" b="0.8" w="0.0"/>
+         <specular r="0.9" g="0.9" b="0.9" w="0.0"/>
+      </light>
+      <light num="2">
+         <position x="0.0" y="25.0" z="0.0" w="0.0"/>
+         <direction x="0.0" y="0.0" z="1.0" w="1.0"/>
+         <ambient r="0.1" g="0.1" b="0.1" w="0.2"/>
+         <diffuse r="0.9" g="0.8" b="0.8" w="0.0"/>
+         <specular r="0.9" g="0.9" b="0.9" w="0.0"/>
+      </light>
+      <light num="3">
+         <position x="30.0" y="30.0" z="2.0" w="0.0"/>
+         <direction x="0.0" y="0.0" z="1.0" w="1.0"/>
+         <ambient r="0.1" g="0.1" b="0.1" w="0.2"/>
+         <diffuse r="0.8" g="0.8" b="0.9" w="0.0"/>
+         <specular r="0.9" g="0.9" b="0.9" w="0.0"/>
+      </light>
+   </lighting>
+   <textures ntextures="6" path="e:/models/Jeanne/textures/">
+      <texture num="0">
+         <data file="ANIM_MURAL.tif"/>
+      </texture>
+      <texture num="1">
+         <data file="LGHT_TXT.tif"/>
+      </texture>
+      <texture num="2">
+         <data file="WOOD_GRAIN.tif"/>
+      </texture>
+      <texture num="3">
+         <data file="FEATHER.tif"/>
+      </texture>
+      <texture num="4">
+         <data file="FROG_SKIN.tif"/>
+      </texture>
+      <texture num="5">
+         <data file="FUR.tif"/>
+      </texture>
+      <texture num="6">
+         <data file="WHTGRAN.tif"/>
+      </texture>
+      <texture num="7">
+         <data file="fx3_Rock_2.tif"/>
+      </texture>
+      <texture num="8">
+         <data file="LIMESTO1.tif"/>
+      </texture>
+      <texture num="9">
+         <data file="STUCCO4.tif"/>
+      </texture>
+      <texture num="10">
+         <data file="GRASS2.tif"/>
+      </texture>
+      <texture num="11">
+         <data file="WATER1.tif"/>
+      </texture>
+      <texture num="12">
+         <data file="WATERA1.tif"/>
+      </texture>
+      <texture num="13">
+         <data file="GUAVA1.tif"/>
+      </texture>
+      <texture num="14">
+         <data file="REDFAB.tif"/>
+      </texture>
+      <texture num="15">
+         <data file="APPLE.tif"/>
+      </texture>
+   </textures>
+   <materials nmaterials="20">
+      <material num="0">
+         <!-- Carousel base-->
+         <ambient r="0.1" g="0.05" b="0.2" a="1.0"/>
+         <specular r="0.6" g="0.6" b="0.06" a="1.0"/>
+         <diffuse r="0.2" g="0.1" b="0.6" a="1.0"/>
+         <shininess val="26.0"/>
+	   <textures ntextures="1">
+            <texture num="0" tex="0"/>
+         </textures>
+      </material>
+      <material num="1">
+         <!-- Coiled Column -->
+         <ambient r="0.1" g="0.1" b="0.2" a="1.0"/>
+         <diffuse r="0.5" g="0.5" b="0.7" a="1.0"/>
+         <specular r="0.2" g="0.1" b="0.02" a="1.0"/>
+         <shininess val="65.0"/>
+	   <textures ntextures="1">
+            <texture num="0" tex="1"/>
+         </textures>
+      </material>
+      <material num="2">
+         <!-- Carousel Top-->
+         <ambient r="0.27" g="0.1" b="0.4" a="1.0"/>
+         <diffuse r="0.5" g="0.3" b="0.5" a="1.0"/>
+         <specular r="0.3" g="0.1" b="0.4" a="1.0"/>
+         <shininess val="20.0"/>
+	   <textures ntextures="1">
+            <texture num="0" tex="2"/>
+         </textures>
+      </material>
+      <material num="3">
+         <!-- Column Balls A-->
+         <ambient r="0.0" g="0.00" b="0.01" a="1.0"/>
+         <diffuse r="0.5" g="0.01" b="0.31" a="0.0"/>
+         <specular r="0.0" g="0.0" b="0.0" a="0.0"/>
+         <shininess val="20.0"/>
+      </material>
+      <material num="4">
+         <!-- Column Balls B -->
+         <ambient r="0.25" g="0.12" b="0.0" a="1.0"/>
+         <diffuse r="0.1" g="0.01" b="0.7" a="1.0"/>
+         <specular r="0.0" g="0.0" b="0.0" a="1.0"/>
+         <shininess val="0.0"/>
+         <textures ntextures="1">
+            <texture num="0" tex="10"/>
+         </textures>
+      </material>
+      <material num="5">
+         <!-- "Green" Frog- dark Green -->
+         <ambient r="0.0" g="0.1" b="0.1" a="0.8"/>
+        <diffuse r="0.1" g="0.4" b="0.4" a="1.0"/>
+         <specular r="0.3" g="0.1" b="0.2" a="1.0"/>
+         <shininess val="25.0"/>
+	   <textures ntextures="1">
+            <texture num="0" tex="4"/>
+         </textures>
+      </material>
+      <material num="6">
+         <!-- "Green" Rabbit- Purple -->
+         <ambient r="0.1" g="0.1" b="0.1" a="1.0"/>
+         <diffuse r="0.6" g="0.2" b="0.6" a="1.0"/>
+         <specular r="0.0" g="0.1" b="0.0" a="1.0"/>
+         <shininess val="0.0"/>
+	   <textures ntextures="1">
+            <texture num="0" tex="5"/>
+         </textures>
+	   </material>
+      <material num="7">
+         <!-- "Green" Rabbit eyes- brown -->
+         <ambient r="0.1" g="0.1" b="0.1" a="1.0"/>
+         <diffuse r="0.3" g="0.3" b="0.3" a="1.0"/>
+         <specular r="0.0" g="0.0" b="0.0" a="0.0"/>
+         <shininess val="0.0"/>
+      </material>
+      <material num="8">
+         <!-- "Green" swan-blue-->
+         <ambient r="0.05" g="0.1" b="0.1" a="1.0"/>
+         <diffuse r="0.8" g="0.8" b="0.9" a="1.0"/>
+         <specular r="0.1" g="0.1" b="0.2" a="1.0"/>
+         <shininess val="5.0"/>
+	   <textures ntextures="1">
+            <texture num="0" tex="3"/>
+         </textures>
+      </material>
+      <material num="9">
+         <!-- "Green" swan beak- orange -->
+         <ambient r="0.0" g="0.0" b="0.0" a="1.0"/>
+         <diffuse r="0.5" g="0.4" b="0.1" a="1.0"/>
+         <specular r="0.0" g="0.0" b="0.0" a="1.0"/>
+         <shininess val="9.0"/>
+      </material>
+      <material num="10">
+         <!-- "Green" swan eyes-black-->
+         <ambient r="0.1" g="0.1" b="0.1" a="1.0"/>
+         <diffuse r="0.0" g="0.0" b="0.0" a="1.0"/>
+         <specular r="0.0" g="0.0" b="0.0" a="1.0"/>
+         <shininess val="0.0"/>
+        <textures ntextures="1">      
+	  	<texture num="0" tex="12"/>
+        </textures>
+      </material>
+      <material num="11">
+         <!-- "Pink" Frog- light green-->
+         <ambient r="0.1" g="0.0" b="0.1" a="1.0"/>
+         <diffuse r="0.1" g="0.6" b="0.5" a="1.0"/>
+         <specular r="0.2" g="0.2" b="0.2" a="1.0"/>
+         <shininess val="0.0"/>
+	   <textures ntextures="1">
+            <texture num="0" tex="4"/>
+         </textures>
+      </material>
+      <material num="12">
+         <!-- "Pink" frog whites-white-->
+         <ambient r="0.1" g="0.1" b="0.0" a="1.0"/>
+         <diffuse r="0.9" g="0.9" b="0.9" a="1.0"/>
+         <specular r="0.05" g="0.05" b="0.0" a="1.0"/>
+         <shininess val="0.0"/>
+      </material>
+      <material num="13">
+         <!-- "Pink" frog pupils-dk green-->
+         <ambient r="0.1" g="0.1" b="0.1" a="1.0"/>
+         <diffuse r="0.05" g="0.2" b="0.1" a="1.0"/>
+         <specular r="0.16" g="0.16" b="0.16" a="0.0"/>
+         <shininess val="0.0"/>
+      </material>
+      <material num="14">
+         <!-- "Pink" Rabbit-pink -->
+         <ambient r="0.1" g="0.05" b="0.2" a="1.0"/>
+         <specular r="0.0" g="0.0" b="0.00" a="1.0"/>
+         <diffuse r="0.4" g="0.2" b="0.2" a="1.0"/>
+         <shininess val="26.0"/>
+         <textures ntextures="1">
+            <texture num="0" tex="5"/>
+         </textures>
+        </material>
+      <material num="15">
+         <!-- "pink" rabbit eyes-brown-->
+         <ambient r="0.8" g="0.8" b="0.0" a="1.0"/>
+         <diffuse r="0.2" g="0.2" b="0.2" a="1.0"/>
+         <specular r="0.2" g="0.2" b="0.0" a="1.0"/>
+         <shininess val="0.5"/>
+      </material>
+	<material num="16">
+         <!--"pink" swan- yellow -->
+         <ambient r="0.1" g="0.1" b="0.0" a="1.0"/>
+         <diffuse r="0.91" g="0.9" b="0.89" a="1.0"/>
+         <specular r="0.05" g="0.05" b="0.0" a="1.0"/>
+         <shininess val="0.0"/>
+ 	   <textures ntextures="1">
+            <texture num="0" tex="3"/>
+         </textures>
+      </material>
+      <material num="17">
+         <!--"pink" swan beak- blue brown -->
+         <ambient r="0.1" g="0.1" b="0.1" a="1.0"/>
+         <diffuse r="0.05" g="0.2" b="0.1" a="1.0"/>
+         <specular r="0.16" g="0.16" b="0.16" a="0.0"/>
+         <shininess val="0.0"/>
+      </material>
+      <material num="18">
+         <!-- poles -->
+         <ambient r="0.1" g="0.1" b="0.1" a="1.0"/>
+         <diffuse r="0.6" g="0.5" b="0.3" a="1.0"/>
+         <specular r="0.14" g="0.14" b="0.14" a="0.0"/>
+         <shininess val="0.0"/>
+         <textures ntextures="1">
+            <texture num="0" tex="3"/>
+         </textures>
+      </material>
+      <material num="19">
+         <!-- spheres-->
+         <ambient r="0.3" g="0.0" b="0.0" a="1.0"/>
+         <diffuse r="0.9" g="0.8" b="0.85" a="1.0"/>
+         <specular r="0.1" g="0.0" b="0.0" a="1.0"/>
+         <shininess val="25.5"/>
+	   <textures ntextures="1">
+            <texture num="0" tex="10"/>
+         </textures>
+      </material>
+   </materials>
+   <models nmodels="3">
+      <model num="0">
+         <orientation>
+            <magnification val="0.05"/>
+            <scale x="1.0" y="1.0" z="1.0"/>
+            <rotate x="-69" y="-60" z="-19.5"/>
+            <translate x="0.0" y="200.0" z="0.0"/>
+         </orientation>
+         <objects nobjects="18" path="e:/models/Jeanne/models/">
+            <object num="0">
+               <data file="Carousel_base_lower.tri.sep" texcoords="true"/>
+               <material num="0"/>
+               <texcoords ntexcoords="1">
+                  <texcoord num="0">
+                     <type mode="embedded"/>
+                  </texcoord>
+               </texcoords>
+            </object>
+            <object num="1">
+               <data file="Carousel_base_upper.tri.sep"/>
+               <material num="0"/>
+		   <texcoords ntexcoords="1">
+                  <texcoord num="0">
+                     <type mode="embedded"/>
+                  </texcoord>
+               </texcoords>
+            </object>
+            <object num="2">
+               <data file="Carousel_coiled_column.tri.sep"/>
+               <material num="1"/>
+            </object>
+            <object num="3">
+               <data file="Carousel_top_lower.tri.sep" texcoords="false"/>
+               <material num="2"/>
+               <texcoords ntexcoords="1">
+                  <texcoord num="0">
+                     <type mode="embedded"/>
+                  </texcoord>
+               </texcoords>
+            </object>
+            <object num="4">
+               <data file="Carousel_top_upper.tri.sep" texcoords="true"/>
+               <material num="2"/>
+               <texcoords ntexcoords="1">
+                  <texcoord num="0">
+                     <type mode="tiled"/>
+                  </texcoord>
+               </texcoords>
+            </object>
+            <object num="5">
+               <data file="Column_balls_a.tri.sep"/>
+               <material num="18"/>
+            </object>
+            <object num="6">
+               <data file="Column_balls_b.tri.sep" texcoords="true"/>
+               <material num="4"/>
+               <texcoords ntexcoords="1">
+                  <texcoord num="0">
+                     <type mode="embedded"/>
+                  </texcoord>
+               </texcoords>
+            </object>
+		<object num="7">
+               <data file="Green_rabbit.tri.sep"/>
+               <material num="6"/>
+            </object>
+            <object num="8">
+               <data file="Green_rabbit_eyes.tri.sep" texcoords="true"/>
+               <material num="7"/>
+               <texcoords ntexcoords="1">
+                  <texcoord num="0">
+                     <type mode="embedded"/>
+                  </texcoord>
+               </texcoords>
+            </object>
+            <object num="9">
+               <data file="Pink_frog.tri.sep" texcoords="true"/>
+               <material num="11"/>
+               <texcoords ntexcoords="1">
+                  <texcoord num="0">
+                     <type mode="embedded"/>
+                  </texcoord>
+               </texcoords>
+            </object>
+            <object num="10">
+               <data file="Pink_frog_pupils.tri.sep" texcoords="true"/>
+               <material num="12"/>
+               <texcoords ntexcoords="1">
+                  <texcoord num="0">
+                     <type mode="embedded"/>
+                  </texcoord>
+               </texcoords>
+            </object>
+		<object num="11">
+               <data file="Pink_frog_whites.tri.sep" texcoords="true"/>
+               <material num="13"/>
+               <texcoords ntexcoords="1">
+                  <texcoord num="0">
+                     <type mode="embedded"/>
+                  </texcoord>
+               </texcoords>
+            </object>
+            <object num="12">
+               <data file="Pink_rabbit.tri.sep"/>
+               <material num="14"/>
+            </object>
+            <object num="13">
+               <data file="Pink_rabbit_eyes.tri.sep"/>
+               <material num="15"/>
+		   <texcoords ntexcoords="1">
+                  <texcoord num="0">
+                     <type mode="embedded"/>
+                  </texcoord>
+               </texcoords>
+            </object>
+            <object num="14">
+               <data file="Pink_swan.tri.sep" texcoords="true"/>
+               <material num="16"/>
+               <texcoords ntexcoords="1">
+                  <texcoord num="0">
+                     <type mode="embedded"/>
+                  </texcoord>
+               </texcoords>
+            </object>
+            <object num="15">
+               <data file="Pink_swan_beak.tri.sep" texcoords="true"/>
+               <material num="17"/>
+               <texcoords ntexcoords="1">
+                  <texcoord num="0">
+                     <type mode="embedded"/>
+                  </texcoord>
+               </texcoords>
+            </object>
+            <object num="16">
+               <data file="Poles.tri.sep"/>
+               <material num="18"/>
+			<texcoords ntexcoords="1">
+                  <texcoord num="0">
+                     <type mode="embedded"/>
+                  </texcoord>
+               </texcoords>
+		</object>
+            <object num="17">
+               <data file="Spheres.tri.sep" texcoords="true"/>
+               <material num="19"/>
+               <texcoords ntexcoords="1">
+                  <texcoord num="0">
+                     <type mode="embedded"/>
+                  </texcoord>
+               </texcoords>
+            </object>
+         </objects>
+      </model>
+	<model num="1">
+         <orientation>
+            <magnification val="0.05"/>
+            <scale x="1.0" y="1.0" z="1.0"/>
+            <rotate x="-89" y="100" z="0"/>
+            <translate x="-100.0" y="300.0" z="-90.0"/>
+         </orientation>
+         <objects nobjects="3" path="e:/models/Jeanne/models/">
+            <object num="0">
+               <data file="Pink_frog.tri.sep" texcoords="true"/>
+               <material num="5"/>
+               <texcoords ntexcoords="1">
+                  <texcoord num="0">
+                     <type mode="embedded"/>
+                  </texcoord>
+               </texcoords>
+            </object>
+		<object num="1">
+               <data file="Pink_frog_pupils.tri.sep" texcoords="true"/>
+               <material num="12"/>
+               <texcoords ntexcoords="1">
+                  <texcoord num="0">
+                     <type mode="embedded"/>
+                  </texcoord>
+               </texcoords>
+            </object>
+		<object num="2">
+               <data file="Pink_frog_whites.tri.sep" texcoords="true"/>
+               <material num="13"/>
+               <texcoords ntexcoords="1">
+                  <texcoord num="0">
+                     <type mode="embedded"/>
+                  </texcoord>
+               </texcoords>
+            </object>
+ 	   </objects>
+     </model>
+     <model num="2">
+         <orientation>
+            <magnification val="0.05"/>
+            <scale x="1.0" y="1.0" z="1.0"/>
+            <rotate x="-89" y="100" z="0"/>
+            <translate x="50.0" y="200.0" z="-100.0"/>
+         </orientation>
+         <objects nobjects="2" path="e:/models/Jeanne/models/">
+            <object num="0">
+               <data file="Pink_swan.tri.sep" texcoords="true"/>
+               <material num="8"/>
+               <texcoords ntexcoords="1">
+                  <texcoord num="0">
+                     <type mode="embedded"/>
+                  </texcoord>
+               </texcoords>
+            </object>
+		<object num="1">
+               <data file="Pink_swan_beak.tri.sep" texcoords="true"/>
+               <material num="9"/>
+               <texcoords ntexcoords="1">
+                  <texcoord num="0">
+                     <type mode="embedded"/>
+                  </texcoord>
+               </texcoords>
+            </object>
+	   </objects>
+     </model>
+   </models>
+</holoren>

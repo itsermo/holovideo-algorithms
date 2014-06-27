@@ -1,0 +1,117 @@
+// This is C5E1v_basicLight from "The Cg Tutorial" (Addison-Wesley, ISBN
+// 0321194969) by Randima Fernando and Mark J. Kilgard.  See page 111.
+
+void C5E1v_basicLight(float4 position  : POSITION,
+
+				float3 normal    : NORMAL,
+				float4 texCoord  :TEXCOORD0,
+				float4 normCoord :TEXCOORD1,
+				float4 color: COLOR,
+
+				out float4 oPosition : POSITION,
+				out float4 oTexCoord  :TEXCOORD0,
+				out float3 oNormal: TEXCOORD1,
+				out float4 oColor:COLOR,
+				out float4 oColor1:COLOR1,
+//				out float4 oWorldpos : POSITION,
+//				out float4 otemp : POSITION,
+				uniform float4x4 modelViewProj
+				,uniform float4x4 textureMatrix
+				,uniform float4x4 depthMatrix
+				,uniform float4x4 textureMatrixSecond
+				,uniform float4x4 depthMatrixSecond
+	      		,uniform int drawdepth
+				,uniform int drawdepthSecond
+				,uniform int kinectNum
+				,uniform float4x4 projectorTransform
+				,uniform float4x4 projectorTransform2)
+{
+//float n=-400 ,f=-600;
+//float n=-450, f=-750;
+float n=-400, f=-800; //near and far clip plane distances 
+float z;
+float4 temp;
+float4 worldpos;
+
+float4 posScaled = position * float4(0.05,0.05,0.1,1);
+
+if(kinectNum < 1)
+{
+	temp = mul(depthMatrix,position); temp = temp/temp.a;
+	worldpos = mul(projectorTransform,temp);
+	//worldpos = float4(0.0,0.,0.,1.);
+	//worldpos = worldpos + float4(0.5,0,0,0);
+	//worldpos = float4(0,0,0,0);
+}
+else
+{
+	temp = mul(depthMatrixSecond,position); temp = temp/temp.a;
+	worldpos = mul(projectorTransform2,temp);
+	//worldpos = float4(0,0,0,0);
+	//worldpos = worldpos + float4(-0.5,0,0,0);
+	//worldpos = float4(0.0,0.,0.,1.);
+	
+}
+//worldpos = worldpos/worldpos.w;
+//oPosition = mul(modelViewProj, worldpos);
+
+oPosition = mul(modelViewProj, worldpos);
+
+oPosition = oPosition*float4(0.8,0.8,0.8,1);
+//float4 worldposition = mul(depthMatrix,posScaled);
+oPosition.xyz = -oPosition.xyz;
+
+if(temp.z/temp.w > 0) //deal with parts where kinect gave zero depth
+{
+	oPosition.z = -9999*oPosition.w;
+}
+//float y=oPosition.y*70+35;
+//float z=oPosition.z*100+500;
+
+//z=-0.5*(f-n)*oPosition.z-0.5*(n+f);
+z=((f-n)*oPosition.z+n);
+ //oPosition.y=oPosition.y/z;
+// oPosition.y=oPosition.y/oPosition.z;
+//z= (oPosition.z+1.0)*0.5+1.;
+
+//oPosition.y=oPosition.y*500/z;
+
+
+
+//THESE TWO LINES ARE ACTIVE IN QUINN's CODE
+//oPosition.y=oPosition.y*(0.5*(n+f))/(z); 
+//oPosition.x=oPosition.x*(0.5*(n+f))/(z); //normalization by z may not be correct
+//THESE TWO LINES ARE ACTIVE IN QUINN's CODE
+
+
+
+//oPosition.y=oPosition.y*(0.5*(n+f))/(z+600);
+//oPosition.x=oPosition.x*(0.5*(n+f))/(z+600);
+
+// oPosition.y=oPosition.y*(oPosition.w)/(oPosition.w+500);
+  oNormal=normal;
+  //oTexCoord=texCoord;
+ 
+oColor=color;
+
+if(drawdepth)
+{
+	oTexCoord.xyzw=oPosition.z/oPosition.w;
+}
+else
+{
+if(kinectNum == 0)
+{
+	//oTexCoord = mul(projectorTransform,position);
+	//oTexCoord = mul(textureMatrix, oTexCoord);
+	oTexCoord = mul(textureMatrix, position);
+}
+else
+{
+	//oTexCoord = mul(projectorTransform2,position);
+	//oTexCoord = mul(textureMatrixSecond, oTexCoord);
+	oTexCoord = mul(textureMatrixSecond, position);
+}  
+  //oTexCoord = texCoord;
+} 
+}

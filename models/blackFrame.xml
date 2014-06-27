@@ -1,0 +1,58 @@
+<holoren>
+   <render double_camera="false" pseudo="true" wireframe="true" recenter="true">
+      <screen_resolution width="383" height="144"/>
+      <nviews horiz="140" vert="1"/>
+      <far_clip z="5000"/>
+      <near_clip_scale zinverse="1000"/>
+      <preview_eyez_scale val="1"/>
+      <camera_track_size width="38.3" />
+      <hologram_size width="7.54" height="5.65" />
+      <eyez z="59.6" />
+   </render>
+   <lighting nlights="1">
+      <globalambient r="0.0" g="0.0" b="0.0" a="1.0"/>
+      <light num="0">
+         <position x="0.0" y="0.0" z="1.0" w="0.0"/>
+         <direction x="0.0" y="0.0" z="1.0" w="1.0"/>
+         <ambient r="0.0" g="0.0" b="0.0" w="0.0"/>
+         <diffuse r="0.0" g="0.0" b="0.0" w="0.0"/>
+         <specular r="0.0" g="0.0" b="0.0" w="0.0"/>
+      </light>
+   </lighting>
+
+
+   <materials nmaterials="1">
+      <material num="0">
+         <ambient r="0.0" g="0.0" b="0.0" w="1.0"/>
+         <diffuse r="0.0" g="0.0" b="0.0" w="1.0"/>
+         <specular r="0.9" g="0.0" b="0.0" w="1.0"/>
+         <shininess val="85.0"/>	 
+      </material>                        
+   </materials>
+
+   <models nmodels="1">
+      <model num="0">
+         <orientation>
+            <magnification val="1.0"/>
+            <scale x="1.0" y="1.0" z="1.0"/>
+            <rotate x="0.0" y="0.0" z="0.0"/>
+            <translate x="0.0" y="0.0" z="0.0"/>
+         </orientation>
+         
+         <objects nobjects="1" path="/home/holovideo1/hv/RIPGen/rip/models/">
+            <object num="0">
+               <orientation>
+                  <magnification val="1.0"/>
+                  <scale x="3.77" y="2.825" z="1.0"/>
+                  <rotate x="0.0" y="0.0" z="0.0"/>
+                  <translate x="0.0" y="0.0" z="0.0"/>
+               </orientation>
+               <data format="square"/>
+               <material num="0"/>
+
+            </object>
+         </objects>
+         
+      </model>
+   </models>
+</holoren>

@@ -1,0 +1,91 @@
+void Holof_myTextures(float4 texCoord : TEXCOORD0,
+					  float4 color : COLOR,		
+					   out float4 oColor : COLOR,
+					   uniform sampler2D decal0,
+					   uniform sampler2D decal1)
+{
+float  xCoord,modxCoord,yCoord,modyCoord;
+float4 mycos0,mycos1,mycos2,mycos3,mysin0,mysin1,mysin2,mysin3;
+float4 mymod00,mymod01,mymod02,mymod03;
+float4 mymod10,mymod11,mymod12,mymod13;  //10
+float4 q0,mydepth0,mymod0;
+float4 z0,temp1,temp2,arg0,mychirp00;
+float4 oColor0,oColor1,oColor2,oColor3;
+
+float xpic,ypic, emitnum,xres,yres,fov,qnum,tilex,tiley,numview;
+float far,near,emitx,emit,x;
+float holotiley,emitwidth;
+
+oColor=float4 (0,0,0,1); 
+q0 = float4(0,0,0,1);			//20
+
+//mod and depth texture info
+far=550; near=450; fov=6*3.141592/180;//fov=15*3.141592/180;  // frustum
+xpic=160; ypic=120; qnum=32;  //emitters and hololine  and view dimensions
+tilex=4.; tiley=2.;  // tiling of views
+emitwidth=80;
+//holoframe buffer info 
+//xres=1024.;yres=480.;   //frame buffer width and height
+xres=800;yres=480;
+holotiley=yres/ypic; //(480/120=4) number of fblines per hololine  
+									//30
+// start with texCoord.x (01) and texCoord.y (01); want to unfold 
+//yCoord=texCoord.y*yres/512.; // just adjusting for texture size (512) vs layout (480) 
+yCoord=texCoord.y*480;
+modyCoord=modf((yCoord-64.)/52.,yCoord);//(yCoord: hololine, modyCoord: wrap#)
+//modyCoord=saturate((modyCoord*140-10)/120);
+modyCoord=((modyCoord*52-10)/31);
+yCoord=texCoord.y*15.; //try to get every 15th line
+
+xCoord=texCoord.x;
+
+//unroll x
+oColor.rgb=0;
+xCoord=modyCoord*(31./32.)+xCoord/32;
+
+/*if ((modyCoord>=0) && (modyCoord<=1)){
+if (((int) yCoord)%2 ){
+xCoord=modyCoord*(31./32.)+xCoord/32;
+//oColor.r=xCoord;
+}
+else{
+xCoord=(1-modyCoord)*(33./32.)-xCoord/32;
+//oColor.g=xCoord;
+}
+}*/
+
+emitx=modf(xpic*xCoord*(xres*tiley-1)/(xres*tiley),emit);
+
+mydepth0=(float4) tex2D(decal0,float2(xCoord,yCoord+0.5));
+mymod0=(float4) tex2D(decal0,float2(xCoord,yCoord));
+
+q0=(float4)(1,2,3,4)*fov/qnum;
+
+z0=(far-near)*mydepth0+near-(far+near)/2.-10.;
+
+temp1=emitx*emitwidth+z0*tan(q0);
+temp2=temp1/z0;
+
+arg0=temp1*atan2(temp1,z0)-0.5*z0*log(1+temp2*temp2);
+if ((modyCoord>=0) && (modyCoord<=1)){
+mychirp00=(sin(180/30 *.10*arg0)+1.)*0.5;  //50
+}
+else
+{
+mychirp00=0;
+}
+//oColor.r=mychirp00.r;
+oColor=0;
+oColor.r=mychirp00.r*mymod0.r;
+//oColor.gba=(0,0,1);
+//oColor0=mychirp00.r*mymod0.r;
+//oColor= oColor0;
+//oColor.gb=0.;
+//oColor.a=1;
+
+
+
+
+}
+
+

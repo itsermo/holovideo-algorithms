@@ -1,0 +1,698 @@
+void Holof_myTextures(float4 texCoord : TEXCOORD0,
+		float4 color : COLOR,
+		out float4 oColor : COLOR,
+		uniform sampler2D decal0,
+		uniform float hogelYes,
+		uniform float hologramGain,
+		uniform int hologramDebugSwitch,
+		uniform int headnum)
+{
+
+	const float pi = 3.141592;
+	const float pi_x2 = 2.0*3.141592;
+	const float numheads = 3.;
+	const float xpic=512.; //num emitters per line (and horiz. size of a single view)
+	const float viewheight = 144.; //height of one view image inside view texture (pixels)
+	const float ypic=48.; //num lines (per video card) 8 scanlines X 3 colors X 2 VGA connectors
+	const float tilex=2.;
+	const float tiley=2.; // tiling of views (how views are packed into single 2d texture
+	const float viewtex_height = viewheight*tiley*2.; //extra factor of two from (luma,depth) storage
+	const float viewtex_width = xpic*tilex;
+	const float hologramWidth_mm = 145.3; //was 150, but hologram is actually smaller
+	
+	const float qnum=16.; //number of views
+	
+	//set hogelYes to 0 to use wafel renderer.
+	
+	//Fragment Shader to construct hologram
+	//hardcoded number of emitters contributing to each hologram pixel (one pass)
+	float xCoord,modxCoord,yCoord,modyCoord, yCoord2;
+	float yOffset,yCoord3,flip,lambda;
+	float xCoordstore,yCoordstore,yCoord2store,blank;
+	float myexp,refangle,xCoord2,refOffset,tempval,fresnelYes,xCoord3,fmax;
+	//float hogelYes;
+
+	float4 q0,mydepth0,mymod0;
+	float4 z0,temp1,temp2,arg0,mychirp00;
+	float4 q1,mydepth1,mymod1;
+	float4 z1,temp11,arg01,mychirp01;
+	float4 q2,mydepth2,mymod2;
+	float4 z2,temp12,arg02,mychirp02;
+	float4 q3,mydepth3,mymod3;
+	float4 z3,temp13,arg03,mychirp03;
+
+	float4 mydepth4,mymod4;
+	float4 z4,temp14,arg04,mychirp04;
+	float4 mydepth5,mymod5;
+	float4 z5,temp15,arg05,mychirp05;
+	float4 mydepth6,mymod6;
+	float4 z6,temp16,arg06,mychirp06;
+	float4 mydepth7,mymod7;
+	float4 z7,temp17,arg07,mychirp07;
+
+	float4 mydepth8,mymod8;
+	float4 z8,temp18,arg08,mychirp08;
+	float4 mydepth9,mymod9;
+	float4 z9,temp19,arg09,mychirp09;
+	float4 mydepth10,mymod10;
+	float4 z10,temp20,arg10,mychirp10;
+	float4 mydepth11,mymod11;
+	float4 z11,temp21,arg11,mychirp11;
+
+	float4 xCoord4,yCoord4,modyCoord2;
+	float numemit;
+	float emitnum;
+	float xres,yres,fov,numview;
+	float far,near,emitx;
+	float holotiley,emitwidth,hololinesPerHead;
+	float temp,mag,x0;
+
+	int lay_blank, lay_front, lay_data, lay_back;
+	float hybridYes=0;
+	//oColor=float4 (0,0,0,1);
+	//q0 = float4(0,0,0,1); //20
+
+
+	//hogelYes -- sterogram version (uses same shader)
+	//hybridYes -- two methods on scree (upper/lower)
+
+	//hogelYes=1;
+	/*if (hogelYes==1){
+	 hogelYes=0;
+	 hybridYes=1;}*/
+
+	mag=1;//magnification
+
+	//modulation and depth texture info
+	//far=750;f
+	//near=450;
+	far=800;//far clip plane mm
+	near=400;//near clip plane mm
+
+	fov=30*pi/180 *mag; // frustum
+
+	
+
+
+
+
+	emitwidth=hologramWidth_mm/xpic * mag; //emitter width in mm. 150 mm hololine / number of emitters
+
+	//holoframe buffer info
+	//xres=2048;yres=1780;   //frame buffer width and height
+	//xres=2048;yres=1757;   //frame buffer width and height for VGA displays
+	xres=2048;yres=1722;   //frame buffer width and height for DisplayPort displays
+
+	lambda=0.000633; //633nm in mm
+	if(hologramDebugSwitch == -3) lambda = lambda*2.;//longer wavelength (slower gratings)
+	// mark II layout blanking, front porch, data, backporch
+
+	lay_blank=204-48;//350;//306*0;//306 //initial blank framebuffer lines before data (JB eyeballed this :( )
+	lay_front=48; //blank framebuffer lines before each line (was 48
+	lay_data=128; //data lines per hololine
+	lay_back=0; //blank framebuffer lines after each line
+
+	hololinesPerHead=8; // (number of hololines per head).we keep hololines in RG and B for each of these hololinesPerHead   
+	//holotiley=(yres-(lay_blank+lay_front)+lay_front*hololinesPerHead)/hololinesPerHead ;
+	
+	//# fblines per hololine 
+	holotiley=lay_data; //one hololine fits on 128 2048-pixel lines 
+
+	//yCoord=texCoord.y; //get position in the framebuffer
+	yOffset=0; //offset in view scanlines of current scanline to render.
+	// start with texCoord.x (0…1) and texCoord.y (0…1); want to unfold
+	if (texCoord.y>=0.5) //top half of image -- second RGB output
+	{
+		yCoord=(texCoord.y-0.5)*2.*yres;
+		yOffset+=0;
+	}
+	else //bottom half of image
+	{
+		yCoord=texCoord.y*2.*yres;
+		yOffset+=9.;//3;//*viewheight/ypic;//lower framebuffer is 3/9 scanlines ahead of upper
+	}
+	//yCoord is now head-relative y-position of the current fragment, in pixels
+	
+	//Here's where MarkII layout starts
+	//yCoord=yCoord*(yres-1); //yCoord now in pixels
+	//yCoord=yCoord*(yres); //yCoord now in pixels JB
+
+	//find out if we are in a blank, a forward line, or a reverse one
+	temp=((yCoord-lay_blank)/(lay_front+lay_data)); //line block in video card head 0-7 float
+	//temp=((yCoord)/(lay_front+lay_data));
+	modyCoord=modf(temp,yCoord2);
+	modyCoord=temp-floor(temp);//get fractional part 0-1
+	yCoord=floor(temp); //get integer part 0-7 int
+
+	yCoord4=(hololinesPerHead-1.)-yCoord;
+	modyCoord=1.-modyCoord;
+//	modyCoord=(modyCoord*(lay_front+lay_data)-lay_front)/(lay_data-1.); // position in hologram scanline 0-1
+	modyCoord=(modyCoord*(lay_front+lay_data)-lay_front)/(lay_data); //JB position in hologram scanline 0-1
+
+    // strip off blank data lines and re-normalize
+	
+	// Here's where chirp stuff starts
+	//unroll x
+	oColor.rgb=0;//init output fragment color to black
+	//xCoord=(xCoord+modyCoord*(lay_data-1.))*(xres-1);
+	xCoord=texCoord.x;
+	//xCoord=xCoord*(xres-1)+modyCoord*(lay_data-1.)*xres;   
+	//xCoord=(xCoord+modyCoord*(lay_data-1.))*xres+xCoord; orig 5/12 Q
+	//xCoord=xCoord*(xres-1)+modyCoord*(lay_data-1.)*(xres);
+	xCoord=xCoord*(xres)+modyCoord*(lay_data)*(xres);
+	
+	numemit=xres*holotiley / xpic; //current emitter number xxx all const //number of emitters per hololine
+	emitx=(texCoord.x*4)-floor(texCoord.x*4.); // easier/cleaner way to compute emitx (4 emitters per screenline when screenlines are 2048 px and 512 emitters per line (x position in emitter)
+
+	xCoord= xCoord/(262144.); //normalize by 2^18 (262144 is number of pixels per hololine).
+	xCoord3=xCoord;
+
+	//flip x coord for alternating hololines
+	if ( ((int)yCoord % (int) 2) == (int) 1)
+	{
+		xCoord3=1-xCoord3;
+		xCoord=1-xCoord;
+		emitx=1-emitx;
+	}
+/*
+	if(hologramDebugSwitch == -4)//flip left-right
+	{
+		xCoord3=1-xCoord3;
+		xCoord=1-xCoord;
+		emitx=1-emitx;
+	}
+*/
+	// RGBRGB
+
+	
+	
+	xCoord=xCoord/tilex; // convert coordinate in view space to coordinate in texture space
+	yCoord4=yCoord4*(viewheight/hololinesPerHead); //6.; // pick texture line for corresponding color.I think 6x8=48 lines/texture 
+	//      [0-7] * [px]/8
+	//0->0
+	//1->18
+	//2->36
+	//...
+	//7->126
+	yCoord =(yCoord4+yOffset + float(headnum)); //y-coordinate (pixels) for modulation lookup. Offset is for second head (behind by 3) (lines are in blocks of 6 per head)
+	//       [px] + [0,9] + [0,1,2]
+	yCoord2=yCoord+(viewheight*tiley); //y-coordinate (pixels) for depth lookup (viewheight*tiley is y spacing between corresponding modulation and depth textures. 
+
+	//yCoord=yCoord; //??
+	//yCoord2=yCoord2; //??
+	// RGBRGB
+
+	//mark out something for blanking/blank areas & discard before texture fetch.
+
+	
+	if ((xCoord*2*128/(125.))>1)
+	{
+		//discard;
+		oColor.rgba=0.5; //JB: was 0.
+		//oColor.rgba=0.0; //JB: was 0.
+		return;
+	}
+	if ((xCoord*2*128/(2.))<1)
+	{
+		//discard;
+		oColor.rgba=0.9; //JB: was 0.
+		//oColor.rgba=0.0; //JB: was 0.
+		return;
+	}
+
+	//mark out display vblank
+	float mody;
+	mody = fmod(texCoord.y,0.5); //relative distance from top of frame
+	if(mody*2. > 1. - (lay_blank/yres) || yCoord4.a > viewheight-1.)
+	{
+		//discard;
+		oColor.rgba = float4(0.0,0.5,0.,1.0); //make vblank green
+		return;
+
+	}
+
+	//float yTexcoordLowerDepth = yCoord2/viewtex_height;
+	//float yTexcoordUpperDepth = (yCoord2+viewheight)/viewtex_height;
+
+	//float yTexcoordLowerModulation = yCoord/viewtex_height ;
+	//float yTexcoordUpperModulation = yCoord+viewheight)/viewtex_height;
+
+	
+	//if (hogelYes==0){
+	//get 16 depths for this emitter (red chan)
+	mydepth0=(float4) tex2D(decal0,float2(xCoord,yCoord2/viewtex_height) );
+	mydepth1=(float4) tex2D(decal0,float2(xCoord,(yCoord2+viewheight)/viewtex_height ));
+	mydepth2=(float4) tex2D(decal0,float2(xCoord+0.5,yCoord2/viewtex_height) );
+	mydepth3=(float4) tex2D(decal0,float2(xCoord+0.5,(yCoord2+viewheight)/viewtex_height ));
+	//}
+	//get modulation values for this emitter (red chan)
+	mymod0=(float4) tex2D(decal0,float2(xCoord,yCoord/viewtex_height) );
+	mymod1=(float4) tex2D(decal0,float2(xCoord,(yCoord+viewheight)/viewtex_height) );
+	mymod2=(float4) tex2D(decal0,float2(xCoord+0.5,yCoord/viewtex_height) );
+	mymod3=(float4) tex2D(decal0,float2(xCoord+0.5,(yCoord+viewheight)/viewtex_height) );
+
+	//green gets next scanline up in view texture
+	yCoord=yCoord+3.;
+	yCoord2=yCoord2+3.;
+	
+	//if (hogelYes==0){
+	//get 16 depths for this emitter (green chan)
+	mydepth4=(float4) tex2D(decal0,float2(xCoord,yCoord2/viewtex_height ) );
+	mydepth5=(float4) tex2D(decal0,float2(xCoord,(yCoord2+viewheight)/viewtex_height) );
+	mydepth6=(float4) tex2D(decal0,float2(xCoord+0.5,yCoord2/viewtex_height) );
+	mydepth7=(float4) tex2D(decal0,float2(xCoord+0.5,(yCoord2+viewheight)/viewtex_height) );
+	//}
+	//get modulation values for this emitter (green chan)
+	mymod4=(float4) tex2D(decal0,float2(xCoord,yCoord/viewtex_height) );
+	mymod5=(float4) tex2D(decal0,float2(xCoord,(yCoord+viewheight)/viewtex_height) );
+	mymod6=(float4) tex2D(decal0,float2(xCoord+0.5 ,yCoord/viewtex_height) );
+	mymod7=(float4) tex2D(decal0,float2(xCoord+0.5 ,(yCoord+viewheight)/viewtex_height) );
+
+	//blue gets next scanline up in view texture
+	yCoord=yCoord+3.;
+	yCoord2=yCoord2+3.;//xCoord=(xCoord+modyCoord*(lay_data-1.))*(xres-1);
+	//if (hogelYes==0){
+	//get 16 depths for this emitter (blue chan)
+	mydepth8=(float4) tex2D(decal0,float2(xCoord,yCoord2/viewtex_height));
+	mydepth9=(float4) tex2D(decal0,float2(xCoord,(yCoord2+viewheight)/viewtex_height) );
+	mydepth10=(float4) tex2D(decal0,float2(xCoord+0.5,yCoord2/viewtex_height) );
+	mydepth11=(float4) tex2D(decal0,float2(xCoord+0.5,(yCoord2+viewheight)/viewtex_height) );
+	//}
+	//get modulation values for this emitter (blue chan)
+	mymod8=(float4) tex2D(decal0,float2(xCoord,yCoord/viewtex_height) );
+	mymod9=(float4) tex2D(decal0,float2(xCoord,(yCoord+viewheight)/viewtex_height) );
+	mymod10=(float4) tex2D(decal0,float2(xCoord+0.5 ,yCoord/viewtex_height) );
+	mymod11=(float4) tex2D(decal0,float2(xCoord+0.5 ,(yCoord+viewheight)/viewtex_height) );
+
+	/*mymod0=(float4) (1,1,1,1);
+	 mymod1=mymod0;mymod2=mymod0;mymod3=mymod0;mymod4=mymod0;mymod5=mymod0;mymod6=mymod0;mymod7=mymod0;mymod8=mymod0;
+	 mymod9=mymod0;mymod10=mymod0;mymod11=mymod0;*/
+
+	//compute angles for each view
+	q0=float4(-8.,-7.,-6.,-5.)*fov/qnum;
+	q1=float4(-4.,-3.,-2.,-1.)*fov/qnum;
+	q2=float4(0.,1.,2.,3.)*fov/qnum;
+	q3=float4(4.,5.,6.,7.)*fov/qnum;
+
+	//q0=float4(7,6,5,4)*fov/qnum;
+	//q1=float4(3,2,1,0)*fov/qnum;
+	//q2=float4(-1,-2,-3,-4)*fov/qnum;
+	//q3=float4(-5,-6,-7,-8)*fov/qnum;
+
+
+	//get z depth in mm from z-buffer depth
+//	if (hogelYes==0)
+//	{
+float zrange = far-near; //distance between near and far clip planes. Here = 300mm
+
+//now make depth z{x} be a 4-vector of signed distances in mm from plane halfway between near and far planes  
+
+		//16 views R
+		z0=-mydepth0*zrange+zrange*0.5;
+		z1=-mydepth1*zrange+zrange*0.5;
+		z2=-mydepth2*zrange+zrange*0.5;
+		z3=-mydepth3*zrange+zrange*0.5;
+
+		//16 views G
+		z4=-mydepth4*zrange+zrange*0.5;
+		z5=-mydepth5*zrange+zrange*0.5;
+		z6=-mydepth6*zrange+zrange*0.5;
+		z7=-mydepth7*zrange+zrange*0.5;
+
+		//16 views B
+		z8=-mydepth8*zrange+zrange*0.5;
+		z9=-mydepth9*zrange+zrange*0.5;
+		z10=-mydepth10*zrange+zrange*0.5;
+		z11=-mydepth11*zrange+zrange*0.5;
+
+		//x offset of emitter. emitx is [0-1) position in emitter. emitwidth is width of emitter in mm
+		//adjusted to make this the x-distance between emitter (single point projected at view angle through
+		//center of emitter) and the current pixel.
+		temp1 =(float4)emitx*emitwidth-z0*tan(q0) - emitwidth*0.5;
+		temp11=(float4)emitx*emitwidth-z1*tan(q1) - emitwidth*0.5;
+		temp12=(float4)emitx*emitwidth-z2*tan(q2) - emitwidth*0.5;
+		temp13=(float4)emitx*emitwidth-z3*tan(q3) - emitwidth*0.5;
+
+		temp14=(float4)emitx*emitwidth-z4*tan(q0) - emitwidth*0.5;
+		temp15=(float4)emitx*emitwidth-z5*tan(q1) - emitwidth*0.5;
+		temp16=(float4)emitx*emitwidth-z6*tan(q2) - emitwidth*0.5;
+		temp17=(float4)emitx*emitwidth-z7*tan(q3) - emitwidth*0.5;
+
+		temp18=(float4)emitx*emitwidth-z8*tan(q0) - emitwidth*0.5;
+		temp19=(float4)emitx*emitwidth-z9*tan(q1) - emitwidth*0.5;
+		temp20=(float4)emitx*emitwidth-z10*tan(q2) - emitwidth*0.5;
+		temp21=(float4)emitx*emitwidth-z11*tan(q3) - emitwidth*0.5;
+
+		//radial distance to emitter (arg is argument to sin for creating chirp)
+		
+		//subtraction of z{x} adjusts phase so that neighboring emitters 
+		//imaging same point have a shot at being in phase
+		
+		//TODO: check units. This is computed in mm, why normalized by emitwidth??
+		
+		//float renorm;
+		
+		//renorm = 1./emitwidth;
+		//renorm = 1.;
+		/*//JB commented out for testing
+		arg0=(sqrt(temp1*temp1+z0*z0)-z0)*renorm;
+		arg0=pi_x2/lambda*arg0;
+		arg0=arg0*((temp1/sqrt(temp1*temp1+z0*z0))<0.5); // keep high-angle contribution from creating grating with too high frequency
+		arg01=(sqrt(temp11*temp11+z1*z1)-z1)*renorm;
+		arg01=pi_x2/lambda*arg01;
+		arg02=(sqrt(temp12*temp12+z2*z2)-z2)*renorm;
+		arg02=pi_x2/lambda*arg02;
+		arg03=(sqrt(temp13*temp13+z3*z3)-z3)*renorm;
+		arg03=pi_x2/lambda*arg03;
+
+		arg04=(sqrt(temp14*temp14+z4*z4)-z4)*renorm;
+		arg04=pi_x2/lambda*arg04;
+		arg05=(sqrt(temp15*temp15+z5*z5)-z5)*renorm;
+		arg05=pi_x2/lambda*arg05;
+		arg06=(sqrt(temp16*temp16+z6*z6)-z6)*renorm;
+		arg06=pi_x2/lambda*arg06;
+		arg07=(sqrt(temp17*temp17+z7*z7)-z7)*renorm;
+		arg07=pi_x2/lambda*arg07;
+
+		arg08=(sqrt(temp18*temp18+z8*z8)-z8)*renorm;
+		arg08=pi_x2/lambda*arg08;
+		arg09=(sqrt(temp19*temp19+z9*z9)-z9)*renorm;
+		arg09=pi_x2/lambda*arg09;
+		arg10=(sqrt(temp20*temp20+z10*z10)-z10)*renorm;
+		arg10=pi_x2/lambda*arg10;
+		arg11=(sqrt(temp21*temp21+z11*z11)-z11)*renorm;
+		arg11=pi_x2/lambda*arg11;
+		*/
+		fmax=15;
+		
+		
+		
+		
+		//JB Testing:
+		float twopioverlamda = (pi_x2/lambda);
+		arg0=(sqrt(temp1*temp1+z0*z0))*twopioverlamda * sign(z0);
+		arg01=(sqrt(temp11*temp11+z1*z1))*twopioverlamda * sign(z1);
+		arg02=(sqrt(temp12*temp12+z2*z2))*twopioverlamda * sign(z2);
+		arg03=(sqrt(temp13*temp13+z3*z3))*twopioverlamda * sign(z3);
+
+		arg04=(sqrt(temp14*temp14+z4*z4))*twopioverlamda * sign(z4);
+		arg05=(sqrt(temp15*temp15+z5*z5))*twopioverlamda * sign(z5);
+		arg06=(sqrt(temp16*temp16+z6*z6))*twopioverlamda * sign(z6);
+		arg07=(sqrt(temp17*temp17+z7*z7))*twopioverlamda * sign(z7);
+
+		arg08=(sqrt(temp18*temp18+z8*z8))*twopioverlamda * sign(z8);
+		arg09=(sqrt(temp19*temp19+z9*z9))*twopioverlamda * sign(z9);
+		arg10=(sqrt(temp20*temp20+z10*z10))*twopioverlamda * sign(z10);
+		arg11=(sqrt(temp21*temp21+z11*z11))*twopioverlamda * sign(z11);
+
+		/*
+		 if (abs(atan(temp1/z0)*180/3.141592)>fmax){
+		 arg0=0;}
+		 if (abs(atan(temp11/z1)*180/3.141592)>fmax){
+		 arg01=0;}
+		 if (abs(atan(temp12/z2)*180/3.141592)>fmax){
+		 arg02=0;}
+		 if (abs(atan(temp13/z3)*180/3.141592)>fmax){
+		 arg03=0;}
+		 if (abs(atan(temp14/z4)*180/3.141592)>fmax){
+		 arg04=0;}
+		 if (abs(atan(temp15/z5)*180/3.141592)>fmax){
+		 arg05=0;}
+		 if (abs(atan(temp16/z6)*180/3.141592)>fmax){
+		 arg06=0;}
+		 if (abs(atan(temp17/z7)*180/3.141592)>fmax){
+		 arg07=0;}
+		 if (abs(atan(temp18/z8)*180/3.141592)>fmax){
+		 arg08=0;}
+		 if (abs(atan(temp19/z9)*180/3.141592)>fmax){
+		 arg09=0;}
+		 if (abs(atan(temp20/z10)*180/3.141592)>fmax){
+		 arg10=0;}
+		 if (abs(atan(temp21/z11)*180/3.141592)>fmax){
+		 arg11=0;}*/
+//	}
+
+	//xCoord2=xCoord*150/262143.;
+	xCoord2=xCoord*hologramWidth_mm; //JB: looks like mm? Position on scanline in mm?
+
+	refangle=fov;//16.0;z
+
+//	if(hologramDebugSwitch == -2) refangle = -refangle; //reverse reference angle
+
+/*
+	//compute constant-rate chirps for alternate (hogel) method
+	if (hogelYes==1)
+	{
+		refangle=45.0;
+		arg0=(float4) pi_x2/lambda*sin(q0)*xCoord2;
+		arg01=(float4) pi_x2/lambda*sin(q1)*xCoord2;
+		arg02=(float4) pi_x2/lambda*sin(q2)*xCoord2;
+		arg03=(float4) pi_x2/lambda*sin(q3)*xCoord2;
+
+		arg04=arg0;
+		arg05=arg01;
+		arg06=arg02;
+		arg07=arg03;
+
+		arg08=arg0;
+		arg09=arg01;
+		arg10=arg02;
+		arg11=arg03;
+	}
+*/
+	refOffset=pi_x2/lambda*sin(refangle)*xCoord2;
+	//refOffset = 0; //for debugging (gabor,with normal reference beam)
+//	if(hologramDebugSwitch == -1) refOffset = 0;
+	
+	mychirp00=(float4) cos(arg0+refOffset);
+	mychirp01=(float4) cos(arg01+refOffset);
+	mychirp02=(float4) cos(arg02+refOffset);
+	mychirp03=(float4) cos(arg03+refOffset);
+
+	mychirp04=(float4) cos(arg04+refOffset);
+	mychirp05=(float4) cos(arg05+refOffset);
+	mychirp06=(float4) cos(arg06+refOffset);
+	mychirp07=(float4) cos(arg07+refOffset);
+
+	mychirp08=(float4) cos(arg08+refOffset);
+	mychirp09=(float4) cos(arg09+refOffset);
+	mychirp10=(float4) cos(arg10+refOffset);
+	mychirp11=(float4) cos(arg11+refOffset);
+
+	mychirp00=0.5*(mychirp00+1.);
+	mychirp01=0.5*(mychirp01+1.);
+	mychirp02=0.5*(mychirp02+1.);
+	mychirp03=0.5*(mychirp03+1.);
+
+	mychirp04=0.5*(mychirp04+1.);
+	mychirp05=0.5*(mychirp05+1.);
+	mychirp06=0.5*(mychirp06+1.);
+	mychirp07=0.5*(mychirp07+1.);
+
+	mychirp08=0.5*(mychirp08+1.);
+	mychirp09=0.5*(mychirp09+1.);
+	mychirp10=0.5*(mychirp10+1.);
+	mychirp11=0.5*(mychirp11+1.);
+
+	//if (hogelYes==0){
+	mydepth0=1-mydepth0;
+	mydepth1=1-mydepth1;
+	mydepth2=1-mydepth2;
+	mydepth3=1-mydepth3;
+	mydepth4=1-mydepth4;
+	mydepth5=1-mydepth5;
+	mydepth6=1-mydepth6;
+	mydepth7=1-mydepth7;
+	mydepth8=1-mydepth8;
+	mydepth9=1-mydepth9;
+	mydepth10=1-mydepth10;
+	mydepth11=1-mydepth11;
+
+	//don't draw if depth is far (at far plane)
+	//JB Removing for speed
+	/*
+	mychirp00=(mydepth0.rgba !=0)*mychirp00;
+	mychirp01=(mydepth1.rgba !=0)*mychirp01;
+	mychirp02=(mydepth2.rgba !=0)*mychirp02;
+	mychirp03=(mydepth3.rgba !=0)*mychirp03;
+	mychirp04=(mydepth4.rgba !=0)*mychirp04;
+	mychirp05=(mydepth5.rgba !=0)*mychirp05;
+	mychirp06=(mydepth6.rgba !=0)*mychirp06;
+	mychirp07=(mydepth7.rgba !=0)*mychirp07;
+	mychirp08=(mydepth8.rgba !=0)*mychirp08;
+	mychirp09=(mydepth9.rgba !=0)*mychirp09;
+	mychirp10=(mydepth10.rgba !=0)*mychirp10;
+	mychirp11=(mydepth11.rgba !=0)*mychirp11;
+	*/
+	//}
+
+
+	// a b c d   /b missing
+	//mymod0.g=0;  // missing
+	//mymod1.g=0;  // a
+	//mymod2.g=0; //c
+	//mymod3.g=0; //d
+	/*
+	 mymod4.g=0;
+	 mymod5.g=0;
+	 mymod6.g=0;
+	 mymod7.g=0;
+
+	 mymod8.g=0;
+	 mymod9.g=0;
+	 mymod10.g=0;
+	 mymod11.g=0;*/
+
+	/*mymod0=(float4) (1,1,1,1);
+	 mymod1=mymod0;mymod2=mymod0;mymod3=mymod0;mymod4=mymod0;mymod5=mymod0;mymod6=mymod0;mymod7=mymod0;mymod8=mymod0;
+	 mymod9=mymod0;mymod10=mymod0;mymod11=mymod0;*/
+
+	//final compose RGB for 16 views
+	oColor.r = dot(mychirp00,mymod0) + dot(mychirp01,mymod1) + dot(mychirp02,mymod2) + dot(mychirp03,mymod3);
+	oColor.g = dot(mychirp04,mymod4) + dot(mychirp05,mymod5) + dot(mychirp06,mymod6) + dot(mychirp07,mymod7);
+	oColor.b = dot(mychirp08,mymod8) + dot(mychirp09,mymod9) + dot(mychirp10,mymod10) + dot(mychirp11,mymod11);
+	oColor.a = 1.;
+	/*
+	 mymod2.gb=0;
+	 mymod6.rb=0;
+	 mymod10.rg=0;
+	 mymod2.a=1;
+	 mymod6.a=1;
+	 mymod10.a=1;
+	 oColor.r=(dot(mychirp00,mymod0)*0+dot(mychirp01,mymod1)*0+dot(mychirp02,mymod2)*1+dot(mychirp03,mymod3)*1);
+	 oColor.g=(dot(mychirp04,mymod4)*0+dot(mychirp05,mymod5)*0+dot(mychirp06,mymod6)*1+dot(mychirp07,mymod7)*1);
+	 oColor.b=(dot(mychirp08,mymod8)*0+dot(mychirp09,mymod9)*0+dot(mychirp10,mymod10)*1+dot(mychirp11,mymod11)*1);*/
+
+//	if (hogelYes==0)
+//	{
+		oColor.rgb=oColor.rgb/4.0*hologramGain;
+//	}
+//	if (hogelYes==1)
+//	{
+//		oColor.rgb=oColor.rgb/16;}
+
+//	fresnelYes=0;
+
+	//if (yCoord>18) {fresnelYes=1;}
+	
+	
+/*//JB removing. Seems like fresnelYes is always 0
+	if (fresnelYes==1)
+	{	refangle=30;
+
+		xCoord3=(xCoord)*150.*2;
+		refOffset=2*pi/lambda*sin(refangle*3.1415/180)*xCoord3;
+		z0=1;
+		x0=-10+75;
+		tempval=(xCoord3-x0)/sqrt((xCoord3-x0)*(xCoord3-x0)+z0*z0);
+		oColor.r=cos(2*pi/lambda*sqrt((xCoord3-x0)*(xCoord3-x0)+z0*z0)+refOffset-z0);
+
+		if( tempval >0.25 )
+		{	oColor.r=0;}
+		if( tempval <0)
+		{	oColor.r=0;}
+
+		z0=+10;
+		x0=0+75;
+		tempval=(xCoord3-x0)/sqrt((xCoord3-x0)*(xCoord3-x0)+z0*z0);
+		oColor.g=cos(2*pi/lambda*sqrt((xCoord3-x0)*(xCoord3-x0)+z0*z0)+refOffset-z0);
+
+		if( tempval >0.25 )
+		{	oColor.g=0;}
+		if( tempval <0)
+		{	oColor.g=0;}
+		//oColor.g=0;
+
+		z0=20;
+		x0=10+75;
+		tempval=(xCoord3-x0)/sqrt((xCoord3-x0)*(xCoord3-x0)+z0*z0);
+		oColor.b=cos(2*pi/lambda*sqrt((xCoord3-x0)*(xCoord3-x0)+z0*z0)+refOffset-z0);
+
+		if( tempval >0.25 )
+		{	oColor.b=0;}
+		if( tempval <0)
+		{	oColor.b=0;}
+
+		oColor.rgb=oColor.r+oColor.g+oColor.b;
+	}
+*/
+	//oColor.rgb=(oColor.rgb+1)*0.5;
+	//oColor.a=1;
+
+
+
+	//if (yCoord4<0) {
+	//oColor.rgba=0.;
+	//}
+	//if (yCoord4>42){
+	//oColor.rgba=0.;
+	//}
+
+	
+	//DEBUGGING35c
+
+//	oColor.rg = texCoord.xy;
+//	oColor.ba = 0.;
+
+//	oColor.rgb = modyCoord;
+//	oColor.rgb = yCoord2/255.;
+//	oColor.rgb = emitx; //emitter number
+//	oColor.b = temp/8.; //relative pos in video channel
+
+//			oColor.rgb = 0.;
+//			oColor.a = 1.;
+//			oColor.g = xCoord;
+//			oColor.rg = texCoord.xy;
+			//oColor.r = yCoord2/255;
+
+	if(hologramDebugSwitch !=0)
+			{
+				if(hologramDebugSwitch == 1)
+				{
+					oColor = z0/150.;
+				}
+				else if(hologramDebugSwitch == 2)
+				{
+					oColor = mydepth0; //normalized z distance
+				}				
+				else if(hologramDebugSwitch == 3)
+				{
+					oColor = mymod1;
+				}
+				else if(hologramDebugSwitch == 3)
+				{
+					oColor = arg0;
+				}
+				else if(hologramDebugSwitch == 4)
+				{
+					oColor = yCoord4/48.;
+				}
+				else if(hologramDebugSwitch == 5)
+				{
+					oColor = xCoord2/150.; //should be horizontal position in scanline
+				}
+				else if(hologramDebugSwitch == 6)
+				{
+					oColor = temp1/36. + 0.5;
+				}
+				else if(hologramDebugSwitch == 7)
+				{
+					oColor = emitx; 
+				}
+				else if(hologramDebugSwitch == 8)
+				{
+					oColor = 0.5+cos(refOffset)/2.;//fmod(refOffset,pi_x2)/pi_x2; 
+				}
+				else if(hologramDebugSwitch == 9)
+				{
+					oColor = 0.5+cos(xCoord2*1000.)/2.;//fmod(refOffset,pi_x2)/pi_x2; 
+				}
+				else if(hologramDebugSwitch == 10)
+				{
+					oColor = fmod(emitx,2.0); 
+				}
+
+
+			}
+				
+}

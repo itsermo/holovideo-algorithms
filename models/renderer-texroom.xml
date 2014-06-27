@@ -1,0 +1,360 @@
+<holoren>
+   <render double_camera="true" pseudo="false" wireframe="false" recenter="true">
+      <screen_resolution width="800" height="600"/>
+      <hologram_size width="84" height="70"/>
+      <nviews horiz="640" vert="480"/>
+      <eyez z="120.0"/>
+      <far_clip z="1000"/>
+      <near_clip_scale zinverse="500"/>
+      <preview_eyez_scale val="1"/>
+      <eye_separation val="8"/>
+   </render>
+   <lighting nlights="4">
+      <globalambient r="0.5" g="0.5" b="0.5" a="1.0"/>
+      <light num="0">
+         <position x="0.0" y="0.0" z="1.0" w="0.0"/>
+         <direction x="0.0" y="0.0" z="1.0" w="1.0"/>
+         <ambient r="0.2" g="0.2" b="0.2" w="0.2"/>
+         <diffuse r="0.0" g="0.0" b="0.0" w="0.0"/>
+         <specular r="0.0" g="0.0" b="0.0" w="0.0"/>
+      </light>
+      <light num="1">
+         <position x="-20.5" y="25.0" z="0.0" w="0.0"/>
+         <direction x="0.0" y="0.0" z="1.0" w="1.0"/>
+         <ambient r="0.1" g="0.1" b="0.1" w="0.1"/>
+         <diffuse r="0.8" g="0.8" b="0.8" w="0.0"/>
+         <specular r="0.9" g="0.9" b="0.9" w="0.0"/>
+      </light>
+      <light num="2">
+         <position x="0.0" y="25.0" z="0.0" w="0.0"/>
+         <direction x="0.0" y="0.0" z="1.0" w="1.0"/>
+         <ambient r="0.1" g="0.1" b="0.1" w="0.2"/>
+         <diffuse r="0.8" g="0.8" b="0.8" w="0.0"/>
+         <specular r="0.9" g="0.9" b="0.9" w="0.0"/>
+      </light>
+      <light num="3">
+         <position x="30.0" y="30.0" z="2.0" w="0.0"/>
+         <direction x="0.0" y="0.0" z="1.0" w="1.0"/>
+         <ambient r="0.1" g="0.1" b="0.1" w="0.2"/>
+         <diffuse r="0.8" g="0.8" b="0.8" w="0.0"/>
+         <specular r="0.9" g="0.9" b="0.9" w="0.0"/>
+      </light>
+   </lighting>
+   <textures ntextures="16" path="e:/models/textures/">
+      <texture num="0">
+         <data file="marlble01.tif"/>
+      </texture>
+      <texture num="1">
+         <data file="bluegrnt.tif"/>
+      </texture>
+      <texture num="2">
+         <data file="blkmarble.tif"/>
+      </texture>
+      <texture num="3">
+         <data file="STUCCO8.tif"/>
+      </texture>
+      <texture num="4">
+         <data file="WATER2.tif"/>
+      </texture>
+      <texture num="5">
+         <data file="CONCGRAY.tif"/>
+      </texture>
+      <texture num="6">
+         <data file="WHTGRAN.tif"/>
+      </texture>
+      <texture num="7">
+         <data file="fx3_Rock_2.tif"/>
+      </texture>
+      <texture num="8">
+         <data file="LIMESTO1.tif"/>
+      </texture>
+      <texture num="9">
+         <data file="STUCCO4.tif"/>
+      </texture>
+      <texture num="10">
+         <data file="GRASS2.tif"/>
+      </texture>
+      <texture num="11">
+         <data file="WATER1.tif"/>
+      </texture>
+      <texture num="12">
+         <data file="WATERA1.tif"/>
+      </texture>
+      <texture num="13">
+         <data file="GUAVA1.tif"/>
+      </texture>
+      <texture num="14">
+         <data file="REDFAB.tif"/>
+      </texture>
+      <texture num="15">
+         <data file="APPLE.tif"/>
+      </texture>
+   </textures>
+   <materials nmaterials="16">
+      <material num="0">
+         <!-- bowl -->
+         <ambient r="0.0" g="0.09" b="0.05" a="1.0"/>
+         <specular r="0.0" g="0.15" b="0.07" a="2.0"/>
+         <diffuse r="0.0" g="0.05" b="0.02" a="1.0"/>
+         <shininess val="26.0"/>
+         <transparency val="true"/>
+      </material>
+      <material num="1">
+         <!-- apple -->
+         <ambient r="1.0" g="0.188" b="0.0" a="1.0"/>
+         <diffuse r="0.1" g="0.01" b="0.0" a="1.0"/>
+         <specular r="0.0" g="0.0" b="0.0" a="1.0"/>
+         <shininess val="0.0"/>
+         <textures ntextures="1">
+            <texture num="0" tex="15"/>
+         </textures>
+      </material>
+      <material num="2">
+         <!-- chair legs -->
+         <ambient r="0.27" g="0.573" b="0.0" a="1.0"/>
+         <diffuse r="0.05" g="0.1" b="0.0" a="1.0"/>
+         <specular r="0.1" g="0.373" b="0.0" a="1.0"/>
+         <shininess val="35.0"/>
+      </material>
+      <material num="3">
+         <!-- chair seats -->
+         <ambient r="0.0" g="0.00" b="0.01" a="1.0"/>
+         <diffuse r="0.1" g="0.01" b="0.01" a="0.0"/>
+         <specular r="0.0" g="0.0" b="0.0" a="0.0"/>
+         <shininess val="20.0"/>
+         <textures ntextures="1">
+            <texture num="0" tex="14"/>
+         </textures>
+      </material>
+      <material num="4">
+         <!-- floor -->
+         <ambient r="0.25" g="0.12" b="0.0" a="1.0"/>
+         <diffuse r="0.12" g="0.06" b="0.0" a="1.0"/>
+         <specular r="0.0" g="0.0" b="0.0" a="1.0"/>
+         <shininess val="0.0"/>
+         <textures ntextures="1">
+            <texture num="0" tex="10"/>
+         </textures>
+      </material>
+      <material num="5">
+         <!-- goblets -->
+         <ambient r="0.27" g="0.573" b="0.0" a="0.8"/>
+         <diffuse r="0.2" g="0.4" b="0.0" a="1.0"/>
+         <specular r="0.17" g="0.773" b="0.0" a="1.0"/>
+         <shininess val="25.0"/>
+      </material>
+      <material num="6">
+         <!-- lampbase -->
+         <ambient r="0.1" g="0.1" b="0.1" a="1.0"/>
+         <diffuse r="0.0" g="0.0" b="0.0" a="1.0"/>
+         <specular r="0.0" g="0.1" b="0.0" a="1.0"/>
+         <shininess val="0.0"/>
+         <textures ntextures="1">
+            <texture num="0" tex="6"/>
+         </textures>
+      </material>
+      <material num="7">
+         <!-- lampshade -->
+         <ambient r="0.1" g="0.1" b="0.1" a="1.0"/>
+         <diffuse r="0.0" g="0.0" b="0.0" a="1.0"/>
+         <specular r="0.0" g="0.0" b="0.0" a="0.0"/>
+         <shininess val="0.0"/>
+         <textures ntextures="1">
+            <texture num="0" tex="4"/>
+         </textures>
+      </material>
+      <material num="8">
+         <!-- lamp post -->
+         <ambient r="0.7" g="0.7" b="0.0" a="1.0"/>
+         <diffuse r="0.3" g="0.3" b="0.0" a="1.0"/>
+         <specular r="0.1" g="0.1" b="0.0" a="1.0"/>
+         <shininess val="5.0"/>
+      </material>
+      <material num="9">
+         <!-- guava -->
+         <ambient r="0.0" g="0.0" b="0.0" a="1.0"/>
+         <diffuse r="0.0" g="0.1" b="0.0" a="1.0"/>
+         <specular r="0.0" g="0.0" b="0.0" a="1.0"/>
+         <shininess val="9.0"/>
+         <textures ntextures="1">
+            <texture num="0" tex="13"/>
+         </textures>
+      </material>
+      <material num="10">
+         <!-- sculpture back -->
+         <ambient r="0.1" g="0.1" b="0.1" a="1.0"/>
+         <diffuse r="0.0" g="0.0" b="0.0" a="1.0"/>
+         <specular r="0.0" g="0.0" b="0.0" a="1.0"/>
+         <shininess val="0.0"/>
+         <textures ntextures="1">
+            <texture num="0" tex="12"/>
+         </textures>
+      </material>
+      <material num="11">
+         <!-- sculpture front -->
+         <ambient r="0.1" g="0.1" b="0.1" a="1.0"/>
+         <diffuse r="0.0" g="0.0" b="0.0" a="1.0"/>
+         <specular r="0.0" g="0.0" b="0.0" a="1.0"/>
+         <shininess val="0.0"/>
+         <textures ntextures="1">
+            <texture num="0" tex="11"/>
+         </textures>
+      </material>
+      <material num="12">
+         <!-- table legs -->
+         <ambient r="0.6" g="0.6" b="0.0" a="1.0"/>
+         <diffuse r="0.1" g="0.2" b="0.0" a="1.0"/>
+         <specular r="0.05" g="0.05" b="0.0" a="1.0"/>
+         <shininess val="0.0"/>
+      </material>
+      <material num="13">
+         <!-- table top -->
+         <ambient r="0.1" g="0.1" b="0.1" a="1.0"/>
+         <diffuse r="0.14" g="0.14" b="0.14" a="1.0"/>
+         <specular r="0.16" g="0.16" b="0.16" a="0.0"/>
+         <shininess val="0.0"/>
+         <textures ntextures="1">
+            <texture num="0" tex="2"/>
+         </textures>
+      </material>
+      <material num="14">
+         <!-- walls -->
+         <ambient r="0.1" g="0.1" b="0.1" a="1.0"/>
+         <diffuse r="0.0" g="0.0" b="0.0" a="1.0"/>
+         <specular r="0.14" g="0.14" b="0.14" a="0.0"/>
+         <shininess val="0.0"/>
+         <textures ntextures="1">
+            <texture num="0" tex="3"/>
+         </textures>
+      </material>
+      <material num="15">
+         <!-- table sides -->
+         <ambient r="0.8" g="0.8" b="0.0" a="1.0"/>
+         <diffuse r="0.4" g="0.4" b="0.0" a="1.0"/>
+         <specular r="0.2" g="0.2" b="0.0" a="1.0"/>
+         <shininess val="0.5"/>
+      </material>
+   </materials>
+   <models nmodels="1">
+      <model num="0">
+         <orientation>
+            <magnification val="1.5"/>
+            <scale x="1.0" y="1.0" z="1.0"/>
+            <rotate x="-69" y="-60" z="-19.5"/>
+            <translate x="0.0" y="0.0" z="0.0"/>
+         </orientation>
+         <objects nobjects="15" path="e:/models/room/">
+            <object num="0">
+               <data file="apple.tri.sep" texcoords="true"/>
+               <material num="1"/>
+               <texcoords ntexcoords="1">
+                  <texcoord num="0">
+                     <type mode="embedded"/>
+                  </texcoord>
+               </texcoords>
+            </object>
+            <object num="1">
+               <data file="bowl.tri.sep"/>
+               <material num="0"/>
+            </object>
+            <object num="2">
+               <data file="chairlegs.tri.sep"/>
+               <material num="2"/>
+            </object>
+            <object num="3">
+               <data file="chairtops.tri.sep" texcoords="true"/>
+               <material num="3"/>
+               <texcoords ntexcoords="1">
+                  <texcoord num="0">
+                     <type mode="embedded"/>
+                  </texcoord>
+               </texcoords>
+            </object>
+            <object num="4">
+               <data file="floor.tri.sep" texcoords="true"/>
+               <material num="4"/>
+               <texcoords ntexcoords="1">
+                  <texcoord num="0">
+                     <type mode="embedded"/>
+                  </texcoord>
+               </texcoords>
+            </object>
+            <object num="5">
+               <data file="goblets.tri.sep"/>
+               <material num="5"/>
+            </object>
+            <object num="6">
+               <data file="lampbase.tri.sep" texcoords="true"/>
+               <material num="6"/>
+               <texcoords ntexcoords="1">
+                  <texcoord num="0">
+                     <type mode="embedded"/>
+                  </texcoord>
+               </texcoords>
+            </object>
+            <object num="7">
+               <data file="lampshade.tri.sep" texcoords="true"/>
+               <material num="7"/>
+               <texcoords ntexcoords="1">
+                  <texcoord num="0">
+                     <type mode="embedded"/>
+                  </texcoord>
+               </texcoords>
+            </object>
+            <object num="8">
+               <data file="lamppost.tri.sep"/>
+               <material num="8"/>
+            </object>
+            <object num="9">
+               <data file="guava.tri.sep" texcoords="true"/>
+               <material num="9"/>
+               <texcoords ntexcoords="1">
+                  <texcoord num="0">
+                     <type mode="embedded"/>
+                  </texcoord>
+               </texcoords>
+            </object>
+            <object num="10">
+               <data file="sculptureback.tri.sep" texcoords="true"/>
+               <material num="10"/>
+               <texcoords ntexcoords="1">
+                  <texcoord num="0">
+                     <type mode="embedded"/>
+                  </texcoord>
+               </texcoords>
+            </object>
+            <object num="11">
+               <data file="sculpturefront.tri.sep" texcoords="true"/>
+               <material num="11"/>
+               <texcoords ntexcoords="1">
+                  <texcoord num="0">
+                     <type mode="embedded"/>
+                  </texcoord>
+               </texcoords>
+            </object>
+            <object num="12">
+               <data file="tablelegs.tri.sep"/>
+               <material num="12"/>
+            </object>
+            <object num="13">
+               <data file="tabletop.tri.sep" texcoords="true"/>
+               <material num="13"/>
+               <texcoords ntexcoords="1">
+                  <texcoord num="0">
+                     <type mode="embedded"/>
+                  </texcoord>
+               </texcoords>
+            </object>
+            <object num="14">
+               <data file="walls.tri.sep" texcoords="true"/>
+               <material num="14"/>
+               <texcoords ntexcoords="1">
+                  <texcoord num="0">
+                     <type mode="embedded"/>
+                  </texcoord>
+               </texcoords>
+            </object>
+         </objects>
+      </model>
+   </models>
+</holoren>

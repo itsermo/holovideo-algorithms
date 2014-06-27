@@ -1,0 +1,125 @@
+<holoren>
+	   <render double_camera="false" pseudo="true" wireframe="true" recenter="true">
+      <screen_resolution width="383" height="144"/>
+      <nviews horiz="140" vert="1"/>
+      <far_clip z="5000"/>
+      <near_clip_scale zinverse="1000"/>
+      <preview_eyez_scale val="1"/>
+      <camera_track_size width="38.3" />
+      <hologram_size width="7.54" height="5.65" />
+      <eyez z="59.6" />
+   </render>
+   <lighting nlights="3">
+      <globalambient r="0.1" g="0.1" b="0.1" a="1.0"/>
+      <light num="0">
+         <position x="0.0" y="0.0" z="20.0" w="0.0"/>
+         <direction x="0.0" y="0.0" z="1.0" w="1.0"/>
+         <ambient r="0.1" g="0.1" b="0.1" w="1.0"/>
+         <diffuse r="0.3" g="0.3" b="0.3" w="1.0"/>
+         <specular r="0.0" g="0.0" b="0.0" w="0.0"/>
+      </light>
+      <light num="1">
+         <position x="-20.5" y="25.0" z="0.0" w="0.0"/>
+         <direction x="0.0" y="0.0" z="1.0" w="1.0"/>
+         <ambient r="0.0" g="0.0" b="0.0" w="0.1"/>
+         <diffuse r="0.5" g="0.5" b="0.5" w="1.0"/>
+         <specular r="0.0" g="0.0" b="0.0" w="0.0"/>
+      </light>
+      <light num="2">
+         <position x="0.0" y="25.0" z="0.0" w="0.0"/>
+         <direction x="0.0" y="0.0" z="1.0" w="1.0"/>
+         <ambient r="0.0" g="0.0" b="0.0" w="0.2"/>
+         <diffuse r="0.0" g="0.0" b="0.0" w="0.0"/>
+         <specular r="0.0" g="0.0" b="0.0" w="0.0"/>
+      </light>
+   </lighting>
+
+
+   <!-- <textures ntextures="1"	>
+      <texture num="0">
+          <data file="models/trex/trex_walk_1_map.tif" />
+      </texture>
+    </textures> -->
+
+	<materials
+		nmaterials="1"
+	>
+		<material num="0">
+			<ambient r="0.0" g="0.0" b="0.0" w="0.0" />
+			<diffuse r="0.75" g="0.75" b="0.75" w="1.0" />
+			<specular r="0.0" g="0.0" b="0.0" w="0.0" />
+			<shininess val="0.0" />
+
+      <!--  <textures ntextures="1">
+            <texture num="0" tex="0" />
+           </textures> -->
+
+		</material>
+
+	</materials>
+
+
+	<models
+		nmodels="1"
+	>
+		<model num="0">
+			<orientation>
+				<magnification val="1.5" />
+				<scale x="0.75" y="1.25" z="0.75" />
+				<rotate x="90.0" y="200.0" z="0.0" />
+				<translate x="0.0" y="2." z="0.0" />
+			</orientation>
+
+
+
+			<objects
+				nobjects="7"
+				path="///home/holo/models/trex/"
+			>
+				<object num="0">
+					<data format="raw" file="trex_walk_1a.raw" />
+					<material num="0" />
+           <!--    <texcoords ntexcoords="1">
+                   <texcoord num="0">
+                      <type mode="file" file="trex_walk_1.tcd" format="tcd" />
+                        <combination val="modulate" />
+                   </texcoord>
+               </texcoords>  -->
+
+				</object>
+  
+				<object num="1">
+					<data format="raw" file="trex_walk_2b.raw" />
+					<material num="0" />
+				</object>	
+				<object num="2">
+					<data format="raw" file="trex_walk_3a.raw" />
+					<material num="0" />
+				</object>	
+				<object num="3">
+					<data format="raw" file="trex_walk_4a.raw" />
+					<material num="0" />
+				</object>	
+				<object num="4">
+					<data format="raw" file="trex_walk_5b.raw" />
+					<material num="0" />
+				</object>	
+				<object num="5">
+					<data format="raw" file="trex_walk_6a.raw" />
+					<material num="0" />
+				</object>	
+				<object num="6">
+					<data format="raw" file="trex_walk_7a.raw" />
+					<material num="0" />
+				</object>
+						
+			</objects>
+		</model>
+
+
+	</models>
+</holoren>
+
+
+
+

@@ -1,0 +1,66 @@
+void C5E1f_basicLight(float4 position  : TEXCOORD0,                        
+                      float3 normal    : TEXCOORD1,
+					float4 pixPosition : WPOS,
+                  out float4 color     : COLOR0,
+                  out float4 depth     : COLOR1,		
+
+              uniform sampler2D decal :TEXUNIT0,
+        //      uniform sampler2D decal2 :TEXUNIT1,
+
+              uniform float3 globalAmbient, 
+              uniform float3 lightColor,
+              uniform float3 lightPosition,
+              uniform float3 eyePosition,
+              uniform float3 Ke,
+              uniform float3 Ka,
+              uniform float3 Kd,
+              uniform float3 Ks,
+              uniform float  shininess,
+			  uniform int drawdepth,
+			  uniform int headnum)
+{
+
+int numlinesperhead = 6;
+int numlinesperscan = 18;
+
+//stipple:
+//if( fmod(pixPosition.y+headnum,3.) < 2.) discard;
+//if( (int(pixPosition.y-0.5)%numlinesperscan)/numlinesperhead != headnum)
+//{
+//	discard;
+//}
+   float3 P = position.xyz;
+
+float3 N = normalize(2.0f*(tex2D(decal, position.xy).rgb-0.5f));
+ float3 L = normalize(lightPosition - P);
+ float3 V = normalize(eyePosition - P);
+ float3 H = normalize(L + V);
+float4 mylit=lit(dot(N,L),dot(N,H),shininess);
+
+ // Compute emissive term
+  float3 emissive = Ke;
+
+  // Compute ambient term
+  float3 ambient = Ka * globalAmbient;
+
+  // Compute the diffuse term
+ float3 diffuse = Kd * lightColor * mylit.y*tex2D(decal,position.xy).aaa;
+//float3 diffuse=Kd*lightColor*mylit.y;
+
+// diffuse.r=1;
+// diffuse.g=1;
+// diffuse.b=1;
+  // Compute the specular term
+  float3 specular = Ks * lightColor * mylit.z;
+
+if (drawdepth==0){
+  color.rgb = (emissive + ambient + diffuse + specular);
+  color.a=color.r;}
+//color.rgb=position.zzz;
+
+if (drawdepth==1){
+  color.rgb=0.5*(-position.zzz+1);
+  color.a=color.r;
+}
+}
+ 

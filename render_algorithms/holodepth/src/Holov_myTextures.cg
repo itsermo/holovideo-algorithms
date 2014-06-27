@@ -1,0 +1,23 @@
+void Holov_myTextures (float2 position : POSITION,
+                           float3 color    : COLOR,
+						   float4 texCoord : TEXCOORD,
+					   
+					out float4 oPosition : POSITION,
+					out float3 ocolor    : COLOR,
+					out float4 otexCoord  : TEXCOORD)
+{
+
+	oPosition = float4(2*position.x,2*position.y,0,1); //with verts [-0.5 0.5]
+	ocolor    = color;
+	otexCoord = texCoord;
+	
+//	otexCoord.x=8.*texCoord.x;
+//	oPosition=float4(position.x,position.y,0,1);  //with verts [-1 1];
+
+//	otexCoord.x=texCoord.x*400./512.;
+//	otexCoord.y=texCoord.y*440/512;
+
+
+}
+
+

@@ -1,0 +1,86 @@
+<holoren>
+	<render
+		double_camera="true"
+		pseudo="false"
+		wireframe="false"
+		recenter="false"
+		lighting="false"
+	>
+		<screen_resolution width="800" height="600" />
+		<hologram_size width="22.0" height="16.5" />
+		<nviews horiz="220" vert="183" />
+		<eyez z="23.0" />
+		<far_clip z="300" />
+		<near_clip_scale zinverse="1500" />
+		<preview_eyez_scale val="2" />
+	</render>
+
+<!--
+	<textures
+		ntextures="1"
+		path="models/textures/"
+	>
+		<texture num="0">
+			<data file="marble01.tif" />
+		</texture>
+	</textures>
+-->
+
+	<materials
+		nmaterials="1"
+	>
+		<material num="0">
+			<ambient r="1.0" g="1.0" b="1.0" w="1.0" />
+			<diffuse r="1.0" g="1.0" b="1.0" w="1.0" />
+			<specular r="0.0" g="0.0" b="0.0" w="0.0" />
+			<shininess val="0.0" />
+
+<!--
+			<textures
+				ntextures="1"
+			>
+				<texture num="0" tex="0" />
+			</textures>
+-->
+			
+		</material>
+
+	</materials>
+
+	<models
+		nmodels="1"
+	>
+		<model num="0">
+                        <orientation>
+                                <magnification val="20.0" />
+                                <scale x="1.0" y="1.0" z="1.0" />
+                                <rotate x="35.0" y="0.0" z="0.0" />
+                                <translate x="0.0" y="-3.55" z="0.0" />
+                        </orientation>
+                                
+                        <objects
+                                nobjects="1"
+                                path="models/hondajvx/"
+                        >
+                                <object num="0">
+                                        <data format="square" />
+                                        <material num="0" />
+                                                
+
+<!--   
+                                     <texcoords
+                                                ntexcoords="1"
+                                        >
+                                                <texcoord num="0">
+                                                        <type mode="file" file="ground.tcd" format="tcd" />
+                                                        <combination val="decal" />
+                                                </texcoord>
+                                        </texcoords>
+-->
+ 
+                               </object>
+                        </objects>
+                </model>
+
+	</models>
+</holoren>
