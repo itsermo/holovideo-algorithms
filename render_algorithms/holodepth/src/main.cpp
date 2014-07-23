@@ -8,7 +8,7 @@
 //for profiling, can auto-quit after set number of seconds (try 60). set to 0 to disable auto-quit
 #define QUIT_AFTER_SECONDS 0
 
-#define USE_GLEW 0
+//#define USE_GLEW 0
 //this disables view rendering from mesh. Not currently used.
 #define DISABLE_VIEW_RENDERING 0
 #define HOLOGRAM_DOWNSCALE_DEBUG 0 
@@ -18,7 +18,7 @@
 #define MODEL_TO_USE 0 //0,1 or 2
 #define DISABLE_SECOND_OBJECT 1
 #define DRAW_WIRE_CUBE_ONLY 0
-#define IGNORE_GUI 0
+//#define ENABLE_REMOTEQT
 
 #define DISABLE_HOLOGRAM_CREATION 0
 #define WRITE_VIEWS_AND_EXIT 0
@@ -26,7 +26,8 @@
 #define WRITE_HOLOGRAM_AND_EXIT 0
 
 //enable both to use kinect. Disable both for cube-only or obj-file modes.
-#define VIEWS_FROM_CLOUD 0
+//#define VIEWS_FROM_CLOUD
+
 //(M_PI/20), (M_PI/200)
 #define ANGLE_THRESH (M_PI/20)
 //16, 100
@@ -48,14 +49,13 @@
 
 #ifdef __APPLE__
 	//#define WRITE_VIEWS_AND_EXIT 1
-	#define KINECT_MODE 0
-	#define VIEWS_FROM_CLOUD 0
+	//#define KINECT_MODE 0
+	//#define VIEWS_FROM_CLOUD
 	#define DRAW_WIRE_CUBE_ONLY 1
 	//#define	WRITE_LUMA_VIEW_FILES 1
 	#define DISABLE_VIEW_RENDERING 0
 	#define DISABLE_HOLOGRAM_CREATION 0
 	#define WRITE_HOLOGRAM_AND_EXIT 0
-	#define IGNORE_GUI 0
 	#define HOLOGRAM_DOWNSCALE_DEBUG 0 //fit hologram onto smaller screen for debugging overall layout.
 #endif
 
@@ -68,6 +68,17 @@
 #if KINECT_MODE == 4
 #include "JVertexRender.h"
 	static JVertexRender *KinectPCL;
+#endif
+
+#ifdef WIN32
+#include <Windows.h>
+#undef near
+#undef far
+#undef	BI_RGB
+#undef	BI_RLE8
+#undef	BI_RLE4
+#undef	BI_BITFIELDS
+#define M_PI       3.14159265358979323846
 #endif
 
 #ifdef __APPLE__
@@ -97,7 +108,7 @@
 #include "mytexture.h"
 #include "shapes.h"
 
-#if IGNORE_GUI != 1
+#ifdef REMOTEQT_GUI
 	#include "JDisplayState.h"
 	#include "JSharedMemory.h"
 	//For interfacing with QTRemote UI
@@ -106,7 +117,6 @@
 
 	static JSharedMemory *sharedstate; //controller to this process
 	static JSharedMemory *sharedstatus; //this process to controller
-
 #endif
 
 #if KINECT_MODE > 0
@@ -164,9 +174,11 @@
 #endif
 #endif
 
-
-
+#ifdef VIEWS_FROM_CLOUD
 #include "JZCameraCloud.h"
+#endif
+
+
 //#include "framebufferObject.h"
 //#include "renderbuffer.h"
 #include "glErrorUtil.h"
@@ -227,7 +239,7 @@ int numview=tilex*tiley*numrgb;
 	float HologramPlaneWidth_mm = 100.0;
 	float HologramPlaneHeight_mm = 100.0;
 #endif
-float near = 400., far = 800; //mm, near and far planes for hologram volume (relative to camera)
+float near = 400.0f, far = 800.0f; //mm, near and far planes for hologram volume (relative to camera)
 float lx = 0, ly = -790, lz = -110; //Light location (direction?) inside volume
 //int imwidth=2048;
 //int imheight=1780;
@@ -277,7 +289,7 @@ static CGparameter myCgVertexParam_projectorTransform;
 static CGparameter myCgVertexParam_projectorTransform2;
 
 static const char *normalMapLightingProgramName = "09_vertex_lighting";
-#if VIEWS_FROM_CLOUD == 0
+#ifdef VIEWS_FROM_CLOUD
 	static const char *normalMapLightingProgramFileName = "../render_algorithms/holodepth/src/C5E1v_basicLightperFrag.cg";
 	static const char *normalMapLightingVertexProgramFileName = "../render_algorithms/holodepth/src/C5E1f_basicNormMap.cg";
 #else
@@ -323,8 +335,11 @@ GLuint depthbuffer;
 GLfloat myProjectionMatrix1[16];
 GLfloat myProjectionMatrix2[16];
 #define MAX_CLOUDS 255
+
+#ifdef VIEWS_FROM_CLOUD
 JZCameraCloud * allClouds[MAX_CLOUDS];
 int numLoadedClouds = 0;
+#endif
 //FramebufferObject* rectifiedfbo;
 
 static float myGlobalAmbient[3] =
@@ -461,6 +476,7 @@ static void setEmissiveLightColorOnly(void)
 	checkForCgError("setting shininess parameter");
 }
 
+#ifdef VIEWS_FROM_CLOUD
 //use this for drawing point clouds when we have multiple image sources/camera positions
 void drawPointCloudFromZImage(JZCameraCloud **cloud, float shearAngle, float threshAngle)
 {
@@ -501,7 +517,7 @@ void drawPointCloudFromZImage(JZCameraCloud **cloud, float shearAngle, float thr
 	glEnd();
 }
 
-
+#endif
 
 #if KINECT_MODE > 0 && KINECT_MODE < 4
 
@@ -671,6 +687,8 @@ void getFilenameForView( int viewnum, int modelnum, char* buff)
 	sprintf(buff,IMAGE_PATH_TEMPLATE,modelname,viewnum);
 }
 
+#ifdef VIEWS_FROM_CLOUD
+
 void loadAllClouds()
 {	
 	int totalimages; 
@@ -723,6 +741,8 @@ void loadAllClouds()
 	numLoadedClouds = viewsToLoad;
 }
 
+#endif
+
 void drawDebugShape(float size)
 {
 	//glEnable(GL_LINE_SMOOTH);
@@ -769,7 +789,7 @@ static void drawme(float *eyePosition, float *modelMatrix_sphere,
 
 	/*** Render brass solid sphere ***/
 
-	#if VIEWS_FROM_CLOUD == 0
+	#ifndef VIEWS_FROM_CLOUD
 		
 		//setRedPlasticMaterial();
 		setBrassMaterial();
@@ -897,7 +917,7 @@ static void drawme(float *eyePosition, float *modelMatrix_sphere,
 			//glutWireCube(16); //draw cube
 			drawDebugShape(16);
 		#else //not "wire cube"
-			#if VIEWS_FROM_CLOUD == 0
+			#ifndef VIEWS_FROM_CLOUD
 				glCallList(DLid); //draw rabbit from display list
 			#else
 				float ang =  (viewnumber/float(numview) - 0.5) * (fov * M_PI/ 180.);
@@ -916,7 +936,7 @@ static void drawme(float *eyePosition, float *modelMatrix_sphere,
 //Get state from external gui. Update renderer state variables & request redraw if changes detected in gui state.
 void refreshState(bool force = false)
 {
-#if IGNORE_GUI != 1
+#ifdef REMOTEQT_GUI
 	//get state from external gui
 	JDisplayState statecopy_old;
 	memcpy(&statecopy_old, &statecopy, sizeof(JDisplayState));
@@ -1029,7 +1049,7 @@ static void display(void)
 #if DISABLE_VIEW_RENDERING == 0 //can skip view rendering for debug of hologram layout
 		glPushAttrib(GL_VIEWPORT_BIT | GL_COLOR_BUFFER_BIT);
 		glEnable(GL_TEXTURE_2D);
-	#if VIEWS_FROM_CLOUD == 0
+	#ifndef VIEWS_FROM_CLOUD
 		glBindTexture(GL_TEXTURE_2D, meshTexID);
 	#endif
 
@@ -1408,7 +1428,7 @@ static void idle(void)
 	//printf("idle\n");
 	if (thetime - timebase > 1000)
 	{
-		int len = 1024;
+		const int len = 1024;
 		char msg[len];
 		//	printf("here\n");
 		fps = frame * 1000.0 / (thetime - timebase);
@@ -1417,11 +1437,12 @@ static void idle(void)
 		sprintf(msg,"Wafel %d render Mode: %d fps: %f\n", headnumber, (int)KINECT_MODE, fps);
 		printf("%s",msg);
 
+#ifdef REMOTEQT_GUI
 		for(int i=0;i<len;i++) {
 			displaystatus->statusMessage[headnumber][i] = msg[i];
 		}
 		//memcpy(&(displaystatus->statusMessage[headnumber][0]),msg,len);
-
+#endif
 
 		fflush(stdout);
 
@@ -1728,12 +1749,12 @@ int main(int argc, char **argv)
 	{
 		headnumber = atoi(argv[1]);
 		if (headnumber > 2 || headnumber < 0)
-			headnumber == 0;
+			headnumber = 0;
 	}
 
 	localFramebufferStore = new GLubyte[VIEWTEX_WIDTH*VIEWTEX_HEIGHT*4];
 
-	#if IGNORE_GUI != 1
+	#ifdef REMOTEQT_GUI
 		//state for slaving to separate UI
 		sharedstate = new JSharedMemory(sizeof(JDisplayState),ALL_STATE_KEY);
 		sharedstatus = new JSharedMemory(sizeof(JDisplayStatus),ALL_STATUS_KEY);
@@ -1985,16 +2006,19 @@ int main(int argc, char **argv)
 		
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-#if VIEWS_FROM_CLOUD && (KINECT_MODE<1)
+
+#ifdef VIEWS_FROM_CLOUD
+#if KINECT_MODE < 1
 	//loading of pre-rendered data
 	loadAllClouds();
 	//makeViewtexFromFile();
 #endif
+#endif
 	
-	#if VIEWS_FROM_CLOUD == 1
-		//makeViewtexFromFile();
-		glutSwapBuffers();
-	#endif
+#ifdef VIEWS_FROM_CLOUD
+	//makeViewtexFromFile();
+	glutSwapBuffers();
+#endif
 
 // 04/09/2011 SKJ: Needs to change for KINECT_MODE == 3	
 	

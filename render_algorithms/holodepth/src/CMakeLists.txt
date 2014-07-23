@@ -2,20 +2,58 @@ cmake_minimum_REQUIRED(VERSION 2.8)
 
 project(holodepth)
 
+OPTION(WITH_REMOTEQT "Enables RemoteQT GUI controls and feedback" ON)
+OPTION(WITH_KINECT "Sets the Kinect code to enabled.  Requires WITH_VIEWS_FROM_CLOUD to be ON." OFF)
+OPTION(WITH_VIEWS_FROM_CLOUD "Renders from point clouds." OFF)
+OPTION(WITH_GLEW "Enables GL extension wrangler." OFF)
+
+set(WITH_KINECT_MODE "0" CACHE FILEPATH "Selects the kinect mode. 1-4, 1 is single Kinect.")
+
+IF(WITH_KINECT)
+	SET(WITH_VIEWS_FROM_CLOUD ON)
+	ADD_DEFINITIONS(-DKINECT_MODE=${KINECT_MODE})
+ENDIF()
+
+IF(WITH_REMOTEQT)
+	ADD_DEFINITIONS(-DREMOTEQT_GUI)
+ENDIF()
+
+IF(WITH_VIEWS_FROM_CLOUD)
+	ADD_DEFINITIONS(-DVIEWS_FROM_CLOUD)
+ENDIF()
+
+IF(WITH_GLEW)
+	find_package(GLEW REQUIRED)
+	INCLUDE_DIRECTORIES(${GLEW_INCLUDE_DIR})
+	ADD_DEFINITIONS(-DUSE_GLEW)
+ENDIF()
+
 find_package(Threads REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(X11 REQUIRED)
 find_package(GLU REQUIRED)
 find_package(GLee REQUIRED)
-find_package(GLUT REQUIRED)
 find_package(Cg REQUIRED)
 
+INCLUDE_DIRECTORIES(${CG_INCLUDE_DIR})
+INCLUDE_DIRECTORIES(${GLEE_INCLUDE_DIR})
+
+if(WIN32)
+get_filename_component(CG_LIBRARY_DIR ${CG_GL_LIBRARY} DIRECTORY)
+LINK_DIRECTORIES(${CG_LIBRARY_DIR})
+endif()
 
 file(GLOB holodepth_SRC
 	"*.h"
 	"*.cpp"
 )
+SET (holodepth_BIN ${PROJECT_NAME})
 
-add_executable (holodepth ${holodepth_SRC})
+#ADD_EXECUTABLE(${holosuite_BIN} ${SRC_FILES})
+add_executable (${holodepth_BIN} ${holodepth_SRC})
 
-target_link_libraries(holodepth GL GLU glut glee pthread Cg CgGL X11)
+target_link_libraries(${HOLODEPTH_BIN} ${OPENGL_GL_LIBRARY} ${OPENGL_GLU_LIBRARY} ${GLUT_glut_LIBRARY} ${GLEE_LIB} ${CG_LIBRARY} ${CG_GL_LIBRARY})
+
+if(UNIX)
+target_link_libraries(${HOLODEPTH_BIN} pthread X11)
+endif()

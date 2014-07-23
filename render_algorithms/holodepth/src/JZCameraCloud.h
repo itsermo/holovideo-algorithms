@@ -7,8 +7,11 @@
  *
  */
 
+#ifdef VIEWS_FROM_CLOUD
+
 #define SWISSRANGER_RESX 176
 #define SWISSRANGER_RESY 144
+
 
 #ifdef __APPLE__
 #include <OpenGL/gl.h>
@@ -21,7 +24,6 @@
 #include <GL/glu.h>
 #define GL_GLEXT_PROTOTYPES
 #include <GL/glext.h>
-
 #endif
 
 class JZCameraCloud
@@ -53,3 +55,5 @@ public:
 	float *la; //buffer for storing a luminance-alpha copy of luma image
 	float *xangles; //left-right angle (for each pixel) relative to camera (0 for pixels at center column of frame)
 };
+
+#endif

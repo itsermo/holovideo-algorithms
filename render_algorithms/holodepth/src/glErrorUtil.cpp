@@ -39,14 +39,21 @@ OF SUCH DAMAGE.
 
 #include "glErrorUtil.h"
 
+#ifdef WIN32
+#include <Windows.h>
+#endif
+
 #ifdef __APPLE__
 #include <OpenGL/gl.h>
 #include <OpenGL/glu.h>
 #include <OpenGL/glext.h>;
 #else
-#include <GL/glew.h>
+#ifdef USE_GLEW
+	#include <GL/glew.h>
+#endif
 #include <GL/gl.h>
 #include <GL/glu.h>
+#include <GL/glut.h>
 #endif
 using namespace std;
 

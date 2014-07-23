@@ -4,6 +4,11 @@
  *  Created on: Jun 28, 2013
  *      Author: holo
  */
+#ifdef REMOTEQT_GUI
+
+#ifndef JHOLOVIDEODISPLAY_H_
+#define JHOLOVIDEODISPLAY_H_
+
 #define R_INDEX 0
 #define G_INDEX 1
 #define B_INDEX 2
@@ -14,9 +19,6 @@
 
 #define LEFT_TO_RIGHT 0
 #define RIGHT_TO_LEFT 1
-
-#ifndef JHOLOVIDEODISPLAY_H_
-#define JHOLOVIDEODISPLAY_H_
 
 class JHolovideoDisplay {
 public:
@@ -68,3 +70,5 @@ class JMarkIIDisplay : public JHolovideoDisplay {
 */
 
 #endif /* JHOLOVIDEODISPLAY_H_ */
+
+#endif

@@ -1,3 +1,5 @@
+#ifdef REMOTEQT_GUI
+
 #ifndef _JSHAREDMEMORY_H_
 #define _JSHAREDMEMORY_H_
 /*
@@ -291,4 +293,7 @@ private:
 	
 	
 };
+
+#endif
+
 #endif

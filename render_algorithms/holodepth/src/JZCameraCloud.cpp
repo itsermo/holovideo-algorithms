@@ -7,6 +7,8 @@
  *
  */
 
+#ifdef VIEWS_FROM_CLOUD
+
 #include "stdlib.h"
 #include "math.h"
 #include "stdio.h"
@@ -184,3 +186,5 @@ void JZCameraCloud::buildFlatDepthGLTexture()
 	glPixelTransferf(GL_ALPHA_BIAS,0);
 	
 }
+
+#endif

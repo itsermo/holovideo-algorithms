@@ -7,6 +7,8 @@
  *
  */
 
+#ifdef REMOTEQT_GUI
+
 #include "JSharedMemory.h"
 
 JSharedMemory::JSharedMemory(int memsiz, int key)
@@ -131,3 +133,5 @@ void JSharedMemory::changemode(char *mode)
 	
 	printf("New permissions are : %o\n", myshmds.shm_perm.mode);
 }
+
+#endif

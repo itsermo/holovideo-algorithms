@@ -17,6 +17,11 @@
  *  Copyright 2008 __MyCompanyName__. All rights reserved.
  *
  */
+
+#ifdef WIN32
+#include <Windows.h>
+#endif
+
 #ifdef __APPLE__
 #include <OpenGL/gl.h>
 #else

@@ -5,6 +5,8 @@
  *      Author: holo
  */
 
+#ifdef REMOTEQT_GUI
+
 #ifndef JDISPLAYSTATE_H_
 #define JDISPLAYSTATE_H_
 
@@ -82,3 +84,5 @@ struct JGPUSliceData
 
 
 #endif /* JDISPLAYSTATE_H_ */
+
+#endif

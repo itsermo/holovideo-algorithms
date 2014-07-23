@@ -4,6 +4,7 @@
  *  Created on: Jun 28, 2013
  *      Author: holo
  */
+#ifdef REMOTEQT_GUI
 
 #include "JHolovideoDisplay.h"
 #include <iostream>
@@ -129,3 +130,5 @@ JMarkIIDisplay::JMarkIIDisplay() : JHolovideoDisplay(144)
 
 }
 */
+
+#endif

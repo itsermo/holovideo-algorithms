@@ -16,7 +16,8 @@
 #include <GL/glut.h>
 #endif
 #include <stdio.h>    /* for printf and NULL */
-static const double myPi = M_PI; //3.14159265358979323846;
+//static const double myPi = M_PI; //3.14159265358979323846;
+static const double myPi = 14159265358979323846; //3.14159265358979323846;
 
 void buildShearOrthographicMatrix(double Xleft, double Xright, double Ybot, double Ytop, 
                                    double n, double f, double q,
