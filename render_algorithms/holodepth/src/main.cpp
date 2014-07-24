@@ -1724,6 +1724,7 @@ void init(const char *filename_obj, char *filename_tex)
 	glEndList();
 	FreeModel(&objfile);
 #endif
+
 	glDisable(GL_LIGHTING);
 
 
