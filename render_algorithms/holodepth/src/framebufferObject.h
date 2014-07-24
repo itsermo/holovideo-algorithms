@@ -51,7 +51,7 @@ OF SUCH DAMAGE.
 #endif
 #include <GL/GLee.h>
 //#include <GL/gl.h>
-#include <GL/glext.h>
+#include "GL/glext.h"
 #endif
 
 #include <iostream>

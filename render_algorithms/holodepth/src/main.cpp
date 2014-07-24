@@ -1454,11 +1454,11 @@ static void idle(void)
 	refreshState();
 }
 
-void ShutDown(void)
-{
-	//        glDeleteFramebuffersEXT(1, &fbo);
-	glDeleteTextures(1, &texture_id[0]);
-}
+//void ShutDown(void)
+//{
+//	//        glDeleteFramebuffersEXT(1, &fbo);
+//	glDeleteTextures(1, &texture_id[0]);
+//}
 
 void writeViewsToFile()
 {
@@ -1800,8 +1800,8 @@ int main(int argc, char **argv)
 	//glBindRenderbufferEXT(GL_FRAMEBUFFER_EXT, depthbuffer);
 	//glRenderbufferStorageEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_COMPONENT, imheight,imwidth);
 
-	char *filename_obj = "../models/bunny502uvA.obj\0";
-	char *filename_tex = "../models/bunny502uv_normtex2.bmp\0";
+	char *filename_obj = "models/bunny502uvA.obj\0";
+	char *filename_tex = "models/bunny502uv_normtex2.bmp\0";
 	init(filename_obj, filename_tex);
 
 	glGenTextures(2, texture_id);
