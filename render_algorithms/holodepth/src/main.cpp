@@ -289,7 +289,7 @@ static CGparameter myCgVertexParam_projectorTransform;
 static CGparameter myCgVertexParam_projectorTransform2;
 
 static const char *normalMapLightingProgramName = "09_vertex_lighting";
-#ifdef VIEWS_FROM_CLOUD
+#ifndef VIEWS_FROM_CLOUD
 	static const char *normalMapLightingProgramFileName = "../render_algorithms/holodepth/src/C5E1v_basicLightperFrag.cg";
 	static const char *normalMapLightingVertexProgramFileName = "../render_algorithms/holodepth/src/C5E1f_basicNormMap.cg";
 #else
