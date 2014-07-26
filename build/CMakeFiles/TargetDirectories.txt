@@ -1,0 +1,6 @@
+/home/holo/Code/holovideo/holovideo-src/build/remote/CMakeFiles/RemoteQT.dir
+/home/holo/Code/holovideo/holovideo-src/build/render_algorithms/holodepth/scripts/CMakeFiles/copy-holodepth-scripts.dir
+/home/holo/Code/holovideo/holovideo-src/build/remote/scripts/CMakeFiles/copy-remote-scripts.dir
+/home/holo/Code/holovideo/holovideo-src/build/render_algorithms/ripgen-fbo/scripts/CMakeFiles/copy-ripgen-scripts.dir
+/home/holo/Code/holovideo/holovideo-src/build/render_algorithms/holodepth/src/CMakeFiles/holodepth.dir
+/home/holo/Code/holovideo/holovideo-src/build/render_algorithms/ripgen-fbo/src/CMakeFiles/ripgen-fbo.dir
