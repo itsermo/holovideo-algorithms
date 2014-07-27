@@ -23,17 +23,16 @@ IF(WITH_VIEWS_FROM_CLOUD)
 ENDIF()
 
 IF(WITH_GLEW)
-	find_package(GLEW REQUIRED)
 	INCLUDE_DIRECTORIES(${GLEW_INCLUDE_DIR})
 	ADD_DEFINITIONS(-DUSE_GLEW)
 ENDIF()
 
-find_package(Threads REQUIRED)
 find_package(OpenGL REQUIRED)
-find_package(X11 REQUIRED)
-find_package(GLU REQUIRED)
 find_package(GLee REQUIRED)
 find_package(Cg REQUIRED)
+find_package(GLEW)
+find_package(X11)
+find_package(Threads)
 
 INCLUDE_DIRECTORIES(${CG_INCLUDE_DIR})
 INCLUDE_DIRECTORIES(${GLEE_INCLUDE_DIR})
@@ -54,6 +53,14 @@ add_executable (${holodepth_BIN} ${holodepth_SRC})
 
 target_link_libraries(${holodepth_BIN} ${OPENGL_GL_LIBRARY} ${OPENGL_GLU_LIBRARY} ${GLUT_glut_LIBRARY} ${GLEE_LIB} ${CG_LIBRARY} ${CG_GL_LIBRARY})
 
-if(UNIX)
-target_link_libraries(${HOLODEPTH_BIN} pthread X11)
+if(X11_FOUND)
+	target_link_libraries(${holodepth_BIN} ${X11_LIBRARY})
+endif()
+
+if(GLEW_FOUND)
+	target_link_libraries(${holodepth_BIN} ${GLEW_LIBRARIES})
+endif()
+
+if(Threads_FOUND)
+	target_link_libraries(${holodepth_BIN} ${CMAKE_THREAD_LIBS_INIT})
 endif()
