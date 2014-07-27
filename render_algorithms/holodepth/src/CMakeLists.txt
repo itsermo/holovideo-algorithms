@@ -51,7 +51,7 @@ SET (holodepth_BIN ${PROJECT_NAME})
 #ADD_EXECUTABLE(${holosuite_BIN} ${SRC_FILES})
 add_executable (${holodepth_BIN} ${holodepth_SRC})
 
-target_link_libraries(${holodepth_BIN} ${OPENGL_GL_LIBRARY} ${OPENGL_GLU_LIBRARY} ${GLUT_glut_LIBRARY} ${GLEE_LIB} ${CG_LIBRARY} ${CG_GL_LIBRARY})
+target_link_libraries(${holodepth_BIN} ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} ${GLUT_glut_LIBRARY} ${GLEE_LIB} ${CG_LIBRARY} ${CG_GL_LIBRARY})
 
 if(X11_FOUND)
 	target_link_libraries(${holodepth_BIN} ${X11_LIBRARY})
