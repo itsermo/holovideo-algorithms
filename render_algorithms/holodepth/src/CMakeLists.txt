@@ -28,6 +28,7 @@ IF(WITH_GLEW)
 ENDIF()
 
 find_package(OpenGL REQUIRED)
+find_package(GLUT REQUIRED)
 find_package(GLee REQUIRED)
 find_package(Cg REQUIRED)
 find_package(GLEW)
