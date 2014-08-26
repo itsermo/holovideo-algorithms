@@ -290,8 +290,8 @@ static CGparameter myCgVertexParam_projectorTransform2;
 
 static const char *normalMapLightingProgramName = "09_vertex_lighting";
 #ifndef VIEWS_FROM_CLOUD
-	static const char *normalMapLightingProgramFileName = "../render_algorithms/holodepth/src/C5E1v_basicLightperFrag.cg";
-	static const char *normalMapLightingVertexProgramFileName = "../render_algorithms/holodepth/src/C5E1f_basicNormMap.cg";
+	static const char *normalMapLightingProgramFileName = "C5E1v_basicLightperFrag.cg";
+	static const char *normalMapLightingVertexProgramFileName = "C5E1f_basicNormMap.cg";
 #else
 	// 04/09/2011 SKJ: Or KINECT_MODE == 3??
 	#if KINECT_MODE == 2
@@ -322,10 +322,10 @@ myCgFragmentParam_decal0, myCgFragmentParam_decal1;
 //myCgFragmentParam_layer0;
 
 static const char *myProgramName2 = "Holo_myTextures",
-		*myVertexProgramFileName2 = "../render_algorithms/holodepth/src/Holov_myTextures.cg",
+		*myVertexProgramFileName2 = "Holov_myTextures.cg",
 		/* Page 83 */*myVertexProgramName2 = "Holov_myTextures",
 
-		*myFragmentProgramFileName2 = "../render_algorithms/holodepth/src/Holof_myTextures.cg",
+		*myFragmentProgramFileName2 = "Holof_myTextures.cg",
 		/* Page 85 */*myFragmentProgramName2 = "Holof_myTextures";
 
 GLuint allviewsfbo; //frame buffer object
@@ -1001,7 +1001,7 @@ void saveSingleView(int viewnum,int chan)
 	glReadPixels(0, 0, numx, numy, frmt, GL_UNSIGNED_BYTE, localFramebufferStore);
 	system("mkdir views 2> /dev/null");
 	char fname[512];
-	sprintf(fname, "/home/holo/Dropbox/Holovideo/Eclipse_Projects/holodepth/views/view_%04d.raw", viewnum);
+	sprintf(fname, "view_%04d.raw", viewnum);
 	FILE *fp = fopen(fname,"w");
 	if(!fp) {printf("failed to create file %s\n", fname);return;}
 	fwrite(localFramebufferStore, sizeof(char), numx*numy, fp);
@@ -1300,7 +1300,7 @@ static void display(void)
 	glBindTexture(GL_TEXTURE_2D, texture_id[0]);
 	//glFlush();
 	//   glCopyTexSubImage			2D(GL_TEXTURE_2D, 0,0,0,0,0,imwidth,imheight);
-				glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, VIEWTEX_WIDTH, VIEWTEX_HEIGHT);
+	glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, VIEWTEX_WIDTH, VIEWTEX_HEIGHT);
 	//	printf("I'm here\n");
 	checkErrors();
 	glBindTexture(GL_TEXTURE_2D, 0);
