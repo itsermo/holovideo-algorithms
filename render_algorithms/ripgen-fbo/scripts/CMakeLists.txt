@@ -12,6 +12,6 @@ get_filename_component(MyTargetDir ${MyTargetLocation} PATH)
 foreach(ScriptFile ${ScriptFiles})
   add_custom_command(TARGET copy-ripgen-scripts PRE_BUILD
                      COMMAND ${CMAKE_COMMAND} -E
-                         copy ${ScriptFile} ${MyTargetDir})
+                         copy_if_different ${ScriptFile} ${MyTargetDir})
 endforeach()
 add_dependencies(ripgen-fbo copy-ripgen-scripts)
