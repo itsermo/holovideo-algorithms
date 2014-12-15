@@ -253,11 +253,11 @@ class HoloRenderParams
             //m_nHBlankLines = 2;//50; //not 48?
             
 			m_xRes = 2048;
-//			m_xActive = 2045; //VGA on Q5800 or Q6000
-			m_xActive = 2032; //DisplayPort on K5000
+			m_xActive = 2045; //VGA on Q5800 or Q6000
+//			m_xActive = 2032; //DisplayPort on K5000
 
-//			m_yRes = 1757;//1744; // (128+50) * 8 + 344  //VGA on Q5800 or Q6000
-			m_yRes = 1722; //DisplayPort on K5000
+			m_yRes = 1757;//1744; // (128+50) * 8 + 344  //VGA on Q5800 or Q6000
+//			m_yRes = 1722; //DisplayPort on K5000
 
             m_nFramebuffers = 6;
             m_yStartOffset =204 ;//358;//390;//344;//185;//356; //not 344? // use function generator phase to tweak. Tuned to 90 degree offset.

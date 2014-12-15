@@ -73,7 +73,7 @@ void RemoteQT::init() {
 	sharedstatus = new JSharedMemory(sizeof(JDisplayStatus), ALL_STATUS_KEY);
 
 	//this is point clouds we upload
-	importer = new JPCLSharedmemAdaptor();
+	//importer = new JPCLSharedmemAdaptor();
 	lastRenderer = -1;
 }
 
@@ -108,17 +108,16 @@ RemoteQT::RemoteQT(QWidget *parent)
     : QMainWindow(parent)
 	,sharedmem(NULL)
 	,sharedstatus(NULL)
-	,vrpn(NULL)
 {
 	//resetDefaults();
 	init();
 
 
-	if(vrpn) {
+/*	if(vrpn) {
 		delete vrpn;
 	}
 	vrpn = new JVRPNClient();
-	vrpn->connectToZspace("obmgzspace");
+	vrpn->connectToZspace("obmgzspace");*/
 
 
     spinTimer = new QTimer(this);
@@ -196,14 +195,14 @@ void RemoteQT::statusUpdate()
 		if (e2) e2->setText(statuscopy.statusMessage[2]);
 	}
 
-	if(importer && sc && spin) {
-		sc->setHtml(QString::fromStdString(importer->printCloudPreviewString(8,spin->value())));
-	}
-
-
-	if(importer && ui.LineEditSequenceMessage) {
-		//ui.LineEditSequenceMessage->setText(QString::fromStdString(importer->getSequenceStatusString()));
-	}
+//	if(importer && sc && spin) {
+//		sc->setHtml(QString::fromStdString(importer->printCloudPreviewString(8,spin->value())));
+//	}
+//
+//
+//	if(importer && ui.LineEditSequenceMessage) {
+//		//ui.LineEditSequenceMessage->setText(QString::fromStdString(importer->getSequenceStatusString()));
+//	}
 
 
 }
@@ -449,26 +448,26 @@ void RemoteQT::loadCloud()
 {
 
 	//importer->loadCloudFromFile("/home/holo/testscene.pcd");
-	float scale = ui.doubleSpinBoxCloudLoadScale->value();
-	float clipsize = 1e99;
-	if(ui.checkBoxClipCircle->isChecked()) {
-		clipsize = 0.0225;
-	}
-	importer->loadCloudFromFile(ui.comboBoxCloudFilename->currentText().toStdString(), scale, clipsize, -1);
-	importer->setPointingMode(false);
-	importer->sliceSceneToShmem();
+//	float scale = ui.doubleSpinBoxCloudLoadScale->value();
+//	float clipsize = 1e99;
+//	if(ui.checkBoxClipCircle->isChecked()) {
+//		clipsize = 0.0225;
+//	}
+//	importer->loadCloudFromFile(ui.comboBoxCloudFilename->currentText().toStdString(), scale, clipsize, -1);
+//	importer->setPointingMode(false);
+//	importer->sliceSceneToShmem();
 }
 
 
 void RemoteQT::loadSequence()
 {
-	//get subject ID, run number
-	std::string  logname;
-	logname.append(ui.comboBoxSequenceFilename->currentText().toStdString());
-	logname.append("_MK2");
-	//sprintf(logname,"%s.log", ui.comboBoxSequenceFilename->currentText().toStdString());
-	//importer->setupExperiment(ui.comboBoxSequenceFilename->currentText().toStdString(), logname, ui.spinBoxSubjectId->value(),ui.spinBoxRunNumber->value() );
-	if(lastRenderer > 0) importer->setupTweaksForRenderer(lastRenderer);
+//	//get subject ID, run number
+//	std::string  logname;
+//	logname.append(ui.comboBoxSequenceFilename->currentText().toStdString());
+//	logname.append("_MK2");
+//	//sprintf(logname,"%s.log", ui.comboBoxSequenceFilename->currentText().toStdString());
+//	//importer->setupExperiment(ui.comboBoxSequenceFilename->currentText().toStdString(), logname, ui.spinBoxSubjectId->value(),ui.spinBoxRunNumber->value() );
+//	if(lastRenderer > 0) importer->setupTweaksForRenderer(lastRenderer);
 }
 
 void RemoteQT::endSequence()
@@ -478,31 +477,31 @@ void RemoteQT::endSequence()
 
 void RemoteQT::expUpdate() {
 
-	if(importer) {
-		//importer->updateExperiment(0); //get experiment to update state (including preloading/display of models.
-		if(vrpn) {
-			//importer->updateStylus(vrpn->stylusx, vrpn->stylusy, vrpn->stylusz);
-		}
-	}
+//	if(importer) {
+//		//importer->updateExperiment(0); //get experiment to update state (including preloading/display of models.
+////		if(vrpn) {
+////			//importer->updateStylus(vrpn->stylusx, vrpn->stylusy, vrpn->stylusz);
+////		}
+//	}
 	//in special debug mode, continuously re-project scene
-	if(statecopy.shaderMode > 3) {
-		importer->sliceSceneToShmem(statecopy.zpos/10.0);
-	}
+//	if(statecopy.shaderMode > 3) {
+//		importer->sliceSceneToShmem(statecopy.zpos/10.0);
+//	}
 }
 
 void RemoteQT::trackerUpdate() {
-	if(vrpn) {
-		vrpn->update();
-		if(vrpn->button0 != lastButton) {
-			if(vrpn->button0) {
-				printf("got stylus click. Sending as 8 key\n");fflush(stdout);
-				if(importer) {
-					//importer->updateExperiment('8');
-				}
-			}
-			lastButton = vrpn->button0;
-		}
-	}
+//	if(vrpn) {
+//		vrpn->update();
+//		if(vrpn->button0 != lastButton) {
+//			if(vrpn->button0) {
+//				printf("got stylus click. Sending as 8 key\n");fflush(stdout);
+//				if(importer) {
+//					//importer->updateExperiment('8');
+//				}
+//			}
+//			lastButton = vrpn->button0;
+//		}
+//	}
 }
 
 void RemoteQT::keyPressEvent( QKeyEvent *k )
@@ -520,11 +519,11 @@ void RemoteQT::keyPressEvent( QKeyEvent *k )
 		//send this to sequencer
 		break;
 	case Qt::Key_R:
-		if(vrpn) {
-			delete vrpn;
-		}
-		vrpn = new JVRPNClient();
-		vrpn->connectToZspace("obmgzspace");
+//		if(vrpn) {
+//			delete vrpn;
+//		}
+//		vrpn = new JVRPNClient();
+//		vrpn->connectToZspace("obmgzspace");
 		break;
 	}
 }

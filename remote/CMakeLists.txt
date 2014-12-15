@@ -14,11 +14,11 @@ PROJECT ( remoteqt CXX C )
 
 FIND_PACKAGE(Qt4 REQUIRED)
 
-find_package(PCL 1.4 REQUIRED)
+#find_package(PCL 1.4 REQUIRED)
 
-include_directories(${PCL_INCLUDE_DIRS})
-link_directories(${PCL_LIBRARY_DIRS})
-add_definitions(${PCL_DEFINITIONS})
+#include_directories(${PCL_INCLUDE_DIRS})
+#link_directories(${PCL_LIBRARY_DIRS})
+#add_definitions(${PCL_DEFINITIONS})
 
 #to find headers from MOC compile
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
@@ -81,8 +81,6 @@ cuda_add_executable(
 	${RemoteQT_SOURCES} 
 	${RemoteQT_FORMS_HEADERS}
 	${RemoteQT_HEADERS_MOC}
-	JPCLSharedmemAdaptor.cpp
-	JVRPNClient.cpp
 	../render_algorithms/ripgen-fbo/src/JSharedMemory.cpp
 	../render_algorithms/ripgen-fbo/src/JHolovideoDisplay.cpp
 	../render_algorithms/ripgen-fbo/src/JSceneSlice.cpp
@@ -91,8 +89,6 @@ cuda_add_executable(
 TARGET_LINK_LIBRARIES(
 	RemoteQT 
 	${QT_LIBRARIES}
-	${PCL_LIBRARIES}
-	vrpn
 )
 
 add_subdirectory(scripts)
