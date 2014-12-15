@@ -201,15 +201,16 @@ int rotateOn = 0;
 int drawdepthOn = 0;
 
 //dimensions of the framebuffer for output to video signals
-int imwidth = 2048;
-int imheight = 3444; //1722*2; //new DisplayPort mode
-//int imheight = 3514;// 1757*2.; //old VGA mode
+//int imwidth = 2048;
+int imwidth = 2045;
+//int imheight = 3444; //1722*2; //new DisplayPort mode
+int imheight = 3514;// 1757*2.; //old VGA mode
 
-int MarkIIGLWindowWidth = 2032; //New DisplayPort Mode
-//int MarkIIGLWindowWidth = 2045; //old VGA mode
+//int MarkIIGLWindowWidth = 2032; //New DisplayPort Mode
+int MarkIIGLWindowWidth = 2045; //old VGA mode
 
-int MarkIIGLWindowHeight = 3444; //1722*2; //This is display height for DisplayPort connected displays on K5000 cards
-//int MarkIIGLWindowHeight = 3514; //1757*2; //This is display height for onboard VGA connector displays
+//int MarkIIGLWindowHeight = 3444; //1722*2; //This is display height for DisplayPort connected displays on K5000 cards
+int MarkIIGLWindowHeight = 3514; //1757*2; //This is display height for onboard VGA connector displays
 
 #if WRITE_LUMA_VIEW_FILES != 1
 	int numx = 512;//512;//horizontal resolution of view to render (also number of emitters per line in hologram), 200 Arizona mode

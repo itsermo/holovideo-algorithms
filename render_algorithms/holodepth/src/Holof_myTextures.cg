@@ -100,8 +100,8 @@ void Holof_myTextures(float4 texCoord : TEXCOORD0,
 
 	//holoframe buffer info
 	//xres=2048;yres=1780;   //frame buffer width and height
-	//xres=2048;yres=1757;   //frame buffer width and height for VGA displays
-	xres=2048;yres=1722;   //frame buffer width and height for DisplayPort displays
+	xres=2048;yres=1757;   //frame buffer width and height for VGA displays
+	//xres=2048;yres=1722;   //frame buffer width and height for DisplayPort displays
 
 	lambda=0.000633; //633nm in mm
 	if(hologramDebugSwitch == -3) lambda = lambda*2.;//longer wavelength (slower gratings)
