@@ -6,8 +6,8 @@
 #include <QMainWindow>
 #include "JSharedMemory.h"
 #include "JDisplayState.h"
-#include "JPCLSharedmemAdaptor.h"
-#include "JVRPNClient.h"
+//#include "JPCLSharedmemAdaptor.h"
+//#include "JVRPNClient.h"
 
 class RemoteQT : public QMainWindow
 {
@@ -102,12 +102,12 @@ private:
     QTimer *statusTimer;
     QTimer *expTimer;
     QTimer *trackerTimer;
-    JPCLSharedmemAdaptor *importer;
+    //JPCLSharedmemAdaptor *importer;
     int lastRenderer;
 
     bool lastButton;
 
-    JVRPNClient *vrpn;
+    //JVRPNClient *vrpn;
 
 };
 
