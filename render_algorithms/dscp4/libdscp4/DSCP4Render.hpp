@@ -4,7 +4,7 @@
 #include <Windows.h>
 #endif
 
-#include <gl/GL.h>
+#include <GL/gl.h>
 #include <string>
 #include <atomic>
 #include <mutex>
