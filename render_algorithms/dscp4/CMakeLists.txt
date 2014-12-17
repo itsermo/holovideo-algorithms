@@ -32,7 +32,7 @@ option(BOOST_DISABLE_AUTOLINK "Defines BOOST_ALL_NO_LIB macro to turn off boost 
 option(BUILD_DSCP4_APP "Builds the executable application for testing the DSCP4 algorithm library (libdscp4)" ON)
 
 find_package(OpenGL REQUIRED)
-find_package(SDL REQUIRED)
+find_package(SDL2 REQUIRED)
 find_package(CUDA REQUIRED)
 find_package(X11)
 
