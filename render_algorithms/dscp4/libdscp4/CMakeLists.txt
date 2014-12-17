@@ -7,7 +7,7 @@ if(BOOST_DISABLE_AUTOLINK)
 	add_definitions(-DBOOST_ALL_NO_LIB)
 endif(BOOST_DISABLE_AUTOLINK)
 
-include_directories(${GLUT_INCLUDE_DIR})
+include_directories(${SDL_INCLUDE_DIR})
 include_directories(${OpenGL_INCLUDE_DIR})
 include_directories(${CUDA_TOOLKIT_INCLUDE})
 
@@ -29,7 +29,7 @@ target_include_directories(${DSCP4_LIB} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 set_target_properties(${DSCP4_LIB} PROPERTIES OUTPUT_NAME ${PROJECT_NAME} CLEAN_DIRECT_OUTPUT 1)
 
-target_link_libraries(${DSCP4_LIB} ${Boost_LIBRARIES} ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} ${GLUT_glut_LIBRARY} ${CUDA_LIBRARIES})
+target_link_libraries(${DSCP4_LIB} ${Boost_LIBRARIES} ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} ${SDL_LIBRARY} ${SDLMAIN_LIBRARY} ${CUDA_LIBRARIES})
 
 
 
