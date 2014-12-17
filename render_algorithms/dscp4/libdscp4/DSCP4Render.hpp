@@ -1,14 +1,21 @@
 #pragma once
 
+#ifdef WIN32
+#include <Windows.h>
+#endif
+
 #include <gl/GL.h>
 #include <string>
 #include <atomic>
 #include <mutex>
 #include <condition_variable>
 
+#define DSCP4_DEFAULT_VOXEL_SIZE 5
+#define DSCP4_XINERAMA_ENABLED true
+
 namespace dscp4
 {
-	class HoloRenderOpenGL
+	class DSCP4Render
 	{
 	public:
 		
@@ -18,9 +25,9 @@ namespace dscp4
 			SIMPLE_OBJECT_TYPE_PYRAMID = 2
 		};
 
-		HoloRenderOpenGL();
-		HoloRenderOpenGL(int voxelSize, bool xineramaEnabled = false);
-		~HoloRenderOpenGL();
+		DSCP4Render();
+		DSCP4Render(int voxelSize, bool xineramaEnabled = false);
+		~DSCP4Render();
 		bool init();
 		void deinit();
 
@@ -89,5 +96,6 @@ namespace dscp4
 
 	};
 
-	static HoloRenderOpenGL *gCurrentOpenGLInstance = nullptr;
+	static DSCP4Render *gCurrentDSCP4Instance = nullptr;
+
 }
