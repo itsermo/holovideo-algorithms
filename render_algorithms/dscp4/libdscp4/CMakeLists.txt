@@ -35,5 +35,5 @@ target_link_libraries(${DSCP4_LIB} ${Boost_LIBRARIES} ${OPENGL_gl_LIBRARY} ${OPE
 
 if(X11_FOUND)
 	add_definitions(-DDSCP4_ENABLE_X11)
-	target_link_libraries(${DSCP4_BIN} ${X11_LIBRARIES})
+	target_link_libraries(${DSCP4_LIB} ${X11_LIBRARIES})
 endif()

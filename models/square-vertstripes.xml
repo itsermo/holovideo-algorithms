@@ -36,7 +36,7 @@
 
     <textures ntextures="1"	>
       <texture num="0">
-          <data file="/home/holovideo1/hv/RIPGen/rip2.0/models/vertstripes.tif" />
+          <data file="/models/vertstripes.tif" />
       </texture>
     </textures>
 
@@ -99,7 +99,7 @@
             <translate x="0.0" y="0.0" z="0.0"/>
          </orientation>
 
-         <objects nobjects="1" path="/home/holovideo1/hv/RIPGen/rip2.0/models/">
+         <objects nobjects="1" path="/models/">
             <object num="0">
                <orientation>
                   <magnification val="1.75"/>
