@@ -7,7 +7,7 @@ if(BOOST_DISABLE_AUTOLINK)
 	add_definitions(-DBOOST_ALL_NO_LIB)
 endif(BOOST_DISABLE_AUTOLINK)
 
-include_directories(${SDL_INCLUDE_DIR})
+include_directories(${SDL2_INCLUDE_DIR})
 include_directories(${OpenGL_INCLUDE_DIR})
 include_directories(${CUDA_TOOLKIT_INCLUDE})
 
