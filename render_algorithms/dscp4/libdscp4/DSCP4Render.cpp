@@ -49,7 +49,7 @@ bool DSCP4Render::init()
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
 
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 32);
+	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 
 	windows_ = new SDL_Window*[numHeads_];
 	glContexts_ = new SDL_GLContext[numHeads_];
@@ -108,7 +108,7 @@ bool DSCP4Render::init()
 		*/
 		gluPerspective(60.0, ratio, 1.0, 1024.0);
 
-		for (int i = 0; i < 1000; i++)
+		for (int i = 0; i < 100; i++)
 		{
 			/* Our angle of rotation. */
 			static float angle = 0.0f;
