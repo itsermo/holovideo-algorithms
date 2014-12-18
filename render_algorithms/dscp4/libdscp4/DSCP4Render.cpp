@@ -5,6 +5,7 @@
 	if (rc_condition)								\
 		{									\
 			LOG4CXX_ERROR(logger_, what);	\
+			LOG4CXX_ERROR(logger_, SDL_GetError()) \
 			deinit();						\
 			return false;					\
 		}									\
