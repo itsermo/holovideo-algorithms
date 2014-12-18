@@ -10,8 +10,6 @@ extern "C"
 
 		render.init();
 
-		render.deinit();
-
 		return true;
 	}
 }

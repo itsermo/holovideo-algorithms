@@ -5,11 +5,15 @@
 #endif
 
 #include <GL/gl.h>
+#include <GL/glu.h>
 #include <SDL2/SDL.h>
+
 #include <string>
 #include <atomic>
 #include <mutex>
 #include <condition_variable>
+#include <thread>
+
 
 #ifdef DSCP4_HAVE_LOG4CXX
 #include <log4cxx/logger.h>
@@ -85,8 +89,8 @@ namespace dscp4
 		log4cxx::LoggerPtr logger_ = log4cxx::Logger::getLogger("edu.mit.media.obmg.holosuite.codec.h264");
 #endif
 
-		SDL_Window *window_;
-		SDL_GLContext glContext_;
+		SDL_Window **windows_;
+		SDL_GLContext *glContexts_;
 
 		
 
