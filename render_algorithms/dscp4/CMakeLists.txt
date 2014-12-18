@@ -28,13 +28,24 @@ endif()
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/CMake)
 
-option(BOOST_DISABLE_AUTOLINK "Defines BOOST_ALL_NO_LIB macro to turn off boost auto linking" OFF)
-option(BUILD_DSCP4_APP "Builds the executable application for testing the DSCP4 algorithm library (libdscp4)" ON)
-
 find_package(OpenGL REQUIRED)
 find_package(SDL2 REQUIRED)
-find_package(CUDA REQUIRED)
+find_package(CUDA)
+find_package(Log4Cxx)
 find_package(X11)
+
+option(BOOST_DISABLE_AUTOLINK "Defines BOOST_ALL_NO_LIB macro to turn off boost auto linking" ${WIN32})
+option(BUILD_DSCP4_APP "Builds the executable application for testing the DSCP4 algorithm library (libdscp4)" ON)
+option(WITH_CUDA "Enables CUDA building" ${CUDA_FOUND})
+option(WITH_LIBLOG4CXX "Uses Log4Cxx library for logging status and error messages" ${LIBLOG4CXX_FOUND})
+
+if(LIBLOG4CXX_FOUND)
+	option(WITH_STATIC_LOG4CXX "Defines LOG4CXX_STATIC for use with static LOG4CXX libraries" ${WIN32})
+endif()
+
+if(WITH_STATIC_LOG4CXX)
+	add_definitions(-DLOG4CXX_STATIC)
+endif()
 
 add_subdirectory(libdscp4)
 

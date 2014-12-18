@@ -9,10 +9,19 @@ endif(BOOST_DISABLE_AUTOLINK)
 
 include_directories(${SDL2_INCLUDE_DIR})
 include_directories(${OpenGL_INCLUDE_DIR})
-include_directories(${CUDA_TOOLKIT_INCLUDE})
 
 if(X11_FOUND)
 	include_directories(${X11_INCLUDE_DIR})
+endif()
+
+if(WITH_LIBLOG4CXX)
+	add_definitions(-DDSCP4_HAVE_LOG4CXX)
+	include_directories(${LIBLOG4CXX_INCLUDE_DIRS})
+endif()
+
+if(WITH_CUDA)
+	add_definitions(-DDSCP4_HAVE_CUDA)
+	include_directories(${CUDA_TOOLKIT_INCLUDE})
 endif()
 
 file(GLOB DSCP4_LIB_SRC
@@ -29,9 +38,15 @@ target_include_directories(${DSCP4_LIB} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 set_target_properties(${DSCP4_LIB} PROPERTIES OUTPUT_NAME ${PROJECT_NAME} CLEAN_DIRECT_OUTPUT 1)
 
-target_link_libraries(${DSCP4_LIB} ${Boost_LIBRARIES} ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} ${SDL2_LIBRARY} ${SDL2MAIN_LIBRARY} ${CUDA_LIBRARIES})
+target_link_libraries(${DSCP4_LIB} ${Boost_LIBRARIES} ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} ${SDL2_LIBRARY} ${SDL2MAIN_LIBRARY})
 
+if(WITH_CUDA)
+	target_link_libraries(${DSCP4_LIB} ${CUDA_LIBRARIES})
+endif()
 
+if(WITH_LIBLOG4CXX)
+	target_link_libraries(${DSCP4_LIB} ${LIBLOG4CXX_LIBRARIES})
+endif()
 
 if(X11_FOUND)
 	add_definitions(-DDSCP4_ENABLE_X11)

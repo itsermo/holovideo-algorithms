@@ -5,10 +5,15 @@
 #endif
 
 #include <GL/gl.h>
+#include <SDL2/SDL.h>
 #include <string>
 #include <atomic>
 #include <mutex>
 #include <condition_variable>
+
+#ifdef DSCP4_HAVE_LOG4CXX
+#include <log4cxx/logger.h>
+#endif
 
 #define DSCP4_DEFAULT_VOXEL_SIZE 5
 #define DSCP4_XINERAMA_ENABLED true
@@ -26,35 +31,17 @@ namespace dscp4
 		};
 
 		DSCP4Render();
-		DSCP4Render(int voxelSize, bool xineramaEnabled = false);
+		DSCP4Render(float voxelSize, bool xineramaEnabled = false);
 		~DSCP4Render();
 		bool init();
 		void deinit();
 
-		void addSimpleObject();
+		void addSimpleObject(SIMPLE_OBJECT_TYPE object);
 
 		void* getContext();
 
-		void display(void);
-		void idle(void);
-		void keyboard(unsigned char c, int x, int y);
-		void cleanup(void);
-		void mouse(int button, int state, int x, int y);
-		void mouseMotion(int x, int y);
-		void reshape(int width, int height);
-
 	private:
 
-		// GL and GLUT related functions
-		static void glutDisplay();
-		static void glutIdle();
-		static void glutKeyboard(unsigned char c, int x, int y);
-		static void glutCleanup();
-		static void glutMouse(int button, int state, int x, int y);
-		static void glutMouseMotion(int x, int y);
-		static void glutReshape(int width, int height);
-
-		void glutInitLoop();
 		void glCheckErrors();
 
 		void drawPointCloud();
@@ -93,6 +80,15 @@ namespace dscp4
 		float viewPhi_, viewTheta_, viewDepth_;
 
 		bool xineramaEnabled_;
+
+#ifdef DSCP4_HAVE_LOG4CXX
+		log4cxx::LoggerPtr logger_ = log4cxx::Logger::getLogger("edu.mit.media.obmg.holosuite.codec.h264");
+#endif
+
+		SDL_Window *window_;
+		SDL_GLContext glContext_;
+
+		
 
 	};
 
