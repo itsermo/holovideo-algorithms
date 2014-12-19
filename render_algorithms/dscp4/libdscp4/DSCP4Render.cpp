@@ -55,18 +55,20 @@ bool DSCP4Render::init()
 	windows_ = new SDL_Window*[numHeads_];
 	glContexts_ = new SDL_GLContext[numHeads_];
 
-	for (int h = 0; h < numHeads_; h++)
-	{
-		initHead(windows_[h], glContexts_[h], h);
-	}
+	//for (int h = 0; h < numHeads_; h++)
+	//{
+		//initHead(windows_[h], glContexts_[h], h);
+	//}
 
 	shouldRender_ = true;
 
-	for (int h = 0; h < numHeads_; h++)
-	{
-		auto renderThread = renderThreads_.create_thread(boost::bind(&DSCP4Render::renderLoop, this, windows_[h], glContexts_[h], h));
-		renderThreads_.add_thread(renderThread);
-	}
+	auto renderThread = renderThreads_.create_thread(boost::bind(&DSCP4Render::renderLoop, this));
+
+	//for (int h = 0; h < numHeads_; h++)
+	//{
+	//	auto renderThread = renderThreads_.create_thread(boost::bind(&DSCP4Render::renderLoop, this, windows_[h], glContexts_[h], h));
+	//	renderThreads_.add_thread(renderThread);
+	//}
 
 	// wait for every thread to initialize (GL context + window) before proceeding
 
@@ -80,7 +82,6 @@ bool DSCP4Render::init()
 
 bool DSCP4Render::initHead(SDL_Window*& window, SDL_GLContext& glContext, int thisHeadNum)
 {
-
 	LOG4CXX_INFO(logger_, "Inititalizing SDL for head " << thisHeadNum);
 	SDL_Rect bounds = { 0 };
 	SDL_GetDisplayBounds(thisHeadNum, &bounds);
@@ -121,11 +122,13 @@ void DSCP4Render::deinitHead(SDL_Window*& window, SDL_GLContext& glContext, int 
 
 }
 
-void DSCP4Render::renderLoop(SDL_Window*& thisWindow, SDL_GLContext& glContext, int thisHeadNum)
+void DSCP4Render::renderLoop()
 {
+	for (int i = 0; i < numHeads_; i++)
 	{
-		boost::lock_guard<boost::mutex> glLock(glContextMutex_);
-		SDL_GL_MakeCurrent(thisWindow, glContext);
+		initHead(windows_[i], glContexts_[i], i);
+
+		SDL_GL_MakeCurrent(windows_[i], glContexts_[i]);
 
 		float ratio = (float)windowWidth_ / (float)windowHeight_;
 
@@ -191,125 +194,134 @@ void DSCP4Render::renderLoop(SDL_Window*& thisWindow, SDL_GLContext& glContext, 
 
 	while (shouldRender_)
 	{
-		boost::unique_lock<boost::mutex> glLock(glContextMutex_);
+		for (int i = 0; i < numHeads_; i++)
+		{
+			SDL_GL_MakeCurrent(windows_[i], glContexts_[i]);
 
-		SDL_GL_MakeCurrent(thisWindow, glContext);
+			//SDL_GL_MakeCurrent(thisWindow, glContext);
 
-		/* Clear the color and depth buffers. */
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			/* Clear the color and depth buffers. */
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		/* We don't want to modify the projection matrix. */
-		glMatrixMode(GL_MODELVIEW);
-		glLoadIdentity();
+			/* We don't want to modify the projection matrix. */
+			glMatrixMode(GL_MODELVIEW);
+			glLoadIdentity();
 
-		/* Move down the z-axis. */
-		glTranslatef(0.0, 0.0, -5.0);
+			/* Move down the z-axis. */
+			glTranslatef(0.0, 0.0, -5.0);
 
-		/* Rotate. */
-		glRotatef(angle, 0.0, 1.0, 0.0);
+			/* Rotate. */
+			glRotatef(angle, 0.0, 1.0, 0.0);
 
-		if (true) {
+			if (true) {
 
-			if (++angle > 360.0f) {
-				angle = 0.0f;
+				if (++angle > 360.0f) {
+					angle = 0.0f;
+				}
+
 			}
 
+			/* Send our triangle data to the pipeline. */
+			glBegin(GL_TRIANGLES);
+
+			glColor4ubv(red);
+			glVertex3fv(v0);
+			glColor4ubv(green);
+			glVertex3fv(v1);
+			glColor4ubv(blue);
+			glVertex3fv(v2);
+
+			glColor4ubv(red);
+			glVertex3fv(v0);
+			glColor4ubv(blue);
+			glVertex3fv(v2);
+			glColor4ubv(white);
+			glVertex3fv(v3);
+
+			glColor4ubv(green);
+			glVertex3fv(v1);
+			glColor4ubv(black);
+			glVertex3fv(v5);
+			glColor4ubv(orange);
+			glVertex3fv(v6);
+
+			glColor4ubv(green);
+			glVertex3fv(v1);
+			glColor4ubv(orange);
+			glVertex3fv(v6);
+			glColor4ubv(blue);
+			glVertex3fv(v2);
+
+			glColor4ubv(black);
+			glVertex3fv(v5);
+			glColor4ubv(yellow);
+			glVertex3fv(v4);
+			glColor4ubv(purple);
+			glVertex3fv(v7);
+
+			glColor4ubv(black);
+			glVertex3fv(v5);
+			glColor4ubv(purple);
+			glVertex3fv(v7);
+			glColor4ubv(orange);
+			glVertex3fv(v6);
+
+			glColor4ubv(yellow);
+			glVertex3fv(v4);
+			glColor4ubv(red);
+			glVertex3fv(v0);
+			glColor4ubv(white);
+			glVertex3fv(v3);
+
+			glColor4ubv(yellow);
+			glVertex3fv(v4);
+			glColor4ubv(white);
+			glVertex3fv(v3);
+			glColor4ubv(purple);
+			glVertex3fv(v7);
+
+			glColor4ubv(white);
+			glVertex3fv(v3);
+			glColor4ubv(blue);
+			glVertex3fv(v2);
+			glColor4ubv(orange);
+			glVertex3fv(v6);
+
+			glColor4ubv(white);
+			glVertex3fv(v3);
+			glColor4ubv(orange);
+			glVertex3fv(v6);
+			glColor4ubv(purple);
+			glVertex3fv(v7);
+
+			glColor4ubv(green);
+			glVertex3fv(v1);
+			glColor4ubv(red);
+			glVertex3fv(v0);
+			glColor4ubv(yellow);
+			glVertex3fv(v4);
+
+			glColor4ubv(green);
+			glVertex3fv(v1);
+			glColor4ubv(yellow);
+			glVertex3fv(v4);
+			glColor4ubv(black);
+			glVertex3fv(v5);
+
+			glEnd();
+
+			//glLock.unlock();
+
+			
 		}
 
-		/* Send our triangle data to the pipeline. */
-		glBegin(GL_TRIANGLES);
+		for (int h = 0; h < numHeads_; h++)
+		{
+			SDL_GL_MakeCurrent(windows_[h], glContexts_[h]);
+			SDL_GL_SwapWindow(windows_[h]);
+		}
 
-		glColor4ubv(red);
-		glVertex3fv(v0);
-		glColor4ubv(green);
-		glVertex3fv(v1);
-		glColor4ubv(blue);
-		glVertex3fv(v2);
-
-		glColor4ubv(red);
-		glVertex3fv(v0);
-		glColor4ubv(blue);
-		glVertex3fv(v2);
-		glColor4ubv(white);
-		glVertex3fv(v3);
-
-		glColor4ubv(green);
-		glVertex3fv(v1);
-		glColor4ubv(black);
-		glVertex3fv(v5);
-		glColor4ubv(orange);
-		glVertex3fv(v6);
-
-		glColor4ubv(green);
-		glVertex3fv(v1);
-		glColor4ubv(orange);
-		glVertex3fv(v6);
-		glColor4ubv(blue);
-		glVertex3fv(v2);
-
-		glColor4ubv(black);
-		glVertex3fv(v5);
-		glColor4ubv(yellow);
-		glVertex3fv(v4);
-		glColor4ubv(purple);
-		glVertex3fv(v7);
-
-		glColor4ubv(black);
-		glVertex3fv(v5);
-		glColor4ubv(purple);
-		glVertex3fv(v7);
-		glColor4ubv(orange);
-		glVertex3fv(v6);
-
-		glColor4ubv(yellow);
-		glVertex3fv(v4);
-		glColor4ubv(red);
-		glVertex3fv(v0);
-		glColor4ubv(white);
-		glVertex3fv(v3);
-
-		glColor4ubv(yellow);
-		glVertex3fv(v4);
-		glColor4ubv(white);
-		glVertex3fv(v3);
-		glColor4ubv(purple);
-		glVertex3fv(v7);
-
-		glColor4ubv(white);
-		glVertex3fv(v3);
-		glColor4ubv(blue);
-		glVertex3fv(v2);
-		glColor4ubv(orange);
-		glVertex3fv(v6);
-
-		glColor4ubv(white);
-		glVertex3fv(v3);
-		glColor4ubv(orange);
-		glVertex3fv(v6);
-		glColor4ubv(purple);
-		glVertex3fv(v7);
-
-		glColor4ubv(green);
-		glVertex3fv(v1);
-		glColor4ubv(red);
-		glVertex3fv(v0);
-		glColor4ubv(yellow);
-		glVertex3fv(v4);
-
-		glColor4ubv(green);
-		glVertex3fv(v1);
-		glColor4ubv(yellow);
-		glVertex3fv(v4);
-		glColor4ubv(black);
-		glVertex3fv(v5);
-
-		glEnd();
-
-		SDL_GL_SwapWindow(thisWindow);
-
-		glLock.unlock();
-
-		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+		std::this_thread::sleep_for(std::chrono::milliseconds(13));
 	}
 }
 

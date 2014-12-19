@@ -51,7 +51,7 @@ namespace dscp4
 		bool initHead(SDL_Window*& window, SDL_GLContext& glContext, int thisHeadNum);
 		void deinitHead(SDL_Window*& window, SDL_GLContext& glContext, int thisHeadNum);
 
-		void renderLoop(SDL_Window*& window, SDL_GLContext& glContext, int thisHeadNum);
+		void renderLoop();
 
 		boost::thread_group renderThreads_;
 
