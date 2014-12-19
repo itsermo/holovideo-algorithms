@@ -55,10 +55,10 @@ bool DSCP4Render::init()
 	windows_ = new SDL_Window*[numHeads_];
 	glContexts_ = new SDL_GLContext[numHeads_];
 
-	//for (int h = 0; h < numHeads_; h++)
-	//{
-	//	initHead(windows_[h], glContexts_[h], h);
-	//}
+	for (int h = 0; h < numHeads_; h++)
+	{
+		initHead(windows_[h], glContexts_[h], h);
+	}
 
 	shouldRender_ = true;
 
@@ -72,7 +72,7 @@ bool DSCP4Render::init()
 
 	while (true)
 	{
-		Sleep(1000);
+		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 	}
 		
 	return true;
@@ -99,36 +99,6 @@ bool DSCP4Render::initHead(SDL_Window*& window, SDL_GLContext& glContext, int th
 	LOG4CXX_DEBUG(logger_, "Creating GL context from SDL window " << thisHeadNum);
 	glContext = SDL_GL_CreateContext(window);
 
-	SDL_GL_MakeCurrent(window, glContext);
-
-	float ratio = (float)windowWidth_ / (float)windowHeight_;
-
-	/* Our shading model--Gouraud (smooth). */
-	glShadeModel(GL_SMOOTH);
-
-	/* Culling. */
-	glCullFace(GL_BACK);
-	glFrontFace(GL_CCW);
-	glEnable(GL_CULL_FACE);
-
-	/* Set the clear color. */
-	glClearColor(0, 0, 0, 0);
-
-	/* Setup our viewport. */
-	glViewport(0, 0, windowWidth_, windowHeight_);
-
-	/*
-	* Change to the projection matrix and set
-	* our viewing volume.
-	*/
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	/*
-	* EXERCISE:
-	* Replace this with a call to glFrustum.
-	*/
-	gluPerspective(60.0, ratio, 1.0, 1024.0);
-
 	return true;
 }
 
@@ -153,8 +123,38 @@ void DSCP4Render::deinitHead(SDL_Window*& window, SDL_GLContext& glContext, int 
 
 void DSCP4Render::renderLoop(SDL_Window*& thisWindow, SDL_GLContext& glContext, int thisHeadNum)
 {
+	{
+		boost::lock_guard<boost::mutex> glLock(glContextMutex_);
+		SDL_GL_MakeCurrent(thisWindow, glContext);
 
-	initHead(thisWindow, glContext, thisHeadNum);
+		float ratio = (float)windowWidth_ / (float)windowHeight_;
+
+		/* Our shading model--Gouraud (smooth). */
+		glShadeModel(GL_SMOOTH);
+
+		/* Culling. */
+		glCullFace(GL_BACK);
+		glFrontFace(GL_CCW);
+		glEnable(GL_CULL_FACE);
+
+		/* Set the clear color. */
+		glClearColor(0, 0, 0, 0);
+
+		/* Setup our viewport. */
+		glViewport(0, 0, windowWidth_, windowHeight_);
+
+		/*
+		* Change to the projection matrix and set
+		* our viewing volume.
+		*/
+		glMatrixMode(GL_PROJECTION);
+		glLoadIdentity();
+		/*
+		* EXERCISE:
+		* Replace this with a call to glFrustum.
+		*/
+		gluPerspective(60.0, ratio, 1.0, 1024.0);
+	}
 	/* Our angle of rotation. */
 	static float angle = 0.0f;
 
@@ -186,6 +186,8 @@ void DSCP4Render::renderLoop(SDL_Window*& thisWindow, SDL_GLContext& glContext, 
 	static GLubyte black[] = { 0, 0, 0, 255 };
 	static GLubyte orange[] = { 255, 255, 0, 255 };
 	static GLubyte purple[] = { 255, 0, 255, 0 };
+
+
 
 	while (shouldRender_)
 	{
@@ -303,11 +305,11 @@ void DSCP4Render::renderLoop(SDL_Window*& thisWindow, SDL_GLContext& glContext, 
 
 		glEnd();
 
-		Sleep(10);
-
 		SDL_GL_SwapWindow(thisWindow);
 
 		glLock.unlock();
+
+		std::this_thread::sleep_for(std::chrono::milliseconds(10));
 	}
 }
 

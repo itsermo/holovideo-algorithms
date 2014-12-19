@@ -15,6 +15,7 @@
 #include <boost/thread/condition_variable.hpp>
 #include <boost/thread.hpp>
 
+#include <thread>
 
 #ifdef DSCP4_HAVE_LOG4CXX
 #include <log4cxx/logger.h>
