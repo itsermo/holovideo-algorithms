@@ -1,5 +1,6 @@
 #pragma once
 
 extern "C" {
-	bool CreateRenderer();
+	bool InitRenderer();
+	void DeinitRenderer();
 }

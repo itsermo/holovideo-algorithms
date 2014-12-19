@@ -10,12 +10,9 @@
 
 #include <string>
 #include <atomic>
-
-#include <boost/thread/mutex.hpp>
-#include <boost/thread/condition_variable.hpp>
-#include <boost/thread.hpp>
-
 #include <thread>
+#include <mutex>
+#include <condition_variable>
 
 #ifdef DSCP4_HAVE_LOG4CXX
 #include <log4cxx/logger.h>
@@ -53,29 +50,29 @@ namespace dscp4
 
 		void renderLoop();
 
-		boost::thread_group renderThreads_;
-
 		void glCheckErrors();
 
 		void drawPointCloud();
 		void drawObjects();
+		void drawCube();
 
 		void drawBackgroundGrid(GLfloat width, GLfloat height, GLfloat depth);
 		void drawSphere(GLfloat x, GLfloat y, GLfloat z, GLfloat radius);
 
-		boost::mutex localCloudMutex_;
+		std::mutex localCloudMutex_;
 
 		std::atomic<bool> haveNewRemoteCloud_;
 
 		bool isInit_;
-		bool firstInit_;
+
+		std::mutex isInitMutex_;
+		std::condition_variable isInitCV_;
+
 		std::atomic<bool> shouldRender_;
+		std::thread renderThread_;
 
-		//boost::mutex hasInitMutex_;
-		//boost::condition_variable hasInitCV_;
-
-		boost::mutex glContextMutex_;
-		boost::condition_variable glContextCV_;
+		std::mutex glContextMutex_;
+		std::condition_variable glContextCV_;
 
 		float voxelSize_;
 		int numHeads_;

@@ -22,7 +22,8 @@ voxelSize_(voxelSize),
 xineramaEnabled_(xineramaEnabled),
 windows_(nullptr),
 glContexts_(nullptr),
-shouldRender_(false)
+shouldRender_(false),
+isInit_(false)
 {
 
 }
@@ -36,7 +37,7 @@ bool DSCP4Render::init()
 {
 	LOG4CXX_INFO(logger_, "Initializing DSCP4...")
 
-		LOG4CXX_INFO(logger_, "Initializing SDL with video subsystem");
+	LOG4CXX_INFO(logger_, "Initializing SDL with video subsystem");
 	CHECK_SDL_RC(SDL_Init(SDL_INIT_VIDEO) < 0, "Could not initialize SDL");
 
 	// If we can get the number of heads from Xinerama
@@ -52,6 +53,8 @@ bool DSCP4Render::init()
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 
+	SDL_GL_SetSwapInterval(1);
+
 	windows_ = new SDL_Window*[numHeads_];
 	glContexts_ = new SDL_GLContext[numHeads_];
 
@@ -60,29 +63,20 @@ bool DSCP4Render::init()
 		//initHead(windows_[h], glContexts_[h], h);
 	//}
 
+	std::unique_lock<std::mutex> initLock(isInitMutex_);
 	shouldRender_ = true;
+	renderThread_ = std::thread(std::bind(&DSCP4Render::renderLoop, this));
 
-	auto renderThread = renderThreads_.create_thread(boost::bind(&DSCP4Render::renderLoop, this));
+	isInitCV_.wait(initLock);
 
-	//for (int h = 0; h < numHeads_; h++)
-	//{
-	//	auto renderThread = renderThreads_.create_thread(boost::bind(&DSCP4Render::renderLoop, this, windows_[h], glContexts_[h], h));
-	//	renderThreads_.add_thread(renderThread);
-	//}
-
-	// wait for every thread to initialize (GL context + window) before proceeding
-
-	while (true)
-	{
-		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-	}
+	initLock.unlock();
 		
 	return true;
 }
 
 bool DSCP4Render::initHead(SDL_Window*& window, SDL_GLContext& glContext, int thisHeadNum)
 {
-	LOG4CXX_INFO(logger_, "Inititalizing SDL for head " << thisHeadNum);
+	LOG4CXX_DEBUG(logger_, "Inititalizing SDL for head " << thisHeadNum);
 	SDL_Rect bounds = { 0 };
 	SDL_GetDisplayBounds(thisHeadNum, &bounds);
 
@@ -92,38 +86,163 @@ bool DSCP4Render::initHead(SDL_Window*& window, SDL_GLContext& glContext, int th
 		windowHeight_ = bounds.h;
 	}
 
-	LOG4CXX_DEBUG(logger_, "Creating SDL OpenGL window: " << bounds.w << "x" << bounds.h << " @ " << "{" << bounds.x << "," << bounds.y << "}");
+	LOG4CXX_DEBUG(logger_, "Creating SDL OpenGL window " << thisHeadNum << ": " << bounds.w << "x" << bounds.h << " @ " << "{" << bounds.x << "," << bounds.y << "}");
 
-	window = SDL_CreateWindow(("dscp4-" + std::to_string(thisHeadNum)).c_str(), bounds.x, bounds.y, bounds.w, bounds.h, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
+	window = SDL_CreateWindow(("dscp4-" + std::to_string(thisHeadNum)).c_str(), bounds.x, bounds.y, bounds.w, bounds.h, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_FULLSCREEN);
 	CHECK_SDL_RC(window == nullptr, "Could not create SDL window");
 
 	LOG4CXX_DEBUG(logger_, "Creating GL context from SDL window " << thisHeadNum);
 	glContext = SDL_GL_CreateContext(window);
+
+	SDL_GL_SetSwapInterval(1);
 
 	return true;
 }
 
 void DSCP4Render::deinitHead(SDL_Window*& window, SDL_GLContext& glContext, int thisHeadNum)
 {
-	LOG4CXX_INFO(logger_, "Deinitializing SDL for head " << thisHeadNum);
+	LOG4CXX_DEBUG(logger_, "Deinitializing SDL for window " << thisHeadNum);
 
 	if (glContext)
 	{
-		LOG4CXX_DEBUG(logger_, "Destroying GL context...");
+		LOG4CXX_DEBUG(logger_, "Destroying GL context " << thisHeadNum << "...");
 		SDL_GL_DeleteContext(glContext);
 		glContext = nullptr;
 	}
 
 	if (window)
 	{
-		LOG4CXX_DEBUG(logger_, "Destroying SDL window...");
+		LOG4CXX_DEBUG(logger_, "Destroying SDL window " << thisHeadNum << "...");
 		SDL_DestroyWindow(window);
+		window = nullptr;
 	}
 
 }
 
+void DSCP4Render::drawCube()
+{
+	/*
+	* EXERCISE:
+	* Replace this awful mess with vertex
+	* arrays and a call to glDrawElements.
+	*
+	* EXERCISE:
+	* After completing the above, change
+	* it to use compiled vertex arrays.
+	*
+	* EXERCISE:
+	* Verify my windings are correct here ;).
+	*/
+	static GLfloat v0[] = { -1.0f, -1.0f, 1.0f };
+	static GLfloat v1[] = { 1.0f, -1.0f, 1.0f };
+	static GLfloat v2[] = { 1.0f, 1.0f, 1.0f };
+	static GLfloat v3[] = { -1.0f, 1.0f, 1.0f };
+	static GLfloat v4[] = { -1.0f, -1.0f, -1.0f };
+	static GLfloat v5[] = { 1.0f, -1.0f, -1.0f };
+	static GLfloat v6[] = { 1.0f, 1.0f, -1.0f };
+	static GLfloat v7[] = { -1.0f, 1.0f, -1.0f };
+	static GLubyte red[] = { 255, 0, 0, 255 };
+	static GLubyte green[] = { 0, 255, 0, 255 };
+	static GLubyte blue[] = { 0, 0, 255, 255 };
+	static GLubyte white[] = { 255, 255, 255, 255 };
+	static GLubyte yellow[] = { 0, 255, 255, 255 };
+	static GLubyte black[] = { 0, 0, 0, 255 };
+	static GLubyte orange[] = { 255, 255, 0, 255 };
+	static GLubyte purple[] = { 255, 0, 255, 0 };
+
+	/* Send our triangle data to the pipeline. */
+	glBegin(GL_TRIANGLES);
+
+	glColor4ubv(red);
+	glVertex3fv(v0);
+	glColor4ubv(green);
+	glVertex3fv(v1);
+	glColor4ubv(blue);
+	glVertex3fv(v2);
+
+	glColor4ubv(red);
+	glVertex3fv(v0);
+	glColor4ubv(blue);
+	glVertex3fv(v2);
+	glColor4ubv(white);
+	glVertex3fv(v3);
+
+	glColor4ubv(green);
+	glVertex3fv(v1);
+	glColor4ubv(black);
+	glVertex3fv(v5);
+	glColor4ubv(orange);
+	glVertex3fv(v6);
+
+	glColor4ubv(green);
+	glVertex3fv(v1);
+	glColor4ubv(orange);
+	glVertex3fv(v6);
+	glColor4ubv(blue);
+	glVertex3fv(v2);
+
+	glColor4ubv(black);
+	glVertex3fv(v5);
+	glColor4ubv(yellow);
+	glVertex3fv(v4);
+	glColor4ubv(purple);
+	glVertex3fv(v7);
+
+	glColor4ubv(black);
+	glVertex3fv(v5);
+	glColor4ubv(purple);
+	glVertex3fv(v7);
+	glColor4ubv(orange);
+	glVertex3fv(v6);
+
+	glColor4ubv(yellow);
+	glVertex3fv(v4);
+	glColor4ubv(red);
+	glVertex3fv(v0);
+	glColor4ubv(white);
+	glVertex3fv(v3);
+
+	glColor4ubv(yellow);
+	glVertex3fv(v4);
+	glColor4ubv(white);
+	glVertex3fv(v3);
+	glColor4ubv(purple);
+	glVertex3fv(v7);
+
+	glColor4ubv(white);
+	glVertex3fv(v3);
+	glColor4ubv(blue);
+	glVertex3fv(v2);
+	glColor4ubv(orange);
+	glVertex3fv(v6);
+
+	glColor4ubv(white);
+	glVertex3fv(v3);
+	glColor4ubv(orange);
+	glVertex3fv(v6);
+	glColor4ubv(purple);
+	glVertex3fv(v7);
+
+	glColor4ubv(green);
+	glVertex3fv(v1);
+	glColor4ubv(red);
+	glVertex3fv(v0);
+	glColor4ubv(yellow);
+	glVertex3fv(v4);
+
+	glColor4ubv(green);
+	glVertex3fv(v1);
+	glColor4ubv(yellow);
+	glVertex3fv(v4);
+	glColor4ubv(black);
+	glVertex3fv(v5);
+
+	glEnd();
+}
+
 void DSCP4Render::renderLoop()
 {
+	std::unique_lock<std::mutex> initLock(isInitMutex_);
 	for (int i = 0; i < numHeads_; i++)
 	{
 		initHead(windows_[i], glContexts_[i], i);
@@ -158,42 +277,22 @@ void DSCP4Render::renderLoop()
 		*/
 		gluPerspective(60.0, ratio, 1.0, 1024.0);
 	}
+
+	isInit_ = true;
+
+	initLock.unlock();
+	isInitCV_.notify_all();
+
 	/* Our angle of rotation. */
 	static float angle = 0.0f;
 
-	/*
-	* EXERCISE:
-	* Replace this awful mess with vertex
-	* arrays and a call to glDrawElements.
-	*
-	* EXERCISE:
-	* After completing the above, change
-	* it to use compiled vertex arrays.
-	*
-	* EXERCISE:
-	* Verify my windings are correct here ;).
-	*/
-	static GLfloat v0[] = { -1.0f, -1.0f, 1.0f };
-	static GLfloat v1[] = { 1.0f, -1.0f, 1.0f };
-	static GLfloat v2[] = { 1.0f, 1.0f, 1.0f };
-	static GLfloat v3[] = { -1.0f, 1.0f, 1.0f };
-	static GLfloat v4[] = { -1.0f, -1.0f, -1.0f };
-	static GLfloat v5[] = { 1.0f, -1.0f, -1.0f };
-	static GLfloat v6[] = { 1.0f, 1.0f, -1.0f };
-	static GLfloat v7[] = { -1.0f, 1.0f, -1.0f };
-	static GLubyte red[] = { 255, 0, 0, 255 };
-	static GLubyte green[] = { 0, 255, 0, 255 };
-	static GLubyte blue[] = { 0, 0, 255, 255 };
-	static GLubyte white[] = { 255, 255, 255, 255 };
-	static GLubyte yellow[] = { 0, 255, 255, 255 };
-	static GLubyte black[] = { 0, 0, 0, 255 };
-	static GLubyte orange[] = { 255, 255, 0, 255 };
-	static GLubyte purple[] = { 255, 0, 255, 0 };
-
-
-
 	while (shouldRender_)
 	{
+		SDL_Event event;
+		while (SDL_PollEvent(&event)) {
+			// handle your event here
+		}
+
 		for (int i = 0; i < numHeads_; i++)
 		{
 			SDL_GL_MakeCurrent(windows_[i], glContexts_[i]);
@@ -221,98 +320,8 @@ void DSCP4Render::renderLoop()
 
 			}
 
-			/* Send our triangle data to the pipeline. */
-			glBegin(GL_TRIANGLES);
+			drawCube();
 
-			glColor4ubv(red);
-			glVertex3fv(v0);
-			glColor4ubv(green);
-			glVertex3fv(v1);
-			glColor4ubv(blue);
-			glVertex3fv(v2);
-
-			glColor4ubv(red);
-			glVertex3fv(v0);
-			glColor4ubv(blue);
-			glVertex3fv(v2);
-			glColor4ubv(white);
-			glVertex3fv(v3);
-
-			glColor4ubv(green);
-			glVertex3fv(v1);
-			glColor4ubv(black);
-			glVertex3fv(v5);
-			glColor4ubv(orange);
-			glVertex3fv(v6);
-
-			glColor4ubv(green);
-			glVertex3fv(v1);
-			glColor4ubv(orange);
-			glVertex3fv(v6);
-			glColor4ubv(blue);
-			glVertex3fv(v2);
-
-			glColor4ubv(black);
-			glVertex3fv(v5);
-			glColor4ubv(yellow);
-			glVertex3fv(v4);
-			glColor4ubv(purple);
-			glVertex3fv(v7);
-
-			glColor4ubv(black);
-			glVertex3fv(v5);
-			glColor4ubv(purple);
-			glVertex3fv(v7);
-			glColor4ubv(orange);
-			glVertex3fv(v6);
-
-			glColor4ubv(yellow);
-			glVertex3fv(v4);
-			glColor4ubv(red);
-			glVertex3fv(v0);
-			glColor4ubv(white);
-			glVertex3fv(v3);
-
-			glColor4ubv(yellow);
-			glVertex3fv(v4);
-			glColor4ubv(white);
-			glVertex3fv(v3);
-			glColor4ubv(purple);
-			glVertex3fv(v7);
-
-			glColor4ubv(white);
-			glVertex3fv(v3);
-			glColor4ubv(blue);
-			glVertex3fv(v2);
-			glColor4ubv(orange);
-			glVertex3fv(v6);
-
-			glColor4ubv(white);
-			glVertex3fv(v3);
-			glColor4ubv(orange);
-			glVertex3fv(v6);
-			glColor4ubv(purple);
-			glVertex3fv(v7);
-
-			glColor4ubv(green);
-			glVertex3fv(v1);
-			glColor4ubv(red);
-			glVertex3fv(v0);
-			glColor4ubv(yellow);
-			glVertex3fv(v4);
-
-			glColor4ubv(green);
-			glVertex3fv(v1);
-			glColor4ubv(yellow);
-			glVertex3fv(v4);
-			glColor4ubv(black);
-			glVertex3fv(v5);
-
-			glEnd();
-
-			//glLock.unlock();
-
-			
 		}
 
 		for (int h = 0; h < numHeads_; h++)
@@ -321,11 +330,35 @@ void DSCP4Render::renderLoop()
 			SDL_GL_SwapWindow(windows_[h]);
 		}
 
-		std::this_thread::sleep_for(std::chrono::milliseconds(13));
+		//std::this_thread::sleep_for(std::chrono::milliseconds(13));
 	}
 }
 
 void DSCP4Render::deinit()
 {
-	LOG4CXX_INFO(logger_, "Deinitializing DSCP4");
+	LOG4CXX_INFO(logger_, "Deinitializing DSCP4...");
+
+	LOG4CXX_DEBUG(logger_, "Waiting for render thread to stop...");
+	shouldRender_ = false;
+	renderThread_.join();
+
+	for (int h = 0; h < numHeads_; h++)
+	{
+		deinitHead(windows_[h], glContexts_[h], h);
+	}
+
+	if (windows_)
+	{
+		delete[] windows_;
+		windows_ = nullptr;
+	}
+
+
+	if (glContexts_)
+	{
+		delete[] glContexts_;
+		glContexts_ = nullptr;
+	}
+
+	SDL_Quit();
 }

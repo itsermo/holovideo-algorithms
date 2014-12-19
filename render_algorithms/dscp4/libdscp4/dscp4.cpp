@@ -1,15 +1,20 @@
 #include "DSCP4Render.hpp"
 
+dscp4::DSCP4Render *g_renderContext = nullptr;
+
 extern "C"
 {
 
-	bool CreateRenderer()
+	bool InitRenderer()
 	{
+		g_renderContext = new dscp4::DSCP4Render;
+		return g_renderContext->init();
+	}
 
-		dscp4::DSCP4Render render;
-
-		render.init();
-
-		return true;
+	void DeinitRenderer()
+	{
+		g_renderContext->deinit();
+		delete g_renderContext;
+		g_renderContext = nullptr;
 	}
 }

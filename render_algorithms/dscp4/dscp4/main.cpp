@@ -1,5 +1,4 @@
 #include <dscp4.h>
-
 #ifdef DSCP4_HAVE_LOG4CXX
 #include <log4cxx/logger.h>
 #include <log4cxx/patternlayout.h>
@@ -14,9 +13,13 @@
 #define LOG4CXX_FATAL(logger, expression) 
 #endif
 
+#include <thread>
+
 #ifdef DSCP4_HAVE_LOG4CXX
 log4cxx::LoggerPtr createLogger();
 #endif
+
+
 
 int main(int argc, const char* argv[])
 {
@@ -27,7 +30,14 @@ int main(int argc, const char* argv[])
 
 	LOG4CXX_INFO(logger, "Starting DSCP4 test program...");
 
-	CreateRenderer();
+	InitRenderer();
+
+	for (size_t i = 0; i < 10; i++)
+	{
+		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+	}
+
+	DeinitRenderer();
 
 	return 0;
 }
