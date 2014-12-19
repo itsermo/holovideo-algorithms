@@ -10,9 +10,10 @@
 
 #include <string>
 #include <atomic>
-#include <mutex>
-#include <condition_variable>
-#include <thread>
+
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/condition_variable.hpp>
+#include <boost/thread.hpp>
 
 
 #ifdef DSCP4_HAVE_LOG4CXX
@@ -46,6 +47,13 @@ namespace dscp4
 
 	private:
 
+		bool initHead(SDL_Window*& window, SDL_GLContext& glContext, int thisHeadNum);
+		void deinitHead(SDL_Window*& window, SDL_GLContext& glContext, int thisHeadNum);
+
+		void renderLoop(SDL_Window*& window, SDL_GLContext& glContext, int thisHeadNum);
+
+		boost::thread_group renderThreads_;
+
 		void glCheckErrors();
 
 		void drawPointCloud();
@@ -54,16 +62,19 @@ namespace dscp4
 		void drawBackgroundGrid(GLfloat width, GLfloat height, GLfloat depth);
 		void drawSphere(GLfloat x, GLfloat y, GLfloat z, GLfloat radius);
 
-		std::mutex localCloudMutex_;
+		boost::mutex localCloudMutex_;
 
 		std::atomic<bool> haveNewRemoteCloud_;
 
-
 		bool isInit_;
 		bool firstInit_;
+		std::atomic<bool> shouldRender_;
 
-		std::mutex hasInitMutex_;
-		std::condition_variable hasInitCV_;
+		//boost::mutex hasInitMutex_;
+		//boost::condition_variable hasInitCV_;
+
+		boost::mutex glContextMutex_;
+		boost::condition_variable glContextCV_;
 
 		float voxelSize_;
 		int numHeads_;
@@ -85,14 +96,12 @@ namespace dscp4
 
 		bool xineramaEnabled_;
 
-#ifdef DSCP4_HAVE_LOG4CXX
-		log4cxx::LoggerPtr logger_ = log4cxx::Logger::getLogger("edu.mit.media.obmg.holosuite.codec.h264");
-#endif
-
 		SDL_Window **windows_;
 		SDL_GLContext *glContexts_;
 
-		
+#ifdef DSCP4_HAVE_LOG4CXX
+		log4cxx::LoggerPtr logger_ = log4cxx::Logger::getLogger("edu.mit.media.obmg.holosuite.codec.h264");
+#endif
 
 	};
 
