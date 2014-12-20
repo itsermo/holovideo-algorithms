@@ -119,7 +119,7 @@ int main(int argc, const char* argv[])
 			if (objectScene->mMeshes[m]->HasVertexColors(0))
 			{
 				LOG4CXX_DEBUG(logger, "Found mesh " << m << " colors vertex colors");
-				AddMesh("myID", objectScene->mMeshes[m]->mNumVertices, (float*)objectScene->mMeshes[m]->mVertices, (char*)objectScene->mMeshes[m]->mColors[0]);
+				AddMesh("myID", objectScene->mMeshes[m]->mNumVertices, (float*)objectScene->mMeshes[m]->mVertices, (float*)objectScene->mMeshes[m]->mColors[0]);
 			}
 			else
 				AddMesh("myID", objectScene->mMeshes[m]->mNumVertices, (float*)objectScene->mMeshes[m]->mVertices);

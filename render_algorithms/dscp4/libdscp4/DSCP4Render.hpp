@@ -45,7 +45,9 @@ namespace dscp4
 		void deinit();
 
 		void addSimpleObject(SIMPLE_OBJECT_TYPE object, float *center, float size);
-		void addMesh(const char* id, int numVertices, float *vertices, char *colors);
+		
+		// Finds the bounding sphere of a mesh, centers the mesh and scales it down or up to radius == 1.0
+		void addMesh(const char *id, int numVertices, float *vertices, float *colors, unsigned int numVertexDimensions = 3, unsigned int numColorChannels = 4);
 		void addMesh(const char* id, int numVertices, float *vertices);
 		void addPointCloud(float *xyzw_rgbaw, int numPoints);
 

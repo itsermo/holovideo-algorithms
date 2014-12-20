@@ -89,7 +89,7 @@ bool DSCP4Render::initHead(SDL_Window*& window, SDL_GLContext& glContext, int th
 
 	LOG4CXX_DEBUG(logger_, "Creating SDL OpenGL window " << thisHeadNum << ": " << bounds.w << "x" << bounds.h << " @ " << "{" << bounds.x << "," << bounds.y << "}");
 
-	window = SDL_CreateWindow(("dscp4-" + std::to_string(thisHeadNum)).c_str(), bounds.x, bounds.y, bounds.w, bounds.h, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
+	window = SDL_CreateWindow(("dscp4-" + std::to_string(thisHeadNum)).c_str(), bounds.x, bounds.y, bounds.w, bounds.h, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_BORDERLESS);
 	CHECK_SDL_RC(window == nullptr, "Could not create SDL window");
 
 	LOG4CXX_DEBUG(logger_, "Creating GL context from SDL window " << thisHeadNum);
@@ -331,13 +331,16 @@ void DSCP4Render::renderLoop()
 
 			}
 
-			drawCube();
-			//draw meshes
 
+			drawCube();
+
+			//draw meshes
+			glEnable(GL_DEPTH_TEST);
 			for (auto it = meshes_.begin(); it != meshes_.end(); it++)
 			{
 				drawMesh(it->second);
 			}
+			glDisable(GL_DEPTH_TEST);
 			//glPushMatrix();
 			//glTranslatef(-0.856932402, 34.3522072, 1163.88293);
 			//drawMesh();
@@ -386,7 +389,7 @@ void DSCP4Render::deinit()
 void DSCP4Render::drawMesh(const mesh_t& mesh)
 {
 	const float radius = sqrt(mesh.info.sq_radius);
-	const float factor = 1.25f/radius;
+	const float factor = 1.0f/radius;
 
 	glPushMatrix();
 	glScalef(factor, factor, factor);
@@ -428,25 +431,24 @@ void DSCP4Render::drawMesh(const mesh_t& mesh)
 	//}
 }
 
-void DSCP4Render::addMesh(const char *id, int numVertices, float *vertices, char *colors)
+void DSCP4Render::addMesh(const char *id, int numVertices, float *vertices, float *colors, unsigned int numVertexDimensions, unsigned int numColorChannels)
 {
-	// need to optimize this
+	// create a 2D array for miniball algorithm
 	float** ap = new float*[numVertices];
+	float * pv = vertices;
 	for (int i = 0; i<numVertices; ++i) {
-		float* p = new float[3];
-		p[0] = vertices[3*i];
-		p[1] = vertices[3*i+1];
-		p[2] = vertices[3*i+2];
-		ap[i] = p;
+		ap[i] = pv;
+		pv += numVertexDimensions;
 	}
 
+	// miniball uses a quick method of determining the bounding sphere of all the vertices
 	auto miniball3f = Miniball::Miniball<Miniball::CoordAccessor<float**, float*>>(3, (float**)ap, (float**)(ap + numVertices));
 
 	mesh_t mesh = { 0 };
 	mesh.vertices_ = vertices;
 	mesh.colors_ = colors;
-	mesh.info.num_color_channels = 4;
-	mesh.info.num_points_per_vertex = 3;
+	mesh.info.num_color_channels = numColorChannels;
+	mesh.info.num_points_per_vertex = numVertexDimensions;
 	mesh.info.num_vertices = numVertices;
 	mesh.info.center_x = miniball3f.center()[0];
 	mesh.info.center_y = miniball3f.center()[1];
@@ -456,8 +458,8 @@ void DSCP4Render::addMesh(const char *id, int numVertices, float *vertices, char
 	meshes_[id] = mesh;
 
 	//need to optimize this
-	for (int i = 0; i<numVertices; ++i)
-		delete[] ap[i];
+	//for (int i = 0; i<numVertices; ++i)
+	//	delete[] ap[i];
 	delete[] ap;
 }
 
