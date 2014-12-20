@@ -28,9 +28,9 @@ namespace dscp4
 	public:
 		
 		enum SIMPLE_OBJECT_TYPE{
-			SIMPLE_OBJECT_TYPE_SPHERE = 0,
-			SIMPLE_OBJECT_TYPE_CUBE = 1,
-			SIMPLE_OBJECT_TYPE_PYRAMID = 2
+			SIMPLE_OBJECT_TYPE_SPHERE = 1,
+			SIMPLE_OBJECT_TYPE_CUBE = 2,
+			SIMPLE_OBJECT_TYPE_PYRAMID = 3
 		};
 
 		DSCP4Render();
@@ -39,7 +39,9 @@ namespace dscp4
 		bool init();
 		void deinit();
 
-		void addSimpleObject(SIMPLE_OBJECT_TYPE object);
+		void addSimpleObject(SIMPLE_OBJECT_TYPE object, float *center, float size);
+		void addMesh(float *vertices, int numVertices);
+		void addPointCloud(float *xyzw_rgbaw, int numPoints);
 
 		void* getContext();
 
@@ -53,6 +55,7 @@ namespace dscp4
 		void glCheckErrors();
 
 		void drawPointCloud();
+		void drawMesh();
 		void drawObjects();
 		void drawCube();
 
@@ -85,7 +88,8 @@ namespace dscp4
 		int mouseDownY_;
 
 		bool isFullScreen_;
-		int windowWidth_, windowHeight_;
+		int *windowWidth_, *windowHeight_;
+
 		int prevWindowWidth_, prevWindowHeight_;
 		int windowX_, windowY_;
 		int prevWindowX_, prevWindowY_;
@@ -94,11 +98,14 @@ namespace dscp4
 
 		bool xineramaEnabled_;
 
+		float *vertices_;
+		int numVertices_;
+
 		SDL_Window **windows_;
 		SDL_GLContext *glContexts_;
 
 #ifdef DSCP4_HAVE_LOG4CXX
-		log4cxx::LoggerPtr logger_ = log4cxx::Logger::getLogger("edu.mit.media.obmg.holosuite.codec.h264");
+		log4cxx::LoggerPtr logger_ = log4cxx::Logger::getLogger("edu.mit.media.obmg.dscp4.lib.render");
 #endif
 
 	};

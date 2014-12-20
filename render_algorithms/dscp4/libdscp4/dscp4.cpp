@@ -17,4 +17,9 @@ extern "C"
 		delete g_renderContext;
 		g_renderContext = nullptr;
 	}
+
+	void AddMesh(float *vertices, int numVertices)
+	{
+		g_renderContext->addMesh(vertices, numVertices);
+	}
 }

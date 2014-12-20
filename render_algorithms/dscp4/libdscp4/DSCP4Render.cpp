@@ -23,7 +23,11 @@ xineramaEnabled_(xineramaEnabled),
 windows_(nullptr),
 glContexts_(nullptr),
 shouldRender_(false),
-isInit_(false)
+isInit_(false),
+windowWidth_(nullptr),
+windowHeight_(nullptr),
+numHeads_(0),
+numVertices_(0)
 {
 
 }
@@ -43,7 +47,9 @@ bool DSCP4Render::init()
 	// If we can get the number of heads from Xinerama
 	// we can create a pixel buffer for each head
 	// for displaying the final fringe pattern textures
-	numHeads_ = SDL_GetNumVideoDisplays();
+	if (numHeads_ == 0)
+		numHeads_ = SDL_GetNumVideoDisplays();
+
 	LOG4CXX_INFO(logger_, "Number of displays: " << numHeads_);
 
 	SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
@@ -57,11 +63,8 @@ bool DSCP4Render::init()
 
 	windows_ = new SDL_Window*[numHeads_];
 	glContexts_ = new SDL_GLContext[numHeads_];
-
-	//for (int h = 0; h < numHeads_; h++)
-	//{
-		//initHead(windows_[h], glContexts_[h], h);
-	//}
+	windowWidth_ = new int[numHeads_];
+	windowHeight_ = new int[numHeads_];
 
 	std::unique_lock<std::mutex> initLock(isInitMutex_);
 	shouldRender_ = true;
@@ -80,21 +83,17 @@ bool DSCP4Render::initHead(SDL_Window*& window, SDL_GLContext& glContext, int th
 	SDL_Rect bounds = { 0 };
 	SDL_GetDisplayBounds(thisHeadNum, &bounds);
 
-	if (thisHeadNum == 0)
-	{
-		windowWidth_ = bounds.w;
-		windowHeight_ = bounds.h;
-	}
+
+	windowWidth_[thisHeadNum] = bounds.w;
+	windowHeight_[thisHeadNum] = bounds.h;
 
 	LOG4CXX_DEBUG(logger_, "Creating SDL OpenGL window " << thisHeadNum << ": " << bounds.w << "x" << bounds.h << " @ " << "{" << bounds.x << "," << bounds.y << "}");
 
-	window = SDL_CreateWindow(("dscp4-" + std::to_string(thisHeadNum)).c_str(), bounds.x, bounds.y, bounds.w, bounds.h, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_FULLSCREEN);
+	window = SDL_CreateWindow(("dscp4-" + std::to_string(thisHeadNum)).c_str(), bounds.x, bounds.y, bounds.w, bounds.h, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
 	CHECK_SDL_RC(window == nullptr, "Could not create SDL window");
 
 	LOG4CXX_DEBUG(logger_, "Creating GL context from SDL window " << thisHeadNum);
 	glContext = SDL_GL_CreateContext(window);
-
-	SDL_GL_SetSwapInterval(1);
 
 	return true;
 }
@@ -243,13 +242,16 @@ void DSCP4Render::drawCube()
 void DSCP4Render::renderLoop()
 {
 	std::unique_lock<std::mutex> initLock(isInitMutex_);
+	
 	for (int i = 0; i < numHeads_; i++)
 	{
 		initHead(windows_[i], glContexts_[i], i);
 
 		SDL_GL_MakeCurrent(windows_[i], glContexts_[i]);
+		
+		SDL_GL_SetSwapInterval(1);
 
-		float ratio = (float)windowWidth_ / (float)windowHeight_;
+		float ratio = (float)windowWidth_[i] / (float)windowHeight_[i];
 
 		/* Our shading model--Gouraud (smooth). */
 		glShadeModel(GL_SMOOTH);
@@ -263,7 +265,7 @@ void DSCP4Render::renderLoop()
 		glClearColor(0, 0, 0, 0);
 
 		/* Setup our viewport. */
-		glViewport(0, 0, windowWidth_, windowHeight_);
+		glViewport(0, 0, windowWidth_[i], windowHeight_[i]);
 
 		/*
 		* Change to the projection matrix and set
@@ -275,8 +277,18 @@ void DSCP4Render::renderLoop()
 		* EXERCISE:
 		* Replace this with a call to glFrustum.
 		*/
-		gluPerspective(60.0, ratio, 1.0, 1024.0);
+		gluPerspective(60.0, ratio, 0.001f, 1024.0);
 	}
+
+	bool resAreDifferent = false;
+	for (int i = 1; i < numHeads_; i++)
+	{
+		if (windowWidth_[i] != windowWidth_[i-1] || windowHeight_[i] != windowHeight_[i-1])
+			resAreDifferent = true;
+	}
+
+	if (resAreDifferent)
+		LOG4CXX_WARN(logger_, "Multiple displays with different resolutions. You're on your own...");
 
 	isInit_ = true;
 
@@ -297,8 +309,6 @@ void DSCP4Render::renderLoop()
 		{
 			SDL_GL_MakeCurrent(windows_[i], glContexts_[i]);
 
-			//SDL_GL_MakeCurrent(thisWindow, glContext);
-
 			/* Clear the color and depth buffers. */
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -307,7 +317,7 @@ void DSCP4Render::renderLoop()
 			glLoadIdentity();
 
 			/* Move down the z-axis. */
-			glTranslatef(0.0, 0.0, -5.0);
+			glTranslatef(0.0, -0.1, -0.5);
 
 			/* Rotate. */
 			glRotatef(angle, 0.0, 1.0, 0.0);
@@ -320,8 +330,8 @@ void DSCP4Render::renderLoop()
 
 			}
 
-			drawCube();
-
+			//drawCube();
+			drawMesh();
 		}
 
 		for (int h = 0; h < numHeads_; h++)
@@ -353,12 +363,35 @@ void DSCP4Render::deinit()
 		windows_ = nullptr;
 	}
 
-
 	if (glContexts_)
 	{
 		delete[] glContexts_;
 		glContexts_ = nullptr;
 	}
 
+	LOG4CXX_DEBUG(logger_, "Destroying SDL context");
 	SDL_Quit();
+}
+
+void DSCP4Render::drawMesh()
+{
+	glColor4f(255, 0, 0, 255);
+
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glVertexPointer(3, GL_FLOAT, 0, vertices_);
+
+	glDrawArrays(GL_TRIANGLES, 0, numVertices_);
+
+	glDisableClientState(GL_VERTEX_ARRAY);
+
+	//for (int v = 0; v < numVertices_; v++)
+	//{
+	//	glVertex3fv(&vertices_[3 * v]);
+	//}
+}
+
+void DSCP4Render::addMesh(float* vertices, int numVertices)
+{
+	vertices_ = vertices;
+	numVertices_ = numVertices;
 }

@@ -2,10 +2,14 @@ cmake_minimum_REQUIRED(VERSION 2.8)
 
 #OPTION(WITH_REMOTEQT "Enables RemoteQT GUI controls and feedback" ON)
 
-
-
+find_package(Boost 1.54 COMPONENTS "program_options" REQUIRED)
 include_directories(${Boost_INCLUDE_DIR})
+if(BOOST_DISABLE_AUTOLINK)
+	add_definitions(-DBOOST_ALL_NO_LIB)
+endif(BOOST_DISABLE_AUTOLINK)
+
 include_directories(${assimp_INCLUDE_DIRS})
+
 
 if(WITH_LIBLOG4CXX)
 	add_definitions(-DDSCP4_HAVE_LOG4CXX)
