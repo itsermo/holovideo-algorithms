@@ -1,5 +1,9 @@
 #pragma once
 
+#ifdef DSCP4_HAVE_LOG4CXX
+#include <log4cxx/logger.h>
+#endif
+
 #ifdef WIN32
 #include <Windows.h>
 #endif
@@ -13,10 +17,11 @@
 #include <thread>
 #include <mutex>
 #include <condition_variable>
+#include <map>
 
-#ifdef DSCP4_HAVE_LOG4CXX
-#include <log4cxx/logger.h>
-#endif
+#include "Miniball.hpp"
+
+#include "dscp4_defs.h"
 
 #define DSCP4_DEFAULT_VOXEL_SIZE 5
 #define DSCP4_XINERAMA_ENABLED true
@@ -56,7 +61,7 @@ namespace dscp4
 		void glCheckErrors();
 
 		void drawPointCloud();
-		void drawMesh();
+		void drawMesh(const mesh_t& mesh);
 		void drawObjects();
 		void drawCube();
 
@@ -99,12 +104,10 @@ namespace dscp4
 
 		bool xineramaEnabled_;
 
-		char *colors_;
-		float *vertices_;
-		int numVertices_;
-
 		SDL_Window **windows_;
 		SDL_GLContext *glContexts_;
+
+		std::map<std::string, mesh_t> meshes_;
 
 #ifdef DSCP4_HAVE_LOG4CXX
 		log4cxx::LoggerPtr logger_ = log4cxx::Logger::getLogger("edu.mit.media.obmg.dscp4.lib.render");

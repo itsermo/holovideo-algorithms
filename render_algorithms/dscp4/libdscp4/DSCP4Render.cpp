@@ -1,5 +1,6 @@
 #include "DSCP4Render.hpp"
 
+
 // This checks for a true condition, prints the error message, cleans up and returns false
 #define CHECK_SDL_RC(rc_condition, what) \
 	if (rc_condition)								\
@@ -26,8 +27,7 @@ shouldRender_(false),
 isInit_(false),
 windowWidth_(nullptr),
 windowHeight_(nullptr),
-numHeads_(0),
-numVertices_(0)
+numHeads_(0)
 {
 
 }
@@ -317,7 +317,7 @@ void DSCP4Render::renderLoop()
 			glLoadIdentity();
 
 			/* Move down the z-axis. */
-			glTranslatef(0.0, -0.1, 900);
+			glTranslatef(0.0, 0.0, -5.0);
 
 			/* Rotate. */
 			glRotatef(angle, 0.0, 1.0, 0.0);
@@ -331,8 +331,17 @@ void DSCP4Render::renderLoop()
 
 			}
 
-			//drawCube();
-			drawMesh();
+			drawCube();
+			//draw meshes
+
+			for (auto it = meshes_.begin(); it != meshes_.end(); it++)
+			{
+				drawMesh(it->second);
+			}
+			//glPushMatrix();
+			//glTranslatef(-0.856932402, 34.3522072, 1163.88293);
+			//drawMesh();
+			//glPopMatrix();
 		}
 
 		for (int h = 0; h < numHeads_; h++)
@@ -374,20 +383,45 @@ void DSCP4Render::deinit()
 	SDL_Quit();
 }
 
-void DSCP4Render::drawMesh()
+void DSCP4Render::drawMesh(const mesh_t& mesh)
 {
-	glColor4f(255, 0, 0, 255);
+	const float radius = sqrt(mesh.info.sq_radius);
+	const float factor = 1.25f/radius;
 
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glEnableClientState(GL_COLOR_ARRAY);
+	glPushMatrix();
+	glScalef(factor, factor, factor);
+	glTranslatef(-mesh.info.center_x, -mesh.info.center_y, -mesh.info.center_z);
+	
 
-	glColorPointer(4, GL_FLOAT, 0, colors_);
-	glVertexPointer(3, GL_FLOAT, 0, vertices_);
-	glDrawArrays(GL_TRIANGLES, 0, numVertices_);
+	//glScalef()
+	//glColor4f(255, 0, 0, 255);
+	if (mesh.colors_)
+	{
+		glEnableClientState(GL_VERTEX_ARRAY);
+		glEnableClientState(GL_COLOR_ARRAY);
 
-	glDisableClientState(GL_VERTEX_ARRAY);
-	glDisableClientState(GL_COLOR_ARRAY);
+		glColorPointer(mesh.info.num_color_channels, GL_FLOAT, 0, mesh.colors_);
+		glVertexPointer(mesh.info.num_points_per_vertex, GL_FLOAT, 0, mesh.vertices_);
+		glDrawArrays(GL_TRIANGLES, 0, mesh.info.num_vertices);
 
+		glDisableClientState(GL_VERTEX_ARRAY);
+		glDisableClientState(GL_COLOR_ARRAY);
+
+	}
+	else
+	{
+		glColor4f(255, 0, 0, 255);
+
+		glEnableClientState(GL_VERTEX_ARRAY);
+
+		glVertexPointer(mesh.info.num_points_per_vertex, GL_FLOAT, 0, mesh.vertices_);
+		glDrawArrays(GL_TRIANGLES, 0, mesh.info.num_vertices);
+
+		glDisableClientState(GL_VERTEX_ARRAY);
+	}
+
+
+	glPopMatrix();
 	//for (int v = 0; v < numVertices_; v++)
 	//{
 	//	glVertex3fv(&vertices_[3 * v]);
@@ -396,14 +430,38 @@ void DSCP4Render::drawMesh()
 
 void DSCP4Render::addMesh(const char *id, int numVertices, float *vertices, char *colors)
 {
-	colors_ = colors;
-	vertices_ = vertices;
-	numVertices_ = numVertices;
+	// need to optimize this
+	float** ap = new float*[numVertices];
+	for (int i = 0; i<numVertices; ++i) {
+		float* p = new float[3];
+		p[0] = vertices[3*i];
+		p[1] = vertices[3*i+1];
+		p[2] = vertices[3*i+2];
+		ap[i] = p;
+	}
+
+	auto miniball3f = Miniball::Miniball<Miniball::CoordAccessor<float**, float*>>(3, (float**)ap, (float**)(ap + numVertices));
+
+	mesh_t mesh = { 0 };
+	mesh.vertices_ = vertices;
+	mesh.colors_ = colors;
+	mesh.info.num_color_channels = 4;
+	mesh.info.num_points_per_vertex = 3;
+	mesh.info.num_vertices = numVertices;
+	mesh.info.center_x = miniball3f.center()[0];
+	mesh.info.center_y = miniball3f.center()[1];
+	mesh.info.center_z = miniball3f.center()[2];
+	mesh.info.sq_radius = miniball3f.squared_radius();
+
+	meshes_[id] = mesh;
+
+	//need to optimize this
+	for (int i = 0; i<numVertices; ++i)
+		delete[] ap[i];
+	delete[] ap;
 }
 
 void DSCP4Render::addMesh(const char *id, int numVertices, float *vertices)
 {
 	addMesh(id, numVertices, vertices, nullptr);
 }
-
-void addMesh(int numVertices, float *vertices);
