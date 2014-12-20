@@ -40,7 +40,8 @@ namespace dscp4
 		void deinit();
 
 		void addSimpleObject(SIMPLE_OBJECT_TYPE object, float *center, float size);
-		void addMesh(float *vertices, int numVertices);
+		void addMesh(const char* id, int numVertices, float *vertices, char *colors);
+		void addMesh(const char* id, int numVertices, float *vertices);
 		void addPointCloud(float *xyzw_rgbaw, int numPoints);
 
 		void* getContext();
@@ -98,6 +99,7 @@ namespace dscp4
 
 		bool xineramaEnabled_;
 
+		char *colors_;
 		float *vertices_;
 		int numVertices_;
 

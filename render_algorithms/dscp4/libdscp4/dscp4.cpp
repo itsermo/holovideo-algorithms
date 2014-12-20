@@ -18,8 +18,8 @@ extern "C"
 		g_renderContext = nullptr;
 	}
 
-	void AddMesh(float *vertices, int numVertices)
+	void AddMesh(const char *id, unsigned int numVertices, float *vertices, char *colors = NULL)
 	{
-		g_renderContext->addMesh(vertices, numVertices);
+		g_renderContext->addMesh(id, numVertices, vertices, colors);
 	}
 }

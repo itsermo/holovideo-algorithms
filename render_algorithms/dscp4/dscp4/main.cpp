@@ -93,11 +93,7 @@ int main(int argc, const char* argv[])
 	LOG4CXX_INFO(logger, "Starting DSCP4 test program...");
 
 	LOG4CXX_INFO(logger, "Loading 3D object file \'" << objectFilePath.filename().string() << "\'...");
-	objectScene = objectFileImporter.ReadFile(objectFilePath.string(),
-		aiProcess_CalcTangentSpace |
-		aiProcess_Triangulate |
-		//aiProcess_JoinIdenticalVertices |
-		aiProcess_SortByPType);
+	objectScene = objectFileImporter.ReadFile(objectFilePath.string(), 0);
 
 
 	if (!objectScene->HasMeshes())
@@ -113,24 +109,41 @@ int main(int argc, const char* argv[])
 		return -1;
 	}
 
-	for (int m = 0; m < objectScene->mNumMeshes; m++)
+	for (unsigned int m = 0; m < objectScene->mNumMeshes; m++)
 	{
 		// if it has faces, treat as mesh, otherwise as point cloud
 		if (objectScene->mMeshes[m]->HasFaces())
 		{
-			LOG4CXX_DEBUG(logger, "Found mesh " << m << " with " << objectScene->mMeshes[m]->mNumFaces << " faces from 3D object file...");
-			AddMesh((float*)objectScene->mMeshes[m]->mVertices, objectScene->mMeshes[m]->mNumVertices);
+			LOG4CXX_DEBUG(logger, "Found mesh " << m << " with " << objectScene->mMeshes[m]->mNumFaces << " faces from 3D object file");
+			
+			if (objectScene->mMeshes[m]->HasVertexColors(0))
+			{
+				LOG4CXX_DEBUG(logger, "Found mesh " << m << " colors vertex colors");
+				AddMesh("myID", objectScene->mMeshes[m]->mNumVertices, (float*)objectScene->mMeshes[m]->mVertices, (char*)objectScene->mMeshes[m]->mColors[0]);
+			}
+			else
+				AddMesh("myID", objectScene->mMeshes[m]->mNumVertices, (float*)objectScene->mMeshes[m]->mVertices);
+		}
+		else
+			LOG4CXX_DEBUG(logger, "Found mesh " << m << " with no faces.  Treating vertecies as point cloud");
+	}
 
-			float v1 = objectScene->mMeshes[m]->mVertices[0].x;
-			float v2 = objectScene->mMeshes[m]->mVertices[0].y;
-			float v3 = objectScene->mMeshes[m]->mVertices[0].z;
+	for (unsigned int m = 0; m < objectScene->mNumMaterials; m++)
+	{
+		aiString key;
+		for (unsigned int p = 0; p < objectScene->mMaterials[m]->mNumProperties; p++)
+		{
+			key = objectScene->mMaterials[m]->mProperties[p]->mKey;
+		}
 
-			float g1 = objectScene->mMeshes[m]->mVertices[1].x;
-			float g2 = objectScene->mMeshes[m]->mVertices[1].y;
-			float g3 = objectScene->mMeshes[m]->mVertices[1].z;
+		aiColor3D color;
+		objectScene->mMaterials[m]->Get(AI_MATKEY_COLOR_DIFFUSE, color);
 
-			float xx = 2313;
-
+		// if it has faces, treat as mesh, otherwise as point cloud
+		if (true)
+		{
+			//LOG4CXX_DEBUG(logger, "Found mesh " << m << " with " << objectScene->mMeshes[m]->mNumFaces << " faces from 3D object file...");
+			//AddMesh((float*)objectScene->mMeshes[m]->mVertices, objectScene->mMeshes[m]->mNumVertices);
 		}
 		else
 			LOG4CXX_DEBUG(logger, "Found mesh " << m << " with no faces.  Treating vertecies as point cloud");

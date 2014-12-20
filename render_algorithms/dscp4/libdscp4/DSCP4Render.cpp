@@ -277,7 +277,7 @@ void DSCP4Render::renderLoop()
 		* EXERCISE:
 		* Replace this with a call to glFrustum.
 		*/
-		gluPerspective(60.0, ratio, 0.001f, 1024.0);
+		gluPerspective(60.0, ratio, 0.001f, 8024.0);
 	}
 
 	bool resAreDifferent = false;
@@ -317,10 +317,11 @@ void DSCP4Render::renderLoop()
 			glLoadIdentity();
 
 			/* Move down the z-axis. */
-			glTranslatef(0.0, -0.1, -0.5);
+			glTranslatef(0.0, -0.1, 900);
 
 			/* Rotate. */
 			glRotatef(angle, 0.0, 1.0, 0.0);
+
 
 			if (true) {
 
@@ -378,11 +379,14 @@ void DSCP4Render::drawMesh()
 	glColor4f(255, 0, 0, 255);
 
 	glEnableClientState(GL_VERTEX_ARRAY);
-	glVertexPointer(3, GL_FLOAT, 0, vertices_);
+	glEnableClientState(GL_COLOR_ARRAY);
 
+	glColorPointer(4, GL_FLOAT, 0, colors_);
+	glVertexPointer(3, GL_FLOAT, 0, vertices_);
 	glDrawArrays(GL_TRIANGLES, 0, numVertices_);
 
 	glDisableClientState(GL_VERTEX_ARRAY);
+	glDisableClientState(GL_COLOR_ARRAY);
 
 	//for (int v = 0; v < numVertices_; v++)
 	//{
@@ -390,8 +394,16 @@ void DSCP4Render::drawMesh()
 	//}
 }
 
-void DSCP4Render::addMesh(float* vertices, int numVertices)
+void DSCP4Render::addMesh(const char *id, int numVertices, float *vertices, char *colors)
 {
+	colors_ = colors;
 	vertices_ = vertices;
 	numVertices_ = numVertices;
 }
+
+void DSCP4Render::addMesh(const char *id, int numVertices, float *vertices)
+{
+	addMesh(id, numVertices, vertices, nullptr);
+}
+
+void addMesh(int numVertices, float *vertices);

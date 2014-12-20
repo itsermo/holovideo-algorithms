@@ -3,5 +3,5 @@
 extern "C" {
 	bool InitRenderer();
 	void DeinitRenderer();
-	void AddMesh(float *vertices, int numVertices);
+	void AddMesh(const char *id, unsigned int numVertices, float *vertices, char *colors = NULL);
 }
