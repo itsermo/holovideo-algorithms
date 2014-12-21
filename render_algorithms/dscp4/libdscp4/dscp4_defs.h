@@ -34,14 +34,16 @@ typedef struct
 typedef struct
 {
 	float center_x, center_y, center_z, sq_radius;
-	int num_vertices, num_points_per_vertex, num_color_channels;
+	unsigned int num_vertices, num_points_per_vertex, num_color_channels;
+	unsigned int vertex_stride, color_stride;
+	bool is_point_cloud;
 } mesh_header_t;
 
 typedef struct
 {
 	mesh_header_t info;
-	void *vertices_;
-	void *colors_;
+	void *vertices;
+	void *colors;
 } mesh_t;
 
 #endif

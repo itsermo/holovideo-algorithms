@@ -15,7 +15,7 @@ using namespace dscp4;
 
 DSCP4Render::DSCP4Render() : DSCP4Render(DSCP4_DEFAULT_VOXEL_SIZE, DSCP4_XINERAMA_ENABLED)
 {
-
+	
 }
 
 DSCP4Render::DSCP4Render(float voxelSize, bool xineramaEnabled) :
@@ -34,7 +34,7 @@ numHeads_(0)
 
 DSCP4Render::~DSCP4Render()
 {
-
+	
 }
 
 bool DSCP4Render::init()
@@ -290,6 +290,8 @@ void DSCP4Render::renderLoop()
 	if (resAreDifferent)
 		LOG4CXX_WARN(logger_, "Multiple displays with different resolutions. You're on your own...");
 
+	//init shaders
+
 	isInit_ = true;
 
 	initLock.unlock();
@@ -304,7 +306,7 @@ void DSCP4Render::renderLoop()
 		while (SDL_PollEvent(&event)) {
 			// handle your event here
 		}
-
+		
 		for (int i = 0; i < numHeads_; i++)
 		{
 			SDL_GL_MakeCurrent(windows_[i], glContexts_[i]);
@@ -336,10 +338,12 @@ void DSCP4Render::renderLoop()
 
 			//draw meshes
 			glEnable(GL_DEPTH_TEST);
+			std::unique_lock<std::mutex> meshLock(meshMutex_);
 			for (auto it = meshes_.begin(); it != meshes_.end(); it++)
 			{
 				drawMesh(it->second);
 			}
+			meshLock.unlock();
 			glDisable(GL_DEPTH_TEST);
 			//glPushMatrix();
 			//glTranslatef(-0.856932402, 34.3522072, 1163.88293);
@@ -398,18 +402,17 @@ void DSCP4Render::drawMesh(const mesh_t& mesh)
 
 	//glScalef()
 	//glColor4f(255, 0, 0, 255);
-	if (mesh.colors_)
+	if (mesh.colors)
 	{
 		glEnableClientState(GL_VERTEX_ARRAY);
 		glEnableClientState(GL_COLOR_ARRAY);
 
-		glColorPointer(mesh.info.num_color_channels, GL_FLOAT, 0, mesh.colors_);
-		glVertexPointer(mesh.info.num_points_per_vertex, GL_FLOAT, 0, mesh.vertices_);
+		glColorPointer(mesh.info.num_color_channels, GL_FLOAT, mesh.info.color_stride, mesh.colors);
+		glVertexPointer(mesh.info.num_points_per_vertex, GL_FLOAT, mesh.info.vertex_stride, mesh.vertices);
 		glDrawArrays(GL_TRIANGLES, 0, mesh.info.num_vertices);
-
+	
 		glDisableClientState(GL_VERTEX_ARRAY);
 		glDisableClientState(GL_COLOR_ARRAY);
-
 	}
 	else
 	{
@@ -417,8 +420,8 @@ void DSCP4Render::drawMesh(const mesh_t& mesh)
 
 		glEnableClientState(GL_VERTEX_ARRAY);
 
-		glVertexPointer(mesh.info.num_points_per_vertex, GL_FLOAT, 0, mesh.vertices_);
-		glDrawArrays(GL_TRIANGLES, 0, mesh.info.num_vertices);
+		glVertexPointer(mesh.info.num_points_per_vertex, GL_FLOAT, mesh.info.vertex_stride, mesh.vertices);
+		glDrawArrays(GL_TRIANGLES, mesh.info.vertex_stride, mesh.info.num_vertices);
 
 		glDisableClientState(GL_VERTEX_ARRAY);
 	}
@@ -445,17 +448,22 @@ void DSCP4Render::addMesh(const char *id, int numVertices, float *vertices, floa
 	auto miniball3f = Miniball::Miniball<Miniball::CoordAccessor<float**, float*>>(3, (float**)ap, (float**)(ap + numVertices));
 
 	mesh_t mesh = { 0 };
-	mesh.vertices_ = vertices;
-	mesh.colors_ = colors;
+	mesh.vertices = vertices;
+	mesh.colors = colors;
 	mesh.info.num_color_channels = numColorChannels;
 	mesh.info.num_points_per_vertex = numVertexDimensions;
+	mesh.info.vertex_stride = numVertexDimensions * sizeof(float);
+	mesh.info.color_stride = numColorChannels * sizeof(float);
 	mesh.info.num_vertices = numVertices;
 	mesh.info.center_x = miniball3f.center()[0];
 	mesh.info.center_y = miniball3f.center()[1];
 	mesh.info.center_z = miniball3f.center()[2];
 	mesh.info.sq_radius = miniball3f.squared_radius();
+	mesh.info.is_point_cloud = false;
 
+	std::unique_lock<std::mutex> meshLock(meshMutex_);
 	meshes_[id] = mesh;
+	meshLock.unlock();
 
 	//need to optimize this
 	//for (int i = 0; i<numVertices; ++i)
@@ -463,7 +471,46 @@ void DSCP4Render::addMesh(const char *id, int numVertices, float *vertices, floa
 	delete[] ap;
 }
 
-void DSCP4Render::addMesh(const char *id, int numVertices, float *vertices)
+void DSCP4Render::removeMesh(const char *id)
 {
-	addMesh(id, numVertices, vertices, nullptr);
+	std::unique_lock<std::mutex> meshLock(meshMutex_);
+	meshes_.erase(id);
+	meshLock.unlock();
+}
+
+void DSCP4Render::addPointCloud(const char *id, float *points, int numPoints, bool hasColorData)
+{
+	// create a 2D array for miniball algorithm
+	//float** ap = new float*[numPoints];
+	//float * pv = points;
+	//for (int i = 0; i<numPoints; ++i) {
+	//	ap[i] = pv;
+	//	pv += 4;
+	//}
+
+	// miniball uses a quick method of determining the bounding sphere of all the vertices
+	//auto miniball3f = Miniball::Miniball<Miniball::CoordAccessor<float**, float*>>(3, (float**)ap, (float**)(ap + numPoints));
+
+	mesh_t mesh = { 0 };
+	mesh.vertices = points;
+	mesh.colors = &points[3];
+	mesh.info.num_color_channels = 4;
+	mesh.info.num_points_per_vertex = 3;
+	mesh.info.vertex_stride = 3 * sizeof(float)+ 4 * sizeof(char);
+	mesh.info.color_stride = 3 * sizeof(float)+ 4 * sizeof(char);
+	mesh.info.num_vertices = numPoints;
+	//mesh.info.center_x = miniball3f.center()[0];
+	//mesh.info.center_y = miniball3f.center()[1];
+	//mesh.info.center_z = miniball3f.center()[2];
+	//mesh.info.sq_radius = miniball3f.squared_radius();
+	mesh.info.is_point_cloud = false;
+
+	std::unique_lock<std::mutex> meshLock(meshMutex_);
+	meshes_[id] = mesh;
+	meshLock.unlock();
+
+	//need to optimize this
+	//for (int i = 0; i<numVertices; ++i)
+	//	delete[] ap[i];
+	//delete[] ap;
 }

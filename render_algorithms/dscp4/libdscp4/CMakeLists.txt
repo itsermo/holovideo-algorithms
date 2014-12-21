@@ -9,6 +9,7 @@ endif(BOOST_DISABLE_AUTOLINK)
 
 include_directories(${SDL2_INCLUDE_DIR})
 include_directories(${OpenGL_INCLUDE_DIR})
+include_directories(${GLEW_INCLUDE_DIR})
 
 if(X11_FOUND)
 	include_directories(${X11_INCLUDE_DIR})
@@ -38,7 +39,7 @@ target_include_directories(${DSCP4_LIB} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 set_target_properties(${DSCP4_LIB} PROPERTIES OUTPUT_NAME ${PROJECT_NAME} CLEAN_DIRECT_OUTPUT 1)
 
-target_link_libraries(${DSCP4_LIB} ${Boost_LIBRARIES} ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} ${SDL2_LIBRARY} ${SDL2MAIN_LIBRARY})
+target_link_libraries(${DSCP4_LIB} ${Boost_LIBRARIES} ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} ${GLEW_LIBRARY} ${SDL2_LIBRARY} ${SDL2MAIN_LIBRARY})
 
 if(WITH_CUDA)
 	target_link_libraries(${DSCP4_LIB} ${CUDA_LIBRARIES})

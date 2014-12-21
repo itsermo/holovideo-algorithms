@@ -8,6 +8,7 @@
 #include <Windows.h>
 #endif
 
+#include <GL/glew.h>
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <SDL2/SDL.h>
@@ -19,9 +20,10 @@
 #include <condition_variable>
 #include <map>
 
-#include "Miniball.hpp"
+#include "dscp4_defs.h"  // Some standard definitions for vector data types
+#include "GLSLShader.h"  // Shader class to make it easy to create GLSL shader objects
+#include "Miniball.hpp"  // For calculating the bounding sphere of 3D mesh
 
-#include "dscp4_defs.h"
 
 #define DSCP4_DEFAULT_VOXEL_SIZE 5
 #define DSCP4_XINERAMA_ENABLED true
@@ -48,8 +50,12 @@ namespace dscp4
 		
 		// Finds the bounding sphere of a mesh, centers the mesh and scales it down or up to radius == 1.0
 		void addMesh(const char *id, int numVertices, float *vertices, float *colors, unsigned int numVertexDimensions = 3, unsigned int numColorChannels = 4);
-		void addMesh(const char* id, int numVertices, float *vertices);
-		void addPointCloud(float *xyzw_rgbaw, int numPoints);
+		void removeMesh(const char *id);
+		//void addMesh(const char* id, int numVertices, float *vertices);
+		//Expects PCL point cloud data type, or array of struct { float x,y,z,w; uchar r,g,b,a; }
+		//You can simply pass the pointer to the PCL::PointCloudPtr->Data[] array
+		void addPointCloud(const char *id, float *points, int numPoints, bool hasColorData = true);
+		void removePointCloud(const char *id) { this->removeMesh(id); }
 
 		void* getContext();
 
@@ -71,6 +77,7 @@ namespace dscp4
 		void drawSphere(GLfloat x, GLfloat y, GLfloat z, GLfloat radius);
 
 		std::mutex localCloudMutex_;
+		std::mutex meshMutex_;
 
 		std::atomic<bool> haveNewRemoteCloud_;
 
@@ -110,6 +117,8 @@ namespace dscp4
 		SDL_GLContext *glContexts_;
 
 		std::map<std::string, mesh_t> meshes_;
+
+		GLSLShader diffuseLightShader_;
 
 #ifdef DSCP4_HAVE_LOG4CXX
 		log4cxx::LoggerPtr logger_ = log4cxx::Logger::getLogger("edu.mit.media.obmg.dscp4.lib.render");

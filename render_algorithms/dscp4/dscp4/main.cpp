@@ -103,7 +103,7 @@ int main(int argc, const char* argv[])
 	}
 
 	LOG4CXX_INFO(logger, "Starting DSCP4 lib");
-	if (!InitRenderer())
+	if (!dscp4_InitRenderer())
 	{
 		LOG4CXX_FATAL(logger, "Could not initialize DSCP4 lib");
 		return -1;
@@ -119,10 +119,10 @@ int main(int argc, const char* argv[])
 			if (objectScene->mMeshes[m]->HasVertexColors(0))
 			{
 				LOG4CXX_DEBUG(logger, "Found mesh " << m << " colors vertex colors");
-				AddMesh("myID", objectScene->mMeshes[m]->mNumVertices, (float*)objectScene->mMeshes[m]->mVertices, (float*)objectScene->mMeshes[m]->mColors[0]);
+				dscp4_AddMesh("myID", objectScene->mMeshes[m]->mNumVertices, (float*)objectScene->mMeshes[m]->mVertices, (float*)objectScene->mMeshes[m]->mColors[0]);
 			}
 			else
-				AddMesh("myID", objectScene->mMeshes[m]->mNumVertices, (float*)objectScene->mMeshes[m]->mVertices);
+				dscp4_AddMesh("myID", objectScene->mMeshes[m]->mNumVertices, (float*)objectScene->mMeshes[m]->mVertices);
 		}
 		else
 			LOG4CXX_DEBUG(logger, "Found mesh " << m << " with no faces.  Treating vertecies as point cloud");
@@ -150,12 +150,19 @@ int main(int argc, const char* argv[])
 	}
 
 
-	for (size_t i = 0; i < 10; i++)
+	for (size_t i = 0; i < 5; i++)
 	{
 		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 	}
 
-	DeinitRenderer();
+	dscp4_RemoveMesh("myID");
+
+	for (size_t i = 0; i < 5; i++)
+	{
+		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+	}
+
+	dscp4_DeinitRenderer();
 
 	LOG4CXX_INFO(logger, "DSCP4 test program successfully exited");
 
