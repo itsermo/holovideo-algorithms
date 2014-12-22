@@ -53,3 +53,15 @@ if(X11_FOUND)
 	add_definitions(-DDSCP4_ENABLE_X11)
 	target_link_libraries(${DSCP4_LIB} ${X11_LIBRARIES})
 endif()
+
+file(GLOB SHADER_FILES
+	"shaders/*.frag"
+	"shaders/*.vert"
+)
+
+install(TARGETS ${DSCP4_LIB} DESTINATION lib)
+install(FILES dscp4.h DESTINATION include)
+install(FILES ${SHADER_FILES} DESTINATION share/${PROJECT_NAME}/shaders)
+
+set(DSCP4_LIB_INSTALL_PATH "${CMAKE_INSTALL_PREFIX}/lib" PARENT_SCOPE)
+set(SHADERS_INSTALL_PATH "${CMAKE_INSTALL_PREFIX}/share/${PROJECT_NAME}/shaders" PARENT_SCOPE)

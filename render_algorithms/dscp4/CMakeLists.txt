@@ -41,18 +41,18 @@ option(WITH_CUDA "Enables CUDA building" ${CUDA_FOUND})
 option(WITH_LIBLOG4CXX "Uses Log4Cxx library for logging status and error messages" ${LIBLOG4CXX_FOUND})
 
 if(LIBLOG4CXX_FOUND)
-	option(LOG4CXX_ENABLE_STATICLIB "Defines LOG4CXX_STATIC for use with static LOG4CXX libraries" ${WIN32})
+	option(LIBLOG4CXX_USING_STATICLIB "Defines LOG4CXX_STATIC for use with static LOG4CXX libraries" ${WIN32})
 endif()
 
 if(GLEW_FOUND)
-	option(GLEW_ENABLE_STATICLIB "Defines GLEW_STATIC for use with static GLEW libraries" ${WIN32})
+	option(GLEW_USING_STATICLIB "Defines GLEW_STATIC for use with static GLEW libraries" ${WIN32})
 endif()
 
-if(GLEW_ENABLE_STATICLIB)
+if(GLEW_USING_STATICLIB)
 	add_definitions(-DGLEW_STATIC)
 endif()
 
-if(LOG4CXX_ENABLE_STATICLIB)
+if(LIBLOG4CXX_USING_STATICLIB)
 	add_definitions(-DLOG4CXX_STATIC)
 endif()
 
@@ -61,10 +61,22 @@ add_subdirectory(libdscp4)
 if(${BUILD_DSCP4_APP})
 	find_package(assimp REQUIRED)
 	add_subdirectory(dscp4)
+else()
+	set(DSCP4_BIN_INSTALL_PATH "NOT_INSTALLED")
+	set(MODELS_INSTALL_PATH "NOT_INSTALLED")
 endif()
 
 #Need to define windows version macro for various reasons
 if(WIN32)
 	get_WIN32_WINNT(winver)
 	add_definitions(-D_WIN32_WINNT=${winver})
+endif()
+
+configure_file(dscp4.conf.in dscp4.conf)
+
+if(UNIX)
+	install(FILES dscp4.conf DESTINATION /etc/dscp4)
+	install(FILES dscp4.conf DESTINATION $ENV{HOME}/.dscp4)
+elseif(WIN32)
+	install(FILES ${PROJECT_BINARY_DIR}/dscp4.conf DESTINATION $ENV{HOMEPATH}/.dscp4)
 endif()
