@@ -1,5 +1,8 @@
 #include "DSCP4Render.hpp"
-#include <glm/glm.hpp>
+
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 
 // This checks for a true condition, prints the error message, cleans up and returns false
 #define CHECK_SDL_RC(rc_condition, what)				\
@@ -294,9 +297,9 @@ void DSCP4Render::renderLoop()
 
 		SDL_GL_MakeCurrent(windows_[i], glContexts_[i]);
 		
-		glewInit();
+		//glewInit();
 
-		bool isShader = initLightingShader(i);
+		//bool isShader = initLightingShader(i);
 
 		SDL_GL_SetSwapInterval(1);
 
@@ -311,7 +314,37 @@ void DSCP4Render::renderLoop()
 		glEnable(GL_CULL_FACE);
 
 		/* Set the clear color. */
-		glClearColor(0, 0, 0, 0);
+		//glClearColor(0, 0, 0, 0);
+
+		GLfloat lightPosition[] = { 1, 1, 1, 0.0 };
+		GLfloat lightAmbientColor[] = { 1.0, 1.0, 1.0, 1 };
+		GLfloat lightDiffuseColor[] = { 1.0f, 0.2, 1, 1 };
+		GLfloat lightSpecularColor[] = { 1, 1, 1, 1 };
+		GLfloat lightGlobalAmbient[] = { 1.0f, 1.0f, 1.0f, 1 };
+
+		GLfloat materialSpecular[] = { 1.0, 1.0, 1.0, 1.0 };
+		GLfloat materialShininess[] = { 50.0 };
+
+		// GLUT settings
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glClearColor(0.0f, 0.0f, 0.0f, 0.0f); // Black Background
+
+		//glShadeModel(GL_FLAT); // Enable Smooth Shading
+		//glLightfv(GL_LIGHT0, GL_AMBIENT, lightAmbientColor);
+		//glLightfv(GL_LIGHT0, GL_DIFFUSE, lightDiffuseColor);
+		//glLightfv(GL_LIGHT0, GL_SPECULAR, lightSpecularColor);
+
+		//glLightModelfv(GL_AMBIENT, lightGlobalAmbient);
+
+		//glMaterialfv(GL_FRONT, GL_SPECULAR, materialSpecular);
+		//glMaterialfv(GL_FRONT, GL_SHININESS, materialShininess);
+		//glLightfv(GL_LIGHT0, GL_POSITION, lightPosition);
+
+		//glEnable(GL_LIGHTING);
+		//glEnable(GL_LIGHT0);
+		//Takes care of occlusions for point cloud
+		//glEnable(GL_DEPTH_TEST);
+
 
 		/* Setup our viewport. */
 		glViewport(0, 0, windowWidth_[i], windowHeight_[i]);
@@ -326,7 +359,8 @@ void DSCP4Render::renderLoop()
 		* EXERCISE:
 		* Replace this with a call to glFrustum.
 		*/
-		gluPerspective(60.0, ratio, 0.001f, 8024.0);
+		gluPerspective(60.0f, ratio, 0.1f, 10.0f);
+		
 	}
 
 	bool resAreDifferent = false;
@@ -347,7 +381,7 @@ void DSCP4Render::renderLoop()
 	isInitCV_.notify_all();
 
 	/* Our angle of rotation. */
-	static float angle = 0.0f;
+	static float angle = 45.0f;
 
 	while (shouldRender_)
 	{
@@ -373,44 +407,17 @@ void DSCP4Render::renderLoop()
 			/* Rotate. */
 			glRotatef(angle, 0.0, 1.0, 0.0);
 
-
 			if (true) {
-
-				if (++angle > 360.0f) {
+				angle += 0.1;
+				if (angle > 360.0f) {
 					angle = 0.0f;
 				}
 
 			}
 
-			float lightDir[4] = { 1.0f, 1.0f, 1.0f, 0.0f };
-			float lightPos[4] = { 4.0f, 6.0f, 2.0f, 1.0f };
-			float spotDir[4] = { -4.0f, -6.0f, -2.0f, 0.0f };
+			drawCube();
 
-
-			float res[4] = { 1.0, 1.0, 1.0, 0.0 };
-			
-			//vsml->multMatrixPoint(VSMathLib::VIEW, lightDir, res);
-			//vsml->normalize(res);
-
-			//float mag = sqrt(a[0] * a[0] + a[1] * a[1] + a[2] * a[2]);
-
-			//a[0] /= mag;
-			//a[1] /= mag;
-			//a[2] /= mag;
-
-			lightingShader_[i].setBlockUniform("Lights", "l_dir", res);
-
-			//vsml->multMatrixPoint(VSMathLib::VIEW, lightPos, res);
-			lightingShader_[i].setBlockUniform("Lights", "l_pos", res);
-
-			//vsml->multMatrixPoint(VSMathLib::VIEW, spotDir, res);
-			lightingShader_[i].setBlockUniform("Lights", "l_spotDir", res);
-			//drawCube();
-
-			//draw meshes
 			glEnable(GL_DEPTH_TEST);
-
-			//glUseProgram(lightingShader_[i].getProgramIndex());
 
 			std::unique_lock<std::mutex> meshLock(meshMutex_);
 			for (auto it = meshes_.begin(); it != meshes_.end(); it++)
@@ -418,11 +425,9 @@ void DSCP4Render::renderLoop()
 				drawMesh(it->second);
 			}
 			meshLock.unlock();
+
 			glDisable(GL_DEPTH_TEST);
-			//glPushMatrix();
-			//glTranslatef(-0.856932402, 34.3522072, 1163.88293);
-			//drawMesh();
-			//glPopMatrix();
+
 		}
 
 		for (int h = 0; h < numWindows_; h++)
@@ -431,7 +436,7 @@ void DSCP4Render::renderLoop()
 			SDL_GL_SwapWindow(windows_[h]);
 		}
 
-		//std::this_thread::sleep_for(std::chrono::milliseconds(13));
+		//std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 	}
 
 	delete[] lightingShader_;
@@ -479,14 +484,11 @@ void DSCP4Render::drawMesh(const mesh_t& mesh)
 {
 	const float radius = sqrt(mesh.info.sq_radius);
 	const float factor = 1.0f/radius;
-
+	
 	glPushMatrix();
 	glScalef(factor, factor, factor);
 	glTranslatef(-mesh.info.center_x, -mesh.info.center_y, -mesh.info.center_z);
-	
 
-	//glScalef()
-	//glColor4f(255, 0, 0, 255);
 	if (mesh.colors)
 	{
 		glEnableClientState(GL_VERTEX_ARRAY);
@@ -501,7 +503,7 @@ void DSCP4Render::drawMesh(const mesh_t& mesh)
 	}
 	else
 	{
-		glColor4f(255, 0, 0, 255);
+		glColor4f(255, 255, 255, 255);
 
 		glEnableClientState(GL_VERTEX_ARRAY);
 
@@ -511,12 +513,7 @@ void DSCP4Render::drawMesh(const mesh_t& mesh)
 		glDisableClientState(GL_VERTEX_ARRAY);
 	}
 
-
 	glPopMatrix();
-	//for (int v = 0; v < numVertices_; v++)
-	//{
-	//	glVertex3fv(&vertices_[3 * v]);
-	//}
 }
 
 void DSCP4Render::addMesh(const char *id, int numVertices, float *vertices, float *colors, unsigned int numVertexDimensions, unsigned int numColorChannels)
