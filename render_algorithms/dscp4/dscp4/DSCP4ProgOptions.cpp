@@ -30,7 +30,7 @@ inputOptions_("Input options")
 		homePathStr = std::string(getenv("HOMEDRIVE"));
 		homePathStr.append(getenv("HOMEPATH")).append("\\.").append(DSCP4_PATH_PREFIX).append("\\").append(DSCP4_CONF_FILENAME);
 #else
-		homePathStr = std::string(getenv("HOME")).append("/.").append(DSCP4_PATH_PREFIX)append("\\").append(DSCP4_CONF_FILENAME);
+		homePathStr = std::string(getenv("HOME")).append("/.").append(DSCP4_PATH_PREFIX).append("/").append(DSCP4_CONF_FILENAME);
 #endif
 		LOG4CXX_DEBUG(logger_, "Could not find '" << DSCP4_CONF_FILENAME <<"' in current working dir '" << boost::filesystem::current_path().string() << "'");
 		LOG4CXX_DEBUG(logger_, "Continuing search for conf file at '" << homePathStr << "'...");
