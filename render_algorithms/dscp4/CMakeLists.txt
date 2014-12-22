@@ -78,5 +78,15 @@ if(UNIX)
 	install(FILES ${CMAKE_BINARY_DIR}/dscp4.conf DESTINATION /etc/dscp4)
 	install(FILES ${CMAKE_BINARY_DIR}/dscp4.conf DESTINATION $ENV{HOME}/.dscp4)
 elseif(WIN32)
-	install(FILES ${CMAKE_BINARY_DIR}/dscp4.conf DESTINATION $ENV{HOMEPATH}/.dscp4)
+	install(FILES ${CMAKE_BINARY_DIR}/dscp4.conf DESTINATION $ENV{PROGRAMDATA}/dscp4)
+	install(FILES ${CMAKE_BINARY_DIR}/dscp4.conf DESTINATION $ENV{HOMEDRIVE}$ENV{HOMEPATH}/.dscp4)
 endif()
+
+# uninstall target
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake_uninstall.cmake.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
+    IMMEDIATE @ONLY)
+
+add_custom_target(uninstall
+    COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
