@@ -32,6 +32,7 @@ int main(int argc, const char* argv[])
 {
 #ifdef DSCP4_HAVE_LOG4CXX
 	auto logger = createLogger();
+	logger->setLevel(log4cxx::Level::getError());
 #endif
 
 	int logLevel;

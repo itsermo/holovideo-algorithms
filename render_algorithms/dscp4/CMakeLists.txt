@@ -76,10 +76,10 @@ configure_file(dscp4.conf.in dscp4.conf)
 
 if(UNIX)
 	install(FILES ${CMAKE_BINARY_DIR}/dscp4.conf DESTINATION /etc/dscp4)
-	install(FILES ${CMAKE_BINARY_DIR}/dscp4.conf DESTINATION $ENV{HOME}/.dscp4)
+	#install(FILES ${CMAKE_BINARY_DIR}/dscp4.conf DESTINATION $ENV{HOME}/.dscp4)
 elseif(WIN32)
 	install(FILES ${CMAKE_BINARY_DIR}/dscp4.conf DESTINATION $ENV{PROGRAMDATA}/dscp4)
-	install(FILES ${CMAKE_BINARY_DIR}/dscp4.conf DESTINATION $ENV{HOMEDRIVE}$ENV{HOMEPATH}/.dscp4)
+	#install(FILES ${CMAKE_BINARY_DIR}/dscp4.conf DESTINATION $ENV{HOMEDRIVE}$ENV{HOMEPATH}/.dscp4)
 endif()
 
 # uninstall target

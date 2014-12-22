@@ -19,3 +19,6 @@ shaders_path = ${SHADERS_INSTALL_PATH}
 
 ; the path where to look for 3d object files
 models_path = ${MODELS_INSTALL_PATH}
+
+; the default log level [0-4] least to most verbose
+verbosity = 2

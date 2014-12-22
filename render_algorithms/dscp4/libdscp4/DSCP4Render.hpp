@@ -121,7 +121,7 @@ namespace dscp4
 		GLSLShader diffuseLightShader_;
 
 #ifdef DSCP4_HAVE_LOG4CXX
-		log4cxx::LoggerPtr logger_ = log4cxx::Logger::getLogger("edu.mit.media.obmg.dscp4.lib.render");
+		log4cxx::LoggerPtr logger_ = log4cxx::Logger::getLogger("edu.mit.media.obmg.holovideo.dscp4.lib.renderer");
 #endif
 
 	};
