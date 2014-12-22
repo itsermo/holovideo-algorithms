@@ -21,12 +21,15 @@
 #include <map>
 
 #include "dscp4_defs.h"  // Some standard definitions for vector data types
-#include "GLSLShader.h"  // Shader class to make it easy to create GLSL shader objects
+#include "vsShaderLib.h"  // Shader class to make it easy to create GLSL shader objects
 #include "Miniball.hpp"  // For calculating the bounding sphere of 3D mesh
 
+#include <boost/filesystem.hpp>
 
 #define DSCP4_DEFAULT_VOXEL_SIZE 5
 #define DSCP4_XINERAMA_ENABLED true
+#define DSCP4_LIGHTING_SHADER_VERTEX_FILENAME "pointlight.vert"
+#define DSCP4_LIGHTING_SHADER_FRAGMENT_FILENAME "pointlight.frag"
 
 namespace dscp4
 {
@@ -41,7 +44,7 @@ namespace dscp4
 		};
 
 		DSCP4Render();
-		DSCP4Render(float voxelSize, bool xineramaEnabled = false);
+		DSCP4Render(const char* shadersPath, const char* lightingShaderVertexFileName, const char* lightingShaderFragmentFileName);
 		~DSCP4Render();
 		bool init();
 		void deinit();
@@ -61,8 +64,11 @@ namespace dscp4
 
 	private:
 
-		bool initHead(SDL_Window*& window, SDL_GLContext& glContext, int thisHeadNum);
-		void deinitHead(SDL_Window*& window, SDL_GLContext& glContext, int thisHeadNum);
+		bool initWindow(SDL_Window*& window, SDL_GLContext& glContext, int thisWindowNum);
+		void deinitWindow(SDL_Window*& window, SDL_GLContext& glContext, int thisWindowNum);
+
+		bool initLightingShader(int which);
+		void deinitLightingShader(int which);
 
 		void renderLoop();
 
@@ -92,33 +98,22 @@ namespace dscp4
 		std::mutex glContextMutex_;
 		std::condition_variable glContextCV_;
 
-		float voxelSize_;
-		int numHeads_;
-		int currentHead_;
-
-		int mouseLeftButton_;
-		int mouseMiddleButton_;
-		int mouseRightButton_;
-		int mouseDownX_;
-		int mouseDownY_;
+		int numWindows_;
+		int currentWindow_;
 
 		bool isFullScreen_;
 		int *windowWidth_, *windowHeight_;
-
-		int prevWindowWidth_, prevWindowHeight_;
-		int windowX_, windowY_;
-		int prevWindowX_, prevWindowY_;
-
-		float viewPhi_, viewTheta_, viewDepth_;
-
-		bool xineramaEnabled_;
 
 		SDL_Window **windows_;
 		SDL_GLContext *glContexts_;
 
 		std::map<std::string, mesh_t> meshes_;
 
-		GLSLShader diffuseLightShader_;
+		boost::filesystem::path shadersPath_;
+		std::string lightingShaderVertexFileName_;
+		std::string lightingShaderFragmentFileName_;
+
+		VSShaderLib* lightingShader_;
 
 #ifdef DSCP4_HAVE_LOG4CXX
 		log4cxx::LoggerPtr logger_ = log4cxx::Logger::getLogger("edu.mit.media.obmg.holovideo.dscp4.lib.renderer");

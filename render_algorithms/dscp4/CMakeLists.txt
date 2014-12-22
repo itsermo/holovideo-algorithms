@@ -30,6 +30,7 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/CMake)
 
 find_package(OpenGL REQUIRED)
 find_package(GLEW REQUIRED)
+find_package(GLM REQUIRED)
 find_package(SDL2 REQUIRED)
 find_package(CUDA)
 find_package(Log4Cxx)
@@ -37,6 +38,7 @@ find_package(X11)
 
 option(BOOST_DISABLE_AUTOLINK "Defines BOOST_ALL_NO_LIB macro to turn off boost auto linking" ${WIN32})
 option(BUILD_DSCP4_APP "Builds the executable application for testing the DSCP4 algorithm library (libdscp4)" ON)
+option(BUILD_DSCP4_STATIC "Builds the DSCP4 lib as a static lib" ${WIN32})
 option(WITH_CUDA "Enables CUDA building" ${CUDA_FOUND})
 option(WITH_LIBLOG4CXX "Uses Log4Cxx library for logging status and error messages" ${LIBLOG4CXX_FOUND})
 

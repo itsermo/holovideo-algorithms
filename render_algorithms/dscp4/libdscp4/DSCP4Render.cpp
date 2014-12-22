@@ -1,35 +1,55 @@
 #include "DSCP4Render.hpp"
-
+#include <glm/glm.hpp>
 
 // This checks for a true condition, prints the error message, cleans up and returns false
-#define CHECK_SDL_RC(rc_condition, what) \
-	if (rc_condition)								\
-		{									\
-			LOG4CXX_ERROR(logger_, what);	\
-			LOG4CXX_ERROR(logger_, SDL_GetError()) \
-			deinit();						\
-			return false;					\
-		}									\
+#define CHECK_SDL_RC(rc_condition, what)				\
+	if (rc_condition)									\
+		{												\
+			LOG4CXX_ERROR(logger_, what);				\
+			LOG4CXX_ERROR(logger_, SDL_GetError());		\
+			deinit();									\
+			return false;								\
+		}												\
+
+#define CHECK_GLEW_RC(rc_condition, what)				\
+if (rc_condition)										\
+		{												\
+		LOG4CXX_ERROR(logger_, what);					\
+		LOG4CXX_ERROR(logger_, glewGetErrorString());	\
+		}
+
+#define CHECK_GL_RC(what)								\
+if (glGetError() != GL_NO_ERROR)						\
+		{												\
+		LOG4CXX_ERROR(logger_, what);					\
+		LOG4CXX_ERROR(logger_, glewGetErrorString());	\
+		}												\
 
 using namespace dscp4;
 
-DSCP4Render::DSCP4Render() : DSCP4Render(DSCP4_DEFAULT_VOXEL_SIZE, DSCP4_XINERAMA_ENABLED)
+DSCP4Render::DSCP4Render() : DSCP4Render(nullptr, DSCP4_LIGHTING_SHADER_VERTEX_FILENAME, DSCP4_LIGHTING_SHADER_FRAGMENT_FILENAME)
 {
 	
 }
 
-DSCP4Render::DSCP4Render(float voxelSize, bool xineramaEnabled) :
-voxelSize_(voxelSize),
-xineramaEnabled_(xineramaEnabled),
+DSCP4Render::DSCP4Render(const char* shadersPath, const char* lightingShaderVertexFileName, const char* lightingShaderFragmentFileName) :
 windows_(nullptr),
 glContexts_(nullptr),
 shouldRender_(false),
 isInit_(false),
 windowWidth_(nullptr),
 windowHeight_(nullptr),
-numHeads_(0)
+numWindows_(0),
+lightingShaderFragmentFileName_(lightingShaderFragmentFileName),
+lightingShaderVertexFileName_(lightingShaderVertexFileName)
 {
-
+	if (shadersPath == nullptr)
+	{
+		LOG4CXX_WARN(logger_, "No shader path location specified, using current working path: " << boost::filesystem::current_path().string());
+		shadersPath_ = boost::filesystem::current_path();
+	}
+	else
+		shadersPath_ = boost::filesystem::path(shadersPath);
 }
 
 DSCP4Render::~DSCP4Render()
@@ -44,13 +64,13 @@ bool DSCP4Render::init()
 	LOG4CXX_INFO(logger_, "Initializing SDL with video subsystem");
 	CHECK_SDL_RC(SDL_Init(SDL_INIT_VIDEO) < 0, "Could not initialize SDL");
 
-	// If we can get the number of heads from Xinerama
-	// we can create a pixel buffer for each head
+	// If we can get the number of Windows from Xinerama
+	// we can create a pixel buffer for each Window
 	// for displaying the final fringe pattern textures
-	if (numHeads_ == 0)
-		numHeads_ = SDL_GetNumVideoDisplays();
+	if (numWindows_ == 0)
+		numWindows_ = SDL_GetNumVideoDisplays();
 
-	LOG4CXX_INFO(logger_, "Number of displays: " << numHeads_);
+	LOG4CXX_INFO(logger_, "Number of displays: " << numWindows_);
 
 	SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
@@ -61,10 +81,10 @@ bool DSCP4Render::init()
 
 	SDL_GL_SetSwapInterval(1);
 
-	windows_ = new SDL_Window*[numHeads_];
-	glContexts_ = new SDL_GLContext[numHeads_];
-	windowWidth_ = new int[numHeads_];
-	windowHeight_ = new int[numHeads_];
+	windows_ = new SDL_Window*[numWindows_];
+	glContexts_ = new SDL_GLContext[numWindows_];
+	windowWidth_ = new int[numWindows_];
+	windowHeight_ = new int[numWindows_];
 
 	std::unique_lock<std::mutex> initLock(isInitMutex_);
 	shouldRender_ = true;
@@ -77,44 +97,67 @@ bool DSCP4Render::init()
 	return true;
 }
 
-bool DSCP4Render::initHead(SDL_Window*& window, SDL_GLContext& glContext, int thisHeadNum)
+bool DSCP4Render::initWindow(SDL_Window*& window, SDL_GLContext& glContext, int thisWindowNum)
 {
-	LOG4CXX_DEBUG(logger_, "Inititalizing SDL for head " << thisHeadNum);
+	LOG4CXX_DEBUG(logger_, "Inititalizing SDL for Window " << thisWindowNum);
 	SDL_Rect bounds = { 0 };
-	SDL_GetDisplayBounds(thisHeadNum, &bounds);
+	SDL_GetDisplayBounds(thisWindowNum, &bounds);
 
 
-	windowWidth_[thisHeadNum] = bounds.w;
-	windowHeight_[thisHeadNum] = bounds.h;
+	windowWidth_[thisWindowNum] = bounds.w;
+	windowHeight_[thisWindowNum] = bounds.h;
 
-	LOG4CXX_DEBUG(logger_, "Creating SDL OpenGL window " << thisHeadNum << ": " << bounds.w << "x" << bounds.h << " @ " << "{" << bounds.x << "," << bounds.y << "}");
+	LOG4CXX_DEBUG(logger_, "Creating SDL OpenGL window " << thisWindowNum << ": " << bounds.w << "x" << bounds.h << " @ " << "{" << bounds.x << "," << bounds.y << "}");
 
-	window = SDL_CreateWindow(("dscp4-" + std::to_string(thisHeadNum)).c_str(), bounds.x, bounds.y, bounds.w, bounds.h, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_BORDERLESS);
+	window = SDL_CreateWindow(("dscp4-" + std::to_string(thisWindowNum)).c_str(), bounds.x, bounds.y, bounds.w, bounds.h, SDL_WINDOW_OPENGL | SDL_WINDOW_BORDERLESS);
 	CHECK_SDL_RC(window == nullptr, "Could not create SDL window");
 
-	LOG4CXX_DEBUG(logger_, "Creating GL context from SDL window " << thisHeadNum);
+	LOG4CXX_DEBUG(logger_, "Creating GL context from SDL window " << thisWindowNum);
 	glContext = SDL_GL_CreateContext(window);
 
 	return true;
 }
 
-void DSCP4Render::deinitHead(SDL_Window*& window, SDL_GLContext& glContext, int thisHeadNum)
+void DSCP4Render::deinitWindow(SDL_Window*& window, SDL_GLContext& glContext, int thisWindowNum)
 {
-	LOG4CXX_DEBUG(logger_, "Deinitializing SDL for window " << thisHeadNum);
+	LOG4CXX_DEBUG(logger_, "Deinitializing SDL for window " << thisWindowNum);
 
 	if (glContext)
 	{
-		LOG4CXX_DEBUG(logger_, "Destroying GL context " << thisHeadNum << "...");
+		LOG4CXX_DEBUG(logger_, "Destroying GL context " << thisWindowNum << "...");
 		SDL_GL_DeleteContext(glContext);
 		glContext = nullptr;
 	}
 
 	if (window)
 	{
-		LOG4CXX_DEBUG(logger_, "Destroying SDL window " << thisHeadNum << "...");
+		LOG4CXX_DEBUG(logger_, "Destroying SDL window " << thisWindowNum << "...");
 		SDL_DestroyWindow(window);
 		window = nullptr;
 	}
+
+}
+
+bool DSCP4Render::initLightingShader(int which)
+{
+	lightingShader_[which].init();
+	lightingShader_[which].loadShader(VSShaderLib::VERTEX_SHADER, (shadersPath_ / lightingShaderVertexFileName_).string());
+	lightingShader_[which].loadShader(VSShaderLib::FRAGMENT_SHADER, (shadersPath_ / lightingShaderFragmentFileName_).string());
+
+	lightingShader_[which].setProgramOutput(0, "outputF");
+	lightingShader_[which].setVertexAttribName(VSShaderLib::VERTEX_COORD_ATTRIB, "position");
+	lightingShader_[which].setVertexAttribName(VSShaderLib::NORMAL_ATTRIB, "normal");
+	lightingShader_[which].setVertexAttribName(VSShaderLib::TEXTURE_COORD_ATTRIB, "texCoord");
+	lightingShader_[which].prepareProgram();
+
+	lightingShader_[which].setUniform("texUnit", 0);
+	float f3 = 0.90f;
+	lightingShader_[which].setBlockUniform("Lights", "l_spotCutOff", &f3);
+	return lightingShader_[which].isProgramValid();
+}
+
+void DSCP4Render::deinitLightingShader(int which)
+{
 
 }
 
@@ -243,12 +286,18 @@ void DSCP4Render::renderLoop()
 {
 	std::unique_lock<std::mutex> initLock(isInitMutex_);
 	
-	for (int i = 0; i < numHeads_; i++)
+	lightingShader_ = new VSShaderLib[numWindows_];
+
+	for (int i = 0; i < numWindows_; i++)
 	{
-		initHead(windows_[i], glContexts_[i], i);
+		initWindow(windows_[i], glContexts_[i], i);
 
 		SDL_GL_MakeCurrent(windows_[i], glContexts_[i]);
 		
+		glewInit();
+
+		bool isShader = initLightingShader(i);
+
 		SDL_GL_SetSwapInterval(1);
 
 		float ratio = (float)windowWidth_[i] / (float)windowHeight_[i];
@@ -281,7 +330,7 @@ void DSCP4Render::renderLoop()
 	}
 
 	bool resAreDifferent = false;
-	for (int i = 1; i < numHeads_; i++)
+	for (int i = 1; i < numWindows_; i++)
 	{
 		if (windowWidth_[i] != windowWidth_[i-1] || windowHeight_[i] != windowHeight_[i-1])
 			resAreDifferent = true;
@@ -307,7 +356,7 @@ void DSCP4Render::renderLoop()
 			// handle your event here
 		}
 		
-		for (int i = 0; i < numHeads_; i++)
+		for (int i = 0; i < numWindows_; i++)
 		{
 			SDL_GL_MakeCurrent(windows_[i], glContexts_[i]);
 
@@ -333,11 +382,36 @@ void DSCP4Render::renderLoop()
 
 			}
 
+			float lightDir[4] = { 1.0f, 1.0f, 1.0f, 0.0f };
+			float lightPos[4] = { 4.0f, 6.0f, 2.0f, 1.0f };
+			float spotDir[4] = { -4.0f, -6.0f, -2.0f, 0.0f };
 
-			drawCube();
+
+			float res[4] = { 1.0, 1.0, 1.0, 0.0 };
+			
+			//vsml->multMatrixPoint(VSMathLib::VIEW, lightDir, res);
+			//vsml->normalize(res);
+
+			//float mag = sqrt(a[0] * a[0] + a[1] * a[1] + a[2] * a[2]);
+
+			//a[0] /= mag;
+			//a[1] /= mag;
+			//a[2] /= mag;
+
+			lightingShader_[i].setBlockUniform("Lights", "l_dir", res);
+
+			//vsml->multMatrixPoint(VSMathLib::VIEW, lightPos, res);
+			lightingShader_[i].setBlockUniform("Lights", "l_pos", res);
+
+			//vsml->multMatrixPoint(VSMathLib::VIEW, spotDir, res);
+			lightingShader_[i].setBlockUniform("Lights", "l_spotDir", res);
+			//drawCube();
 
 			//draw meshes
 			glEnable(GL_DEPTH_TEST);
+
+			//glUseProgram(lightingShader_[i].getProgramIndex());
+
 			std::unique_lock<std::mutex> meshLock(meshMutex_);
 			for (auto it = meshes_.begin(); it != meshes_.end(); it++)
 			{
@@ -351,7 +425,7 @@ void DSCP4Render::renderLoop()
 			//glPopMatrix();
 		}
 
-		for (int h = 0; h < numHeads_; h++)
+		for (int h = 0; h < numWindows_; h++)
 		{
 			SDL_GL_MakeCurrent(windows_[h], glContexts_[h]);
 			SDL_GL_SwapWindow(windows_[h]);
@@ -359,6 +433,16 @@ void DSCP4Render::renderLoop()
 
 		//std::this_thread::sleep_for(std::chrono::milliseconds(13));
 	}
+
+	delete[] lightingShader_;
+	lightingShader_ = nullptr;
+
+	for (int i = 0; i < numWindows_; i++)
+	{
+		SDL_GL_MakeCurrent(windows_[i], glContexts_[i]);
+		deinitWindow(windows_[i], glContexts_[i], i);
+	}
+
 }
 
 void DSCP4Render::deinit()
@@ -369,9 +453,10 @@ void DSCP4Render::deinit()
 	shouldRender_ = false;
 	renderThread_.join();
 
-	for (int h = 0; h < numHeads_; h++)
+	if (lightingShader_)
 	{
-		deinitHead(windows_[h], glContexts_[h], h);
+		delete[] lightingShader_;
+		lightingShader_ = nullptr;
 	}
 
 	if (windows_)

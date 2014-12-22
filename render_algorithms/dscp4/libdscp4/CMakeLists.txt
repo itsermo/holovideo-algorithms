@@ -10,6 +10,7 @@ endif(BOOST_DISABLE_AUTOLINK)
 include_directories(${SDL2_INCLUDE_DIR})
 include_directories(${OpenGL_INCLUDE_DIR})
 include_directories(${GLEW_INCLUDE_DIR})
+include_directories(${GLM_INCLUDE_DIRS})
 
 if(X11_FOUND)
 	include_directories(${X11_INCLUDE_DIR})
@@ -33,7 +34,12 @@ file(GLOB DSCP4_LIB_SRC
 
 set(DSCP4_LIB ${PROJECT_NAME}-lib)
 
-add_library(${DSCP4_LIB} ${DSCP4_LIB_SRC})
+if(BUILD_DSCP4_STATIC)
+	add_definitions(-DDSCP4_STATIC)
+	add_library(${DSCP4_LIB} STATIC ${DSCP4_LIB_SRC})
+else()
+	add_library(${DSCP4_LIB} SHARED ${DSCP4_LIB_SRC})
+endif()
 
 target_include_directories(${DSCP4_LIB} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
