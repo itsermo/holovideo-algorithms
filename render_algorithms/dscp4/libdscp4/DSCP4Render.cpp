@@ -304,8 +304,8 @@ void DSCP4Render::renderLoop()
 	lightingShader_ = new VSShaderLib[numWindows_];
 
 	GLfloat lightPosition[] = { 1, 1, 1, 0.0 };
-	GLfloat lightAmbientColor[] = { 0.2, 0.2, 0.2, 1 };
-	GLfloat lightDiffuseColor[] = { 0.8f, 0.8, 0.2, 1 };
+	GLfloat lightAmbientColor[] = { 0.2f, 0.2f, 0.2f, 1 };
+	GLfloat lightDiffuseColor[] = { 0.8f, 0.8f, 0.2f, 1 };
 	GLfloat lightSpecularColor[] = { 1, 1, 1, 1 };
 	GLfloat lightGlobalAmbient[] = { 0.0f, 0.0f, 0.0f, 1 };
 
@@ -407,22 +407,22 @@ void DSCP4Render::renderLoop()
 					rotateAngle_ += 10;
 					break;
 				case  SDL_Scancode::SDL_SCANCODE_W:
-					lightPosition[1] += 0.1;
+					lightPosition[1] += 0.1f;
 					break;
 				case SDL_Scancode::SDL_SCANCODE_S:
-					lightPosition[1] -= 0.1;
+					lightPosition[1] -= 0.1f;
 					break;
 				case  SDL_Scancode::SDL_SCANCODE_A:
-					lightPosition[0] -= 0.1;
+					lightPosition[0] -= 0.1f;
 					break;
 				case SDL_Scancode::SDL_SCANCODE_D:
-					lightPosition[0] += 0.1;
+					lightPosition[0] += 0.1f;
 					break;
 				case  SDL_Scancode::SDL_SCANCODE_Z:
-					lightPosition[2] -= 0.1;
+					lightPosition[2] -= 0.1f;
 					break;
 				case SDL_Scancode::SDL_SCANCODE_X:
-					lightPosition[2] += 0.1;
+					lightPosition[2] += 0.1f;
 
 					break;
 				default:
@@ -533,6 +533,7 @@ void DSCP4Render::drawMesh(const mesh_t& mesh)
 	glTranslatef(-mesh.info.center_x, -mesh.info.center_y, -mesh.info.center_z);
 
 	glEnable(GL_COLOR_MATERIAL);
+	glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
 	glEnable(GL_NORMALIZE);
 
 	if (mesh.colors && mesh.normals)
