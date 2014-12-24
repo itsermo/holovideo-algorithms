@@ -304,10 +304,10 @@ void DSCP4Render::renderLoop()
 	lightingShader_ = new VSShaderLib[numWindows_];
 
 	GLfloat lightPosition[] = { 1, 1, 1, 0.0 };
-	GLfloat lightAmbientColor[] = { 1.0, 1.0, 1.0, 1 };
+	GLfloat lightAmbientColor[] = { 0.2, 0.2, 0.2, 1 };
 	GLfloat lightDiffuseColor[] = { 0.8f, 0.8, 0.2, 1 };
 	GLfloat lightSpecularColor[] = { 1, 1, 1, 1 };
-	GLfloat lightGlobalAmbient[] = { 1.0f, 1.0f, 1.0f, 1 };
+	GLfloat lightGlobalAmbient[] = { 0.0f, 0.0f, 0.0f, 1 };
 
 	for (int i = 0; i < numWindows_; i++)
 	{
@@ -324,7 +324,7 @@ void DSCP4Render::renderLoop()
 		float ratio = (float)windowWidth_[i] / (float)windowHeight_[i];
 
 		/* Our shading model--Gouraud (smooth). */
-		glShadeModel(GL_SMOOTH);
+		glShadeModel(GL_FLAT);
 
 		/* Culling. */
 		glCullFace(GL_BACK);
@@ -343,7 +343,7 @@ void DSCP4Render::renderLoop()
 		glLightfv(GL_LIGHT0, GL_DIFFUSE, lightDiffuseColor);
 		//glLightfv(GL_LIGHT0, GL_SPECULAR, lightSpecularColor);
 
-		//glLightModelfv(GL_AMBIENT, lightGlobalAmbient);
+		glLightModelfv(GL_AMBIENT_AND_DIFFUSE, lightGlobalAmbient);
 
 		//glMaterialfv(GL_FRONT, GL_SPECULAR, materialSpecular);
 		//glMaterialfv(GL_FRONT, GL_SHININESS, materialShininess);
@@ -535,7 +535,7 @@ void DSCP4Render::drawMesh(const mesh_t& mesh)
 	glEnable(GL_COLOR_MATERIAL);
 	glEnable(GL_NORMALIZE);
 
-	if (mesh.colors)
+	if (mesh.colors && mesh.normals)
 	{
 		glEnableClientState(GL_VERTEX_ARRAY);
 		glEnableClientState(GL_COLOR_ARRAY);
@@ -551,9 +551,35 @@ void DSCP4Render::drawMesh(const mesh_t& mesh)
 		glDisableClientState(GL_VERTEX_ARRAY);
 
 	}
+	else if (mesh.colors)
+	{
+		glEnableClientState(GL_VERTEX_ARRAY);
+		glEnableClientState(GL_COLOR_ARRAY);
+
+		glColorPointer(mesh.info.num_color_channels, GL_FLOAT, mesh.info.color_stride, mesh.colors);
+		glVertexPointer(mesh.info.num_points_per_vertex, GL_FLOAT, mesh.info.vertex_stride, mesh.vertices);
+		glDrawArrays(GL_TRIANGLES, 0, mesh.info.num_vertices);
+
+		glDisableClientState(GL_COLOR_ARRAY);
+		glDisableClientState(GL_VERTEX_ARRAY);
+	}
+	else if (mesh.normals)
+	{
+		glColor4f(0.5f, 0.5f, 0.5f, 1.0f);
+
+		glEnableClientState(GL_VERTEX_ARRAY);
+		glEnableClientState(GL_NORMAL_ARRAY);
+
+		glNormalPointer(GL_FLOAT, mesh.info.vertex_stride, mesh.normals);
+		glVertexPointer(mesh.info.num_points_per_vertex, GL_FLOAT, mesh.info.vertex_stride, mesh.vertices);
+		glDrawArrays(GL_TRIANGLES, mesh.info.vertex_stride, mesh.info.num_vertices);
+
+		glDisableClientState(GL_VERTEX_ARRAY);
+		glDisableClientState(GL_NORMAL_ARRAY);
+	}
 	else
 	{
-		glColor4f(0.4, 0.4, 0.4, 255);
+		glColor4f(0.5f, 0.5f, 0.5f, 1.0f);
 
 		glEnableClientState(GL_VERTEX_ARRAY);
 
