@@ -120,7 +120,7 @@ int main(int argc, const char* argv[])
 			if (objectScene->mMeshes[m]->HasVertexColors(0))
 			{
 				LOG4CXX_DEBUG(logger, "Found mesh " << m << " colors vertex colors");
-				dscp4_AddMesh("myID", objectScene->mMeshes[m]->mNumVertices, (float*)objectScene->mMeshes[m]->mVertices, (float*)objectScene->mMeshes[m]->mColors[0]);
+				dscp4_AddMesh("myID", objectScene->mMeshes[m]->mNumVertices, (float*)objectScene->mMeshes[m]->mVertices, (float*)objectScene->mMeshes[m]->mNormals, (float*)objectScene->mMeshes[m]->mColors[0]);
 			}
 			else
 				dscp4_AddMesh("myID", objectScene->mMeshes[m]->mNumVertices, (float*)objectScene->mMeshes[m]->mVertices);

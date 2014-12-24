@@ -54,7 +54,7 @@ namespace dscp4
 		void addSimpleObject(SIMPLE_OBJECT_TYPE object, float *center, float size);
 		
 		// Finds the bounding sphere of a mesh, centers the mesh and scales it down or up to radius == 1.0
-		void addMesh(const char *id, int numVertices, float *vertices, float *colors, unsigned int numVertexDimensions = 3, unsigned int numColorChannels = 4);
+		void addMesh(const char *id, int numVertices, float *vertices, float * normals = nullptr, float *colors = nullptr, unsigned int numVertexDimensions = 3, unsigned int numColorChannels = 4);
 		void removeMesh(const char *id);
 		//void addMesh(const char* id, int numVertices, float *vertices);
 		//Expects PCL point cloud data type, or array of struct { float x,y,z,w; uchar r,g,b,a; }

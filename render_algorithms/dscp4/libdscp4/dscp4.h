@@ -13,7 +13,7 @@
 extern "C" {
 	DSCP4_API bool dscp4_InitRenderer();
 	DSCP4_API void dscp4_DeinitRenderer();
-	DSCP4_API void dscp4_AddMesh(const char *id, unsigned int numVertices, float *vertices, float *colors = 0);
+	DSCP4_API void dscp4_AddMesh(const char *id, unsigned int numVertices, float *vertices, float *normals = 0, float *colors = 0);
 	DSCP4_API void dscp4_RemoveMesh(const char *id);
 	DSCP4_API void dscp4_AddPointCloud(const char *id, unsigned int numPoints, float *points);
 	DSCP4_API void dscp4_RemovePointCloud(const char *id);

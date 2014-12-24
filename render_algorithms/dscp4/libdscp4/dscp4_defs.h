@@ -44,6 +44,7 @@ typedef struct
 	mesh_header_t info;
 	void *vertices;
 	void *colors;
+	void *normals;
 } mesh_t;
 
 #endif

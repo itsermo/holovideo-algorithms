@@ -19,9 +19,9 @@ extern "C"
 		g_renderContext = nullptr;
 	}
 
-	DSCP4_API void dscp4_AddMesh(const char *id, unsigned int numVertices, float *vertices, float *colors)
+	DSCP4_API void dscp4_AddMesh(const char *id, unsigned int numVertices, float *vertices, float *normals, float *colors)
 	{
-		g_renderContext->addMesh(id, numVertices, vertices, colors);
+		g_renderContext->addMesh(id, numVertices, vertices, normals, colors);
 	}
 
 	DSCP4_API void dscp4_RemoveMesh(const char *id)

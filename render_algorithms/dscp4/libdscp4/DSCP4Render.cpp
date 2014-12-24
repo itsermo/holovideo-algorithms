@@ -305,7 +305,7 @@ void DSCP4Render::renderLoop()
 
 	GLfloat lightPosition[] = { 1, 1, 1, 0.0 };
 	GLfloat lightAmbientColor[] = { 1.0, 1.0, 1.0, 1 };
-	GLfloat lightDiffuseColor[] = { 1.0f, 0.2, 1, 1 };
+	GLfloat lightDiffuseColor[] = { 0.8f, 0.8, 0.2, 1 };
 	GLfloat lightSpecularColor[] = { 1, 1, 1, 1 };
 	GLfloat lightGlobalAmbient[] = { 1.0f, 1.0f, 1.0f, 1 };
 
@@ -539,17 +539,21 @@ void DSCP4Render::drawMesh(const mesh_t& mesh)
 	{
 		glEnableClientState(GL_VERTEX_ARRAY);
 		glEnableClientState(GL_COLOR_ARRAY);
+		glEnableClientState(GL_NORMAL_ARRAY);
 
+		glNormalPointer(GL_FLOAT, mesh.info.vertex_stride, mesh.normals);
 		glColorPointer(mesh.info.num_color_channels, GL_FLOAT, mesh.info.color_stride, mesh.colors);
 		glVertexPointer(mesh.info.num_points_per_vertex, GL_FLOAT, mesh.info.vertex_stride, mesh.vertices);
 		glDrawArrays(GL_TRIANGLES, 0, mesh.info.num_vertices);
 	
-		glDisableClientState(GL_VERTEX_ARRAY);
+		glDisableClientState(GL_NORMAL_ARRAY);
 		glDisableClientState(GL_COLOR_ARRAY);
+		glDisableClientState(GL_VERTEX_ARRAY);
+
 	}
 	else
 	{
-		glColor4f(255, 255, 255, 255);
+		glColor4f(0.4, 0.4, 0.4, 255);
 
 		glEnableClientState(GL_VERTEX_ARRAY);
 
@@ -565,7 +569,7 @@ void DSCP4Render::drawMesh(const mesh_t& mesh)
 	glPopMatrix();
 }
 
-void DSCP4Render::addMesh(const char *id, int numVertices, float *vertices, float *colors, unsigned int numVertexDimensions, unsigned int numColorChannels)
+void DSCP4Render::addMesh(const char *id, int numVertices, float *vertices, float * normals, float *colors, unsigned int numVertexDimensions, unsigned int numColorChannels)
 {
 	// create a 2D array for miniball algorithm
 	float** ap = new float*[numVertices];
@@ -580,6 +584,7 @@ void DSCP4Render::addMesh(const char *id, int numVertices, float *vertices, floa
 
 	mesh_t mesh = { 0 };
 	mesh.vertices = vertices;
+	mesh.normals = normals;
 	mesh.colors = colors;
 	mesh.info.num_color_channels = numColorChannels;
 	mesh.info.num_points_per_vertex = numVertexDimensions;
