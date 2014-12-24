@@ -115,15 +115,28 @@ int main(int argc, const char* argv[])
 		// if it has faces, treat as mesh, otherwise as point cloud
 		if (objectScene->mMeshes[m]->HasFaces())
 		{
-			LOG4CXX_DEBUG(logger, "Found mesh " << m << " with " << objectScene->mMeshes[m]->mNumFaces << " faces from 3D object file");
-			
+			std::string meshID;
+			meshID += std::string("Mesh ") += std::to_string(m);
+			LOG4CXX_INFO(logger, "Found " << meshID << " from 3D object file '" << objectFilePath.string() << "'");
+			LOG4CXX_INFO(logger, meshID << " has " << objectScene->mMeshes[m]->mNumVertices << " vertices");
+			if (objectScene->mMeshes[m]->HasNormals())
+				LOG4CXX_INFO(logger, meshID <<  " has normals")
+			else
+			LOG4CXX_WARN(logger, meshID << " does not have normals, lighting effects might be fucked up");
+
+			LOG4CXX_INFO(logger, meshID << " has " << objectScene->mMeshes[m]->mNumFaces << " faces")
+
 			if (objectScene->mMeshes[m]->HasVertexColors(0))
 			{
-				LOG4CXX_DEBUG(logger, "Found mesh " << m << " colors vertex colors");
-				dscp4_AddMesh("myID", objectScene->mMeshes[m]->mNumVertices, (float*)objectScene->mMeshes[m]->mVertices, (float*)objectScene->mMeshes[m]->mNormals, (float*)objectScene->mMeshes[m]->mColors[0]);
+				LOG4CXX_INFO(logger, meshID << " has vertex colors");
+				dscp4_AddMesh(meshID.c_str(), objectScene->mMeshes[m]->mNumVertices, (float*)objectScene->mMeshes[m]->mVertices, (float*)objectScene->mMeshes[m]->mNormals, (float*)objectScene->mMeshes[m]->mColors[0]);
 			}
 			else
-				dscp4_AddMesh("myID", objectScene->mMeshes[m]->mNumVertices, (float*)objectScene->mMeshes[m]->mVertices);
+			{
+				LOG4CXX_WARN(logger, meshID << " does not have vertex colors--it may look dull");
+				dscp4_AddMesh(meshID.c_str(), objectScene->mMeshes[m]->mNumVertices, (float*)objectScene->mMeshes[m]->mVertices, (float*)objectScene->mMeshes[m]->mNormals);
+			}
+				
 		}
 		else
 			LOG4CXX_DEBUG(logger, "Found mesh " << m << " with no faces.  Treating vertecies as point cloud");
@@ -147,21 +160,21 @@ int main(int argc, const char* argv[])
 			//AddMesh((float*)objectScene->mMeshes[m]->mVertices, objectScene->mMeshes[m]->mNumVertices);
 		}
 		else
-			LOG4CXX_DEBUG(logger, "Found mesh " << m << " with no faces.  Treating vertecies as point cloud");
+			LOG4CXX_DEBUG(logger, "Found Mesh " << m << " with no faces.  Treating vertecies as point cloud");
 	}
 
 
-	while (true)
+	for (size_t i = 0; i < 5; i++)
 	{
 		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 	}
 
-	//dscp4_RemoveMesh("myID");
+	dscp4_RemoveMesh("Mesh 0");
 
-	//for (size_t i = 0; i < 5; i++)
-	//{
-	//	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-	//}
+	for (size_t i = 0; i < 5; i++)
+	{
+		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+	}
 
 	dscp4_DeinitRenderer();
 

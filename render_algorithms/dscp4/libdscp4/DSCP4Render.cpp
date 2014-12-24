@@ -45,7 +45,9 @@ windowHeight_(nullptr),
 numWindows_(0),
 lightingShaderFragmentFileName_(lightingShaderFragmentFileName),
 lightingShaderVertexFileName_(lightingShaderVertexFileName),
-rotateAngle_(0)
+rotateAngle_(0),
+rotateIncrement_(0.1f),
+rotateOn_(false)
 {
 	if (shadersPath == nullptr)
 	{
@@ -110,24 +112,27 @@ bool DSCP4Render::initWindow(SDL_Window*& window, SDL_GLContext& glContext, int 
 #ifdef _DEBUG
 	windowWidth_[thisWindowNum] = bounds.w/2;
 	windowHeight_[thisWindowNum] = bounds.h/2;
-	LOG4CXX_DEBUG(logger_, "Creating SDL OpenGL window " << thisWindowNum << ": " << bounds.w/2 << "x" << bounds.h/2 << " @ " << "{" << bounds.x+80 << "," << bounds.y+80 << "}");
+	LOG4CXX_DEBUG(logger_, "Creating SDL OpenGL Window " << thisWindowNum << ": " << bounds.w/2 << "x" << bounds.h/2 << " @ " << "{" << bounds.x+80 << "," << bounds.y+80 << "}");
 #else
 	windowWidth_[thisWindowNum] = bounds.w;
 	windowHeight_[thisWindowNum] = bounds.h;
-	LOG4CXX_DEBUG(logger_, "Creating SDL OpenGL window " << thisWindowNum << ": " << bounds.w << "x" << bounds.h << " @ " << "{" << bounds.x << "," << bounds.y << "}");
+	LOG4CXX_DEBUG(logger_, "Creating SDL OpenGL Window " << thisWindowNum << ": " << bounds.w << "x" << bounds.h << " @ " << "{" << bounds.x << "," << bounds.y << "}");
 #endif
 
 	
 
 #ifdef _DEBUG
-	window = SDL_CreateWindow(("dscp4-" + std::to_string(thisWindowNum)).c_str(), bounds.x+80, bounds.y+80, bounds.w/2, bounds.h/2, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
+	window = SDL_CreateWindow(("dscp4-" + std::to_string(thisWindowNum)).c_str(), bounds.x+80, bounds.y+80, bounds.w/2, bounds.h/2, SDL_WINDOW_OPENGL);
 	CHECK_SDL_RC(window == nullptr, "Could not create SDL window");
 #else
-	window = SDL_CreateWindow(("dscp4-" + std::to_string(thisWindowNum)).c_str(), bounds.x, bounds.y, bounds.w, bounds.h, SDL_WINDOW_OPENGL | SDL_WINDOW_FULLSCREEN);
+	window = SDL_CreateWindow(("dscp4-" + std::to_string(thisWindowNum)).c_str(), bounds.x, bounds.y, bounds.w, bounds.h, SDL_WINDOW_OPENGL | SDL_WINDOW_BORDERLESS);
 	CHECK_SDL_RC(window == nullptr, "Could not create SDL window");
+	SDL_ShowCursor(SDL_DISABLE);
 #endif
 
-	LOG4CXX_DEBUG(logger_, "Creating GL context from SDL window " << thisWindowNum);
+	
+
+	LOG4CXX_DEBUG(logger_, "Creating GL Context from SDL window " << thisWindowNum);
 	glContext = SDL_GL_CreateContext(window);
 
 	return true;
@@ -135,18 +140,18 @@ bool DSCP4Render::initWindow(SDL_Window*& window, SDL_GLContext& glContext, int 
 
 void DSCP4Render::deinitWindow(SDL_Window*& window, SDL_GLContext& glContext, int thisWindowNum)
 {
-	LOG4CXX_DEBUG(logger_, "Deinitializing SDL for window " << thisWindowNum);
+	LOG4CXX_DEBUG(logger_, "Deinitializing SDL for Window " << thisWindowNum);
 
 	if (glContext)
 	{
-		LOG4CXX_DEBUG(logger_, "Destroying GL context " << thisWindowNum << "...");
+		LOG4CXX_DEBUG(logger_, "Destroying GL Context " << thisWindowNum << "...");
 		SDL_GL_DeleteContext(glContext);
 		glContext = nullptr;
 	}
 
 	if (window)
 	{
-		LOG4CXX_DEBUG(logger_, "Destroying SDL window " << thisWindowNum << "...");
+		LOG4CXX_DEBUG(logger_, "Destroying SDL Window " << thisWindowNum << "...");
 		SDL_DestroyWindow(window);
 		window = nullptr;
 	}
@@ -347,7 +352,7 @@ void DSCP4Render::renderLoop()
 
 		//glMaterialfv(GL_FRONT, GL_SPECULAR, materialSpecular);
 		//glMaterialfv(GL_FRONT, GL_SHININESS, materialShininess);
-		glLightfv(GL_LIGHT0, GL_POSITION, lightPosition);
+		//glLightfv(GL_LIGHT0, GL_POSITION, lightPosition);
 
 		glEnable(GL_LIGHTING);
 		//glEnable(GL_LIGHT0);
@@ -401,10 +406,16 @@ void DSCP4Render::renderLoop()
 				switch (event.key.keysym.scancode)
 				{
 				case  SDL_Scancode::SDL_SCANCODE_LEFT:
-					rotateAngle_ -= 10;
+					if (rotateOn_)
+						rotateIncrement_ -= 0.1f;
+					else
+						rotateAngle_ -= 10;
 					break;
 				case SDL_Scancode::SDL_SCANCODE_RIGHT:
-					rotateAngle_ += 10;
+					if (rotateOn_)
+						rotateIncrement_ += 0.1f;
+					else
+						rotateAngle_ += 10;
 					break;
 				case  SDL_Scancode::SDL_SCANCODE_W:
 					lightPosition[1] += 0.1f;
@@ -423,7 +434,9 @@ void DSCP4Render::renderLoop()
 					break;
 				case SDL_Scancode::SDL_SCANCODE_X:
 					lightPosition[2] += 0.1f;
-
+					break;
+				case  SDL_Scancode::SDL_SCANCODE_R:
+					rotateOn_ = !rotateOn_;
 					break;
 				default:
 					break;
@@ -439,6 +452,11 @@ void DSCP4Render::renderLoop()
 			/* Clear the color and depth buffers. */
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+			glPushMatrix();
+			glMatrixMode(GL_PROJECTION);
+			glLightfv(GL_LIGHT0, GL_POSITION, lightPosition);
+			glPopMatrix();
+
 			/* We don't want to modify the projection matrix. */
 			glMatrixMode(GL_MODELVIEW);
 			glLoadIdentity();
@@ -449,13 +467,13 @@ void DSCP4Render::renderLoop()
 			/* Rotate. */
 			glRotatef(rotateAngle_, 0.0, 1.0, 0.0);
 
-			//if (true) {
-			//	angle += 0.1;
-			//	if (angle > 360.0f) {
-			//		angle = 0.0f;
-			//	}
+			if (rotateOn_) {
+				rotateAngle_ += rotateIncrement_;
+				if (rotateAngle_ > 360.0f) {
+					rotateAngle_ = 0.0f;
+				}
 
-			//}
+			}
 
 			//drawCube();
 
@@ -479,7 +497,7 @@ void DSCP4Render::renderLoop()
 			SDL_GL_SwapWindow(windows_[h]);
 		}
 
-		//std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+		//std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	}
 
 	delete[] lightingShader_;
