@@ -11,8 +11,17 @@
 #endif
 
 extern "C" {
+
+	typedef enum {
+		DSCP4_SHADE_MODEL_OFF = 0,
+		DSCP4_SHADE_MODEL_FLAT = 1,
+		DSCP4_SHADE_MODEL_SMOOTH =2,
+	} shade_model_t;
+
 	DSCP4_API bool dscp4_InitRenderer();
 	DSCP4_API void dscp4_DeinitRenderer();
+	DSCP4_API void dscp4_SetShadeModel(shade_model_t shadeModel);
+	DSCP4_API void dscp4_SetAutoScaleEnabled(bool autoScaleEnabled);
 	DSCP4_API void dscp4_AddMesh(const char *id, unsigned int numVertices, float *vertices, float *normals = 0, float *colors = 0);
 	DSCP4_API void dscp4_RemoveMesh(const char *id);
 	DSCP4_API void dscp4_AddPointCloud(const char *id, unsigned int numPoints, float *points);

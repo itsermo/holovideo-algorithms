@@ -38,7 +38,11 @@ int main(int argc, const char* argv[])
 	int logLevel;
 	boost::filesystem::path objectFilePath;
 	Assimp::Importer objectFileImporter;
-	const aiScene* objectScene;
+	const aiScene* objectScene = nullptr;
+	bool triangulateMesh = false;
+	std::string generateNormals;
+	unsigned int aiFlags = 0;
+	bool autoScaleEnabled = false;
 
 	DSCP4ProgramOptions options;
 
@@ -91,10 +95,39 @@ int main(int argc, const char* argv[])
 		return -1;
 	}
 
+	generateNormals = options.getGenerateNormals();
+	if (generateNormals != "off")
+	{
+		if (generateNormals == "flat")
+		{
+			aiFlags |= aiProcess_GenNormals;
+			LOG4CXX_DEBUG(logger, "Set flag for asset importer to generate flat normals (if don't exist)")
+		}
+		else if (generateNormals == "smooth")
+		{
+			aiFlags |= aiProcess_GenSmoothNormals;
+			LOG4CXX_DEBUG(logger, "Set flag for asset importer to generate smooth normals (if don't exist)")
+		}
+		else
+		{
+			std::cout << "Invalid generate normals option: '" << generateNormals << "'. Valid choices are 'off', 'flat' or 'smooth'" << std::endl;
+			options.printOptions(DSCP4ProgramOptions::DSCP4_OPTIONS_TYPE_INPUT);
+			return -1;
+		}
+		
+	}
+
+	triangulateMesh = options.getTriangulateMesh();
+	if (triangulateMesh)
+	{
+		aiFlags |= aiProcess_Triangulate;
+		LOG4CXX_DEBUG(logger, "Set flag for asset importer to triangulate 3d object file mesh");
+	}
+
 	LOG4CXX_INFO(logger, "Starting DSCP4 test program...");
 
 	LOG4CXX_INFO(logger, "Loading 3D object file \'" << objectFilePath.filename().string() << "\'...");
-	objectScene = objectFileImporter.ReadFile(objectFilePath.string(), 0);
+	objectScene = objectFileImporter.ReadFile(objectFilePath.string(), aiFlags);
 
 
 	if (!objectScene->HasMeshes())
@@ -109,6 +142,40 @@ int main(int argc, const char* argv[])
 		LOG4CXX_FATAL(logger, "Could not initialize DSCP4 lib");
 		return -1;
 	}
+
+	std::string shadeModelString = options.getShadeModel();
+	if (shadeModelString == "off")
+	{
+		dscp4_SetShadeModel(DSCP4_SHADE_MODEL_OFF);
+		LOG4CXX_DEBUG(logger, "Turned off all lighting effects for renderer");
+	}
+	else if (shadeModelString == "flat")
+	{
+		dscp4_SetShadeModel(DSCP4_SHADE_MODEL_FLAT);
+		LOG4CXX_DEBUG(logger, "Set renderer shading model to 'flat'");
+	}
+	else if (shadeModelString == "smooth")
+	{
+		dscp4_SetShadeModel(DSCP4_SHADE_MODEL_SMOOTH);
+		LOG4CXX_DEBUG(logger, "Set renderer shading model to 'smooth'");
+	}
+
+	if ((shadeModelString == "flat" && generateNormals == "smooth") ||
+		(shadeModelString == "smooth" && generateNormals == "flat"))
+		LOG4CXX_WARN(logger, "Your normal generation mode and shading model are mis-matching.  Your model will probably look like crap");
+
+	autoScaleEnabled = options.getAutoscale();
+	if (autoScaleEnabled)
+	{
+		dscp4_SetAutoScaleEnabled(true);
+		LOG4CXX_DEBUG(logger, "Renderer model autoscaling and centering enabled");
+	}
+	else
+	{
+		dscp4_SetAutoScaleEnabled(false);
+		LOG4CXX_DEBUG(logger, "Renderer model autoscaling and centering disabled");
+	}
+		
 
 	for (unsigned int m = 0; m < objectScene->mNumMeshes; m++)
 	{
@@ -164,7 +231,7 @@ int main(int argc, const char* argv[])
 	}
 
 
-	for (size_t i = 0; i < 5; i++)
+	while(true)
 	{
 		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 	}

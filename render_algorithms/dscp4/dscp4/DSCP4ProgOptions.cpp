@@ -12,10 +12,24 @@ inputOptions_("Input options")
 
 	inputOptions_.add_options()
 		("input-file,i",
-		boost::program_options::value<std::string>()->default_value(DSCP4_DEFAULT_OBJECT_FILENAME),
-		"the input 3D object file path");
+		boost::program_options::value<std::string>()->default_value(DSCP4_INPUT_DEFAULT_OBJECT_FILENAME),
+		"the input 3D object file path")
+		("generate-normals,n",
+		boost::program_options::value<std::string>()->default_value(DSCP4_INPUT_DEFAULT_GEN_NORMALS),
+		"generate normals for 3D object file. valid values are \"off\" \"flat\" and \"smooth\"")
+		("triangulate-mesh,t",
+		boost::program_options::value<bool>()->default_value(DSCP4_INPUT_DEFAULT_TRIANGULATE_MESH),
+		"triangulates the mesh (if it is made of quads or something else");
 
-	allOptions_.add(generalOptions_).add(inputOptions_);
+	renderOptions_.add_options()
+		("autoscale,a",
+		boost::program_options::value<bool>()->default_value(DSCP4_RENDER_DEFAULT_AUTOSCALE),
+		"finds the 3d model bounding sphere, scales the model and places it at the origin")
+		("shade-model,s",
+		boost::program_options::value<std::string>()->default_value(DSCP4_RENDER_DEFAULT_SHADEMODEL),
+		"the shading model. valid options are 'off' to turn off all lighting, 'flat' and 'smooth'");
+
+	allOptions_.add(generalOptions_).add(inputOptions_).add(renderOptions_);
 
 	//check for working path conf file first
 	try

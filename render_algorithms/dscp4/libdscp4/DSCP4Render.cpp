@@ -46,8 +46,10 @@ numWindows_(0),
 lightingShaderFragmentFileName_(lightingShaderFragmentFileName),
 lightingShaderVertexFileName_(lightingShaderVertexFileName),
 rotateAngle_(0),
-rotateIncrement_(0.1f),
-rotateOn_(false)
+rotateIncrement_(1.0f),
+rotateOn_(false),
+shadeModel_(DSCP4_LIGHTING_SHADE_MODEL),
+autoScaleEnabled_(DSCP4_AUTO_SCALE_ENABLED)
 {
 	if (shadersPath == nullptr)
 	{
@@ -310,7 +312,7 @@ void DSCP4Render::renderLoop()
 
 	GLfloat lightPosition[] = { 1, 1, 1, 0.0 };
 	GLfloat lightAmbientColor[] = { 0.2f, 0.2f, 0.2f, 1 };
-	GLfloat lightDiffuseColor[] = { 0.8f, 0.8f, 0.2f, 1 };
+	GLfloat lightDiffuseColor[] = { 1.0f, 1.0f, 1.0f, 1 };
 	GLfloat lightSpecularColor[] = { 1, 1, 1, 1 };
 	GLfloat lightGlobalAmbient[] = { 0.0f, 0.0f, 0.0f, 1 };
 
@@ -328,13 +330,11 @@ void DSCP4Render::renderLoop()
 
 		float ratio = (float)windowWidth_[i] / (float)windowHeight_[i];
 
-		/* Our shading model--Gouraud (smooth). */
-		glShadeModel(GL_FLAT);
 
 		/* Culling. */
-		glCullFace(GL_BACK);
-		glFrontFace(GL_CCW);
-		glEnable(GL_CULL_FACE);
+		//glCullFace(GL_BACK);
+		//glFrontFace(GL_CCW);
+		//glEnable(GL_CULL_FACE);
 
 		/* Set the clear color. */
 		//glClearColor(0, 0, 0, 0);
@@ -354,7 +354,7 @@ void DSCP4Render::renderLoop()
 		//glMaterialfv(GL_FRONT, GL_SHININESS, materialShininess);
 		//glLightfv(GL_LIGHT0, GL_POSITION, lightPosition);
 
-		glEnable(GL_LIGHTING);
+		
 		//glEnable(GL_LIGHT0);
 		//Takes care of occlusions for point cloud
 		//glEnable(GL_DEPTH_TEST);
@@ -393,9 +393,6 @@ void DSCP4Render::renderLoop()
 
 	initLock.unlock();
 	isInitCV_.notify_all();
-
-	/* Our angle of rotation. */
-	static float angle = 45.0f;
 
 	while (shouldRender_)
 	{
@@ -444,10 +441,23 @@ void DSCP4Render::renderLoop()
 			}
 			// handle your event here
 		}
+
+		if (rotateOn_) {
+			rotateAngle_ += rotateIncrement_;
+			if (rotateAngle_ > 360.0f) {
+				rotateAngle_ = 0.0f;
+			}
+
+		}
 		
 		for (int i = 0; i < numWindows_; i++)
 		{
 			SDL_GL_MakeCurrent(windows_[i], glContexts_[i]);
+
+			if (shadeModel_ != SHADE_MODEL_OFF)
+				glEnable(GL_LIGHTING);
+
+			glShadeModel(shadeModel_ == SHADE_MODEL_SMOOTH ? GL_SMOOTH : GL_FLAT );
 
 			/* Clear the color and depth buffers. */
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -462,20 +472,10 @@ void DSCP4Render::renderLoop()
 			glLoadIdentity();
 
 			/* Move down the z-axis. */
-			glTranslatef(0.0, 0.0, -2.5);
+			glTranslatef(0.0, 0.0, -2.0f);
 
 			/* Rotate. */
 			glRotatef(rotateAngle_, 0.0, 1.0, 0.0);
-
-			if (rotateOn_) {
-				rotateAngle_ += rotateIncrement_;
-				if (rotateAngle_ > 360.0f) {
-					rotateAngle_ = 0.0f;
-				}
-
-			}
-
-			//drawCube();
 
 			glEnable(GL_DEPTH_TEST);
 			glEnable(GL_LIGHT0);
@@ -486,6 +486,7 @@ void DSCP4Render::renderLoop()
 				drawMesh(it->second);
 			}
 			meshLock.unlock();
+
 			glDisable(GL_LIGHT0);
 			glDisable(GL_DEPTH_TEST);
 
@@ -551,7 +552,7 @@ void DSCP4Render::drawMesh(const mesh_t& mesh)
 	glTranslatef(-mesh.info.center_x, -mesh.info.center_y, -mesh.info.center_z);
 
 	glEnable(GL_COLOR_MATERIAL);
-	glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
+	glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
 	glEnable(GL_NORMALIZE);
 
 	if (mesh.colors && mesh.normals)
@@ -616,17 +617,6 @@ void DSCP4Render::drawMesh(const mesh_t& mesh)
 
 void DSCP4Render::addMesh(const char *id, int numVertices, float *vertices, float * normals, float *colors, unsigned int numVertexDimensions, unsigned int numColorChannels)
 {
-	// create a 2D array for miniball algorithm
-	float** ap = new float*[numVertices];
-	float * pv = vertices;
-	for (int i = 0; i<numVertices; ++i) {
-		ap[i] = pv;
-		pv += numVertexDimensions;
-	}
-
-	// miniball uses a quick method of determining the bounding sphere of all the vertices
-	auto miniball3f = Miniball::Miniball<Miniball::CoordAccessor<float**, float*>>(3, (float**)ap, (float**)(ap + numVertices));
-
 	mesh_t mesh = { 0 };
 	mesh.vertices = vertices;
 	mesh.normals = normals;
@@ -636,20 +626,31 @@ void DSCP4Render::addMesh(const char *id, int numVertices, float *vertices, floa
 	mesh.info.vertex_stride = numVertexDimensions * sizeof(float);
 	mesh.info.color_stride = numColorChannels * sizeof(float);
 	mesh.info.num_vertices = numVertices;
-	mesh.info.center_x = miniball3f.center()[0];
-	mesh.info.center_y = miniball3f.center()[1];
-	mesh.info.center_z = miniball3f.center()[2];
-	mesh.info.sq_radius = miniball3f.squared_radius();
 	mesh.info.is_point_cloud = false;
+
+	if (autoScaleEnabled_)
+	{
+		// create a 2D array for miniball algorithm
+		float **ap = new float*[numVertices];
+		float * pv = vertices;
+		for (int i = 0; i < numVertices; ++i) {
+			ap[i] = pv;
+			pv += numVertexDimensions;
+		}
+
+		// miniball uses a quick method of determining the bounding sphere of all the vertices
+		auto miniball3f = Miniball::Miniball<Miniball::CoordAccessor<float**, float*>>(3, (float**)ap, (float**)(ap + numVertices));
+		mesh.info.center_x = miniball3f.center()[0];
+		mesh.info.center_y = miniball3f.center()[1];
+		mesh.info.center_z = miniball3f.center()[2];
+		mesh.info.sq_radius = miniball3f.squared_radius();
+
+		delete[] ap;
+	}
 
 	std::unique_lock<std::mutex> meshLock(meshMutex_);
 	meshes_[id] = mesh;
 	meshLock.unlock();
-
-	//need to optimize this
-	//for (int i = 0; i<numVertices; ++i)
-	//	delete[] ap[i];
-	delete[] ap;
 }
 
 void DSCP4Render::removeMesh(const char *id)

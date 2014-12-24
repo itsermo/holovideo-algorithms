@@ -32,6 +32,8 @@
 #define DSCP4_XINERAMA_ENABLED true
 #define DSCP4_LIGHTING_SHADER_VERTEX_FILENAME "pointlight.vert"
 #define DSCP4_LIGHTING_SHADER_FRAGMENT_FILENAME "pointlight.frag"
+#define DSCP4_AUTO_SCALE_ENABLED true
+#define DSCP4_LIGHTING_SHADE_MODEL SHADE_MODEL_FLAT
 
 namespace dscp4
 {
@@ -40,9 +42,15 @@ namespace dscp4
 	public:
 		
 		enum SIMPLE_OBJECT_TYPE{
-			SIMPLE_OBJECT_TYPE_SPHERE = 1,
-			SIMPLE_OBJECT_TYPE_CUBE = 2,
-			SIMPLE_OBJECT_TYPE_PYRAMID = 3
+			SIMPLE_OBJECT_TYPE_SPHERE = 0,
+			SIMPLE_OBJECT_TYPE_CUBE = 1,
+			SIMPLE_OBJECT_TYPE_PYRAMID = 2
+		};
+
+		enum SHADE_MODEL {
+			SHADE_MODEL_OFF = 0,
+			SHADE_MODEL_FLAT = 1,
+			SHADE_MODEL_SMOOTH = 2
 		};
 
 		DSCP4Render();
@@ -62,12 +70,16 @@ namespace dscp4
 		void addPointCloud(const char *id, float *points, int numPoints, bool hasColorData = true);
 		void removePointCloud(const char *id) { this->removeMesh(id); }
 
+		void setShadingModel(SHADE_MODEL shadeModel) { shadeModel_ = shadeModel; }
+		void setAutoScaleEnabled(bool autoScaleEnabled) { autoScaleEnabled_ = autoScaleEnabled; }
+
 		void* getContext();
 
 	private:
 
 		bool initWindow(SDL_Window*& window, SDL_GLContext& glContext, int thisWindowNum);
 		void deinitWindow(SDL_Window*& window, SDL_GLContext& glContext, int thisWindowNum);
+
 
 		bool initLightingShader(int which);
 		void deinitLightingShader(int which);
@@ -120,6 +132,9 @@ namespace dscp4
 		float rotateAngle_;
 		float rotateIncrement_;
 		bool rotateOn_;
+
+		SHADE_MODEL shadeModel_;
+		bool autoScaleEnabled_;
 
 #ifdef DSCP4_HAVE_LOG4CXX
 		log4cxx::LoggerPtr logger_ = log4cxx::Logger::getLogger("edu.mit.media.obmg.holovideo.dscp4.lib.renderer");

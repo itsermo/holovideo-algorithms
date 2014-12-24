@@ -13,7 +13,11 @@
 #define DSCP4_CONF_FILENAME "dscp4.conf"
 #define DSCP4_PATH_PREFIX "dscp4"
 #define DSCP4_DEFAULT_VERBOSITY 2
-#define DSCP4_DEFAULT_OBJECT_FILENAME "bun_zipper.ply"
+#define DSCP4_INPUT_DEFAULT_OBJECT_FILENAME "bun_zipper_res4.ply"
+#define DSCP4_INPUT_DEFAULT_GEN_NORMALS "flat"
+#define DSCP4_INPUT_DEFAULT_TRIANGULATE_MESH true
+#define DSCP4_RENDER_DEFAULT_AUTOSCALE true
+#define DSCP4_RENDER_DEFAULT_SHADEMODEL "flat"
 
 class DSCP4ProgramOptions
 {
@@ -34,6 +38,11 @@ public:
 	std::string getFileName() { return vm_["input-file"].as<std::string>(); }
 	bool getWantHelp() { return vm_.count("help") == 0 ? false : true; }
 	int getVerbosity() { return verbosity_; }
+	std::string getGenerateNormals() { return vm_["generate-normals"].as<std::string>(); }
+	bool getTriangulateMesh() { return vm_["triangulate-mesh"].as<bool>(); }
+	bool getAutoscale() { return vm_["autoscale"].as<bool>(); }
+	std::string getShadeModel() { return vm_["shade-model"].as<std::string>(); }
+	
 
 	boost::filesystem::path getInstallPath() { return pt_.get<std::string>("general.install_path"); }
 	boost::filesystem::path getBinPath() { return pt_.get<std::string>("general.bin_path"); }
@@ -49,6 +58,7 @@ private:
 	boost::program_options::options_description allOptions_;
 	boost::program_options::options_description generalOptions_;
 	boost::program_options::options_description inputOptions_;
+	boost::program_options::options_description renderOptions_;
 
 	int verbosity_;
 

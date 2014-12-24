@@ -19,6 +19,16 @@ extern "C"
 		g_renderContext = nullptr;
 	}
 
+	DSCP4_API void dscp4_SetShadeModel(shade_model_t shadeModel)
+	{
+		g_renderContext->setShadingModel((dscp4::DSCP4Render::SHADE_MODEL)shadeModel);
+	}
+
+	DSCP4_API void dscp4_SetAutoScaleEnabled(bool autoScaleEnabled)
+	{
+		g_renderContext->setAutoScaleEnabled(autoScaleEnabled);
+	}
+
 	DSCP4_API void dscp4_AddMesh(const char *id, unsigned int numVertices, float *vertices, float *normals, float *colors)
 	{
 		g_renderContext->addMesh(id, numVertices, vertices, normals, colors);
