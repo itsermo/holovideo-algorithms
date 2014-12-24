@@ -151,17 +151,17 @@ int main(int argc, const char* argv[])
 	}
 
 
-	for (size_t i = 0; i < 5; i++)
+	while (true)
 	{
 		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 	}
 
-	dscp4_RemoveMesh("myID");
+	//dscp4_RemoveMesh("myID");
 
-	for (size_t i = 0; i < 5; i++)
-	{
-		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-	}
+	//for (size_t i = 0; i < 5; i++)
+	//{
+	//	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+	//}
 
 	dscp4_DeinitRenderer();
 

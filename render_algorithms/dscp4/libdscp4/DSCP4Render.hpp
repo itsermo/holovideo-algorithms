@@ -117,6 +117,8 @@ namespace dscp4
 
 		VSShaderLib* lightingShader_;
 
+		float rotateAngle_;
+
 #ifdef DSCP4_HAVE_LOG4CXX
 		log4cxx::LoggerPtr logger_ = log4cxx::Logger::getLogger("edu.mit.media.obmg.holovideo.dscp4.lib.renderer");
 #endif

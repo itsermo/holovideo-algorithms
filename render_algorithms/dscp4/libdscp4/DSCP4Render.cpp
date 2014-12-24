@@ -44,7 +44,8 @@ windowWidth_(nullptr),
 windowHeight_(nullptr),
 numWindows_(0),
 lightingShaderFragmentFileName_(lightingShaderFragmentFileName),
-lightingShaderVertexFileName_(lightingShaderVertexFileName)
+lightingShaderVertexFileName_(lightingShaderVertexFileName),
+rotateAngle_(0)
 {
 	if (shadersPath == nullptr)
 	{
@@ -106,14 +107,25 @@ bool DSCP4Render::initWindow(SDL_Window*& window, SDL_GLContext& glContext, int 
 	SDL_Rect bounds = { 0 };
 	SDL_GetDisplayBounds(thisWindowNum, &bounds);
 
-
+#ifdef _DEBUG
+	windowWidth_[thisWindowNum] = bounds.w/2;
+	windowHeight_[thisWindowNum] = bounds.h/2;
+	LOG4CXX_DEBUG(logger_, "Creating SDL OpenGL window " << thisWindowNum << ": " << bounds.w/2 << "x" << bounds.h/2 << " @ " << "{" << bounds.x+80 << "," << bounds.y+80 << "}");
+#else
 	windowWidth_[thisWindowNum] = bounds.w;
 	windowHeight_[thisWindowNum] = bounds.h;
-
 	LOG4CXX_DEBUG(logger_, "Creating SDL OpenGL window " << thisWindowNum << ": " << bounds.w << "x" << bounds.h << " @ " << "{" << bounds.x << "," << bounds.y << "}");
+#endif
 
-	window = SDL_CreateWindow(("dscp4-" + std::to_string(thisWindowNum)).c_str(), bounds.x, bounds.y, bounds.w, bounds.h, SDL_WINDOW_OPENGL | SDL_WINDOW_BORDERLESS);
+	
+
+#ifdef _DEBUG
+	window = SDL_CreateWindow(("dscp4-" + std::to_string(thisWindowNum)).c_str(), bounds.x+80, bounds.y+80, bounds.w/2, bounds.h/2, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
 	CHECK_SDL_RC(window == nullptr, "Could not create SDL window");
+#else
+	window = SDL_CreateWindow(("dscp4-" + std::to_string(thisWindowNum)).c_str(), bounds.x, bounds.y, bounds.w, bounds.h, SDL_WINDOW_OPENGL | SDL_WINDOW_FULLSCREEN);
+	CHECK_SDL_RC(window == nullptr, "Could not create SDL window");
+#endif
 
 	LOG4CXX_DEBUG(logger_, "Creating GL context from SDL window " << thisWindowNum);
 	glContext = SDL_GL_CreateContext(window);
@@ -291,6 +303,12 @@ void DSCP4Render::renderLoop()
 	
 	lightingShader_ = new VSShaderLib[numWindows_];
 
+	GLfloat lightPosition[] = { 1, 1, 1, 0.0 };
+	GLfloat lightAmbientColor[] = { 1.0, 1.0, 1.0, 1 };
+	GLfloat lightDiffuseColor[] = { 1.0f, 0.2, 1, 1 };
+	GLfloat lightSpecularColor[] = { 1, 1, 1, 1 };
+	GLfloat lightGlobalAmbient[] = { 1.0f, 1.0f, 1.0f, 1 };
+
 	for (int i = 0; i < numWindows_; i++)
 	{
 		initWindow(windows_[i], glContexts_[i], i);
@@ -316,31 +334,22 @@ void DSCP4Render::renderLoop()
 		/* Set the clear color. */
 		//glClearColor(0, 0, 0, 0);
 
-		GLfloat lightPosition[] = { 1, 1, 1, 0.0 };
-		GLfloat lightAmbientColor[] = { 1.0, 1.0, 1.0, 1 };
-		GLfloat lightDiffuseColor[] = { 1.0f, 0.2, 1, 1 };
-		GLfloat lightSpecularColor[] = { 1, 1, 1, 1 };
-		GLfloat lightGlobalAmbient[] = { 1.0f, 1.0f, 1.0f, 1 };
-
-		GLfloat materialSpecular[] = { 1.0, 1.0, 1.0, 1.0 };
-		GLfloat materialShininess[] = { 50.0 };
-
 		// GLUT settings
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glClearColor(0.0f, 0.0f, 0.0f, 0.0f); // Black Background
 
 		//glShadeModel(GL_FLAT); // Enable Smooth Shading
-		//glLightfv(GL_LIGHT0, GL_AMBIENT, lightAmbientColor);
-		//glLightfv(GL_LIGHT0, GL_DIFFUSE, lightDiffuseColor);
+		glLightfv(GL_LIGHT0, GL_AMBIENT, lightAmbientColor);
+		glLightfv(GL_LIGHT0, GL_DIFFUSE, lightDiffuseColor);
 		//glLightfv(GL_LIGHT0, GL_SPECULAR, lightSpecularColor);
 
 		//glLightModelfv(GL_AMBIENT, lightGlobalAmbient);
 
 		//glMaterialfv(GL_FRONT, GL_SPECULAR, materialSpecular);
 		//glMaterialfv(GL_FRONT, GL_SHININESS, materialShininess);
-		//glLightfv(GL_LIGHT0, GL_POSITION, lightPosition);
+		glLightfv(GL_LIGHT0, GL_POSITION, lightPosition);
 
-		//glEnable(GL_LIGHTING);
+		glEnable(GL_LIGHTING);
 		//glEnable(GL_LIGHT0);
 		//Takes care of occlusions for point cloud
 		//glEnable(GL_DEPTH_TEST);
@@ -387,6 +396,39 @@ void DSCP4Render::renderLoop()
 	{
 		SDL_Event event;
 		while (SDL_PollEvent(&event)) {
+			if (event.key.type == SDL_KEYDOWN)
+			{
+				switch (event.key.keysym.scancode)
+				{
+				case  SDL_Scancode::SDL_SCANCODE_LEFT:
+					rotateAngle_ -= 10;
+					break;
+				case SDL_Scancode::SDL_SCANCODE_RIGHT:
+					rotateAngle_ += 10;
+					break;
+				case  SDL_Scancode::SDL_SCANCODE_W:
+					lightPosition[1] += 0.1;
+					break;
+				case SDL_Scancode::SDL_SCANCODE_S:
+					lightPosition[1] -= 0.1;
+					break;
+				case  SDL_Scancode::SDL_SCANCODE_A:
+					lightPosition[0] -= 0.1;
+					break;
+				case SDL_Scancode::SDL_SCANCODE_D:
+					lightPosition[0] += 0.1;
+					break;
+				case  SDL_Scancode::SDL_SCANCODE_Z:
+					lightPosition[2] -= 0.1;
+					break;
+				case SDL_Scancode::SDL_SCANCODE_X:
+					lightPosition[2] += 0.1;
+
+					break;
+				default:
+					break;
+				}
+			}
 			// handle your event here
 		}
 		
@@ -402,22 +444,23 @@ void DSCP4Render::renderLoop()
 			glLoadIdentity();
 
 			/* Move down the z-axis. */
-			glTranslatef(0.0, 0.0, -5.0);
+			glTranslatef(0.0, 0.0, -2.5);
 
 			/* Rotate. */
-			glRotatef(angle, 0.0, 1.0, 0.0);
+			glRotatef(rotateAngle_, 0.0, 1.0, 0.0);
 
-			if (true) {
-				angle += 0.1;
-				if (angle > 360.0f) {
-					angle = 0.0f;
-				}
+			//if (true) {
+			//	angle += 0.1;
+			//	if (angle > 360.0f) {
+			//		angle = 0.0f;
+			//	}
 
-			}
+			//}
 
-			drawCube();
+			//drawCube();
 
 			glEnable(GL_DEPTH_TEST);
+			glEnable(GL_LIGHT0);
 
 			std::unique_lock<std::mutex> meshLock(meshMutex_);
 			for (auto it = meshes_.begin(); it != meshes_.end(); it++)
@@ -425,7 +468,7 @@ void DSCP4Render::renderLoop()
 				drawMesh(it->second);
 			}
 			meshLock.unlock();
-
+			glDisable(GL_LIGHT0);
 			glDisable(GL_DEPTH_TEST);
 
 		}
@@ -489,6 +532,9 @@ void DSCP4Render::drawMesh(const mesh_t& mesh)
 	glScalef(factor, factor, factor);
 	glTranslatef(-mesh.info.center_x, -mesh.info.center_y, -mesh.info.center_z);
 
+	glEnable(GL_COLOR_MATERIAL);
+	glEnable(GL_NORMALIZE);
+
 	if (mesh.colors)
 	{
 		glEnableClientState(GL_VERTEX_ARRAY);
@@ -512,6 +558,9 @@ void DSCP4Render::drawMesh(const mesh_t& mesh)
 
 		glDisableClientState(GL_VERTEX_ARRAY);
 	}
+
+	glDisable(GL_NORMALIZE);
+	glDisable(GL_COLOR_MATERIAL);
 
 	glPopMatrix();
 }
