@@ -188,7 +188,9 @@ int main(int argc, const char* argv[])
 
 	if ((shadeModelString == "flat" && generateNormals == "smooth") ||
 		(shadeModelString == "smooth" && generateNormals == "flat"))
+	{
 		LOG4CXX_WARN(logger, "Your normal generation mode and shading model are mis-matching.  Your model will probably look like crap")
+	}
 
 	autoScaleEnabled = options.getAutoscale();
 	dscp4_SetAutoScaleEnabled(renderContext, autoScaleEnabled);
