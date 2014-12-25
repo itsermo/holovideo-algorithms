@@ -11,7 +11,7 @@ extern "C"
 
 	DSCP4_API void dscp4_DestroyContext(dscp4_context_t* renderContext)
 	{
-		delete *renderContext;
+		delete (dscp4_context_t*)*renderContext;
 		*renderContext = nullptr;
 	}
 

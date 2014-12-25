@@ -12,6 +12,8 @@ include_directories(${OpenGL_INCLUDE_DIR})
 include_directories(${GLEW_INCLUDE_DIR})
 include_directories(${GLM_INCLUDE_DIRS})
 
+add_definitions(-DGLM_FORCE_RADIANS)
+
 if(X11_FOUND)
 	include_directories(${X11_INCLUDE_DIR})
 endif()
