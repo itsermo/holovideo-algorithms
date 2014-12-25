@@ -27,10 +27,21 @@ inputOptions_("Input options")
 		"finds the 3d model bounding sphere, scales the model and places it at the origin")
 		("shade-model,s",
 		boost::program_options::value<std::string>()->default_value(DSCP4_RENDER_DEFAULT_SHADEMODEL),
-		"the shading model. valid options are 'off' to turn off all lighting, 'flat' and 'smooth'");
+		"the shading model. valid options are 'off' to turn off all lighting, 'flat' and 'smooth'")
+		("render-mode,m",
+		boost::program_options::value<std::string>()->default_value(DSCP4_RENDER_DEFAULT_MODE),
+		"sets the render mode. valid options are 'viewing', 'stereogram', and 'holovideo'");
 
 	allOptions_.add(generalOptions_).add(inputOptions_).add(renderOptions_);
+}
 
+DSCP4ProgramOptions::~DSCP4ProgramOptions()
+{
+
+}
+
+void DSCP4ProgramOptions::parseConfigFile()
+{
 	//check for working path conf file first
 	try
 	{
@@ -46,8 +57,8 @@ inputOptions_("Input options")
 #else
 		homePathStr = std::string(getenv("HOME")).append("/.").append(DSCP4_PATH_PREFIX).append("/").append(DSCP4_CONF_FILENAME);
 #endif
-		LOG4CXX_DEBUG(logger_, "Could not find '" << DSCP4_CONF_FILENAME <<"' in current working dir '" << boost::filesystem::current_path().string() << "'");
-		LOG4CXX_DEBUG(logger_, "Continuing search for conf file at '" << homePathStr << "'...");
+		LOG4CXX_DEBUG(logger_, "Could not find '" << DSCP4_CONF_FILENAME << "' in current working dir '" << boost::filesystem::current_path().string() << "'")
+		LOG4CXX_DEBUG(logger_, "Continuing search for conf file at '" << homePathStr << "'...")
 		try
 		{
 			boost::property_tree::ini_parser::read_ini(homePathStr.c_str(), pt_);
@@ -63,15 +74,15 @@ inputOptions_("Input options")
 			globalPathStr = std::string("/etc/").append(DSCP4_PATH_PREFIX).append(DSCP4_CONF_FILENAME);
 
 #endif
-			LOG4CXX_DEBUG(logger_, "Could not find conf file at '" << homePathStr << "'");
-			LOG4CXX_DEBUG(logger_, "Continuing search for conf file at '" << globalPathStr << "'...");
+			LOG4CXX_DEBUG(logger_, "Could not find conf file at '" << homePathStr << "'")
+			LOG4CXX_DEBUG(logger_, "Continuing search for conf file at '" << globalPathStr << "'...")
 			try{
 				boost::property_tree::ini_parser::read_ini(globalPathStr.c_str(), pt_);
 			}
 			catch (std::exception)
 			{
 				LOG4CXX_ERROR(logger_, "Could not find '" << DSCP4_CONF_FILENAME << "' configuration file. You're on your own!")
-				return;
+					return;
 			}
 		}
 
@@ -85,11 +96,6 @@ inputOptions_("Input options")
 	{
 		verbosity_ = DSCP4_DEFAULT_VERBOSITY;
 	}
-}
-
-DSCP4ProgramOptions::~DSCP4ProgramOptions()
-{
-
 }
 
 void DSCP4ProgramOptions::parseCommandLine(int argc, const char* argv[])

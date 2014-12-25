@@ -2,6 +2,16 @@
 
 #ifdef DSCP4_HAVE_LOG4CXX
 #include <log4cxx/logger.h>
+#include <log4cxx/patternlayout.h>
+#include <log4cxx/consoleappender.h>
+#include <log4cxx/basicconfigurator.h>
+#else
+#define LOG4CXX_TRACE(logger, expression)    
+#define LOG4CXX_DEBUG(logger, expression)    
+#define LOG4CXX_INFO(logger, expression)   
+#define LOG4CXX_WARN(logger, expression)    
+#define LOG4CXX_ERROR(logger, expression)    
+#define LOG4CXX_FATAL(logger, expression) 
 #endif
 
 #ifdef WIN32
@@ -28,12 +38,13 @@
 
 #include <boost/filesystem.hpp>
 
-#define DSCP4_DEFAULT_VOXEL_SIZE 5
+#define DSCP4_DEFAULT_VOXEL_SIZE 5.0f
 #define DSCP4_XINERAMA_ENABLED true
 #define DSCP4_LIGHTING_SHADER_VERTEX_FILENAME "pointlight.vert"
 #define DSCP4_LIGHTING_SHADER_FRAGMENT_FILENAME "pointlight.frag"
 #define DSCP4_AUTO_SCALE_ENABLED true
-#define DSCP4_LIGHTING_SHADE_MODEL SHADE_MODEL_FLAT
+#define DSCP4_LIGHTING_SHADE_MODEL DSCP4_SHADE_MODEL_FLAT
+#define DSCP4_RENDER_MODE_DEFAULT DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE
 
 namespace dscp4
 {
@@ -41,25 +52,13 @@ namespace dscp4
 	{
 	public:
 		
-		enum SIMPLE_OBJECT_TYPE{
-			SIMPLE_OBJECT_TYPE_SPHERE = 0,
-			SIMPLE_OBJECT_TYPE_CUBE = 1,
-			SIMPLE_OBJECT_TYPE_PYRAMID = 2
-		};
-
-		enum SHADE_MODEL {
-			SHADE_MODEL_OFF = 0,
-			SHADE_MODEL_FLAT = 1,
-			SHADE_MODEL_SMOOTH = 2
-		};
-
 		DSCP4Render();
 		DSCP4Render(const char* shadersPath, const char* lightingShaderVertexFileName, const char* lightingShaderFragmentFileName);
 		~DSCP4Render();
 		bool init();
 		void deinit();
 
-		void addSimpleObject(SIMPLE_OBJECT_TYPE object, float *center, float size);
+		void addSimpleObject(simple_object_t object, float *center, float size);
 		
 		// Finds the bounding sphere of a mesh, centers the mesh and scales it down or up to radius == 1.0
 		void addMesh(const char *id, int numVertices, float *vertices, float * normals = nullptr, float *colors = nullptr, unsigned int numVertexDimensions = 3, unsigned int numColorChannels = 4);
@@ -70,10 +69,11 @@ namespace dscp4
 		void addPointCloud(const char *id, float *points, int numPoints, bool hasColorData = true);
 		void removePointCloud(const char *id) { this->removeMesh(id); }
 
-		void setShadingModel(SHADE_MODEL shadeModel) { shadeModel_ = shadeModel; }
+		void setRenderMode(render_mode_t renderMode) { renderMode_ = renderMode; }
+		void setShadingModel(shade_model_t shadeModel) { shadeModel_ = shadeModel; }
 		void setAutoScaleEnabled(bool autoScaleEnabled) { autoScaleEnabled_ = autoScaleEnabled; }
 
-		void* getContext();
+		void* getContext(); 
 
 	private:
 
@@ -133,8 +133,9 @@ namespace dscp4
 		float rotateIncrement_;
 		bool rotateOn_;
 
-		SHADE_MODEL shadeModel_;
+		shade_model_t shadeModel_;
 		bool autoScaleEnabled_;
+		render_mode_t renderMode_;
 
 #ifdef DSCP4_HAVE_LOG4CXX
 		log4cxx::LoggerPtr logger_ = log4cxx::Logger::getLogger("edu.mit.media.obmg.holovideo.dscp4.lib.renderer");

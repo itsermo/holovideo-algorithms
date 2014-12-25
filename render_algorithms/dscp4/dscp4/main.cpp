@@ -33,9 +33,10 @@ int main(int argc, const char* argv[])
 #ifdef DSCP4_HAVE_LOG4CXX
 	auto logger = createLogger();
 	logger->setLevel(log4cxx::Level::getError());
+	int logLevel;
 #endif
 
-	int logLevel;
+	dscp4_context_t renderContext = nullptr;
 	boost::filesystem::path objectFilePath;
 	Assimp::Importer objectFileImporter;
 	const aiScene* objectScene = nullptr;
@@ -43,8 +44,11 @@ int main(int argc, const char* argv[])
 	std::string generateNormals;
 	unsigned int aiFlags = 0;
 	bool autoScaleEnabled = false;
+	render_mode_t renderMode;
 
 	DSCP4ProgramOptions options;
+
+	options.parseConfigFile();
 
 	try {
 		options.parseCommandLine(argc, argv);
@@ -63,6 +67,7 @@ int main(int argc, const char* argv[])
 		return -1;
 	}
 
+#ifdef DSCP4_HAVE_LOG4CXX
 	logLevel = options.getVerbosity();
 
 	switch (logLevel)
@@ -85,6 +90,7 @@ int main(int argc, const char* argv[])
 		return -1;
 		break;
 	}
+#endif
 
 	objectFilePath = boost::filesystem::path(options.getFileName());
 
@@ -121,61 +127,79 @@ int main(int argc, const char* argv[])
 	if (triangulateMesh)
 	{
 		aiFlags |= aiProcess_Triangulate;
-		LOG4CXX_DEBUG(logger, "Set flag for asset importer to triangulate 3d object file mesh");
+		LOG4CXX_DEBUG(logger, "Set flag for asset importer to triangulate 3d object file mesh")
 	}
 
-	LOG4CXX_INFO(logger, "Starting DSCP4 test program...");
+	LOG4CXX_INFO(logger, "Starting DSCP4 test program...")
 
-	LOG4CXX_INFO(logger, "Loading 3D object file \'" << objectFilePath.filename().string() << "\'...");
+	LOG4CXX_INFO(logger, "Loading 3D object file \'" << objectFilePath.filename().string() << "\'...")
 	objectScene = objectFileImporter.ReadFile(objectFilePath.string(), aiFlags);
 
 
 	if (!objectScene->HasMeshes())
 	{
-		LOG4CXX_FATAL(logger, "3D object file does not appear to have any meshes");
+		LOG4CXX_FATAL(logger, "3D object file does not appear to have any meshes")
 		return -1;
 	}
 
-	LOG4CXX_INFO(logger, "Starting DSCP4 lib");
-	if (!dscp4_InitRenderer())
+	LOG4CXX_INFO(logger, "Starting DSCP4 lib")
+	renderContext = dscp4_CreateContext();
+
+	std::string renderModeString = options.getRenderMode();
+	renderMode = renderModeString == "viewing" ? DSCP4_RENDER_MODE_MODEL_VIEWING : renderModeString == "stereogram" ? DSCP4_RENDER_MODE_STEREOGRAM_VIEWING : DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE;
+	dscp4_SetRenderMode(renderContext, renderMode);
+
+	switch (renderMode)
 	{
-		LOG4CXX_FATAL(logger, "Could not initialize DSCP4 lib");
+	case DSCP4_RENDER_MODE_MODEL_VIEWING:
+		LOG4CXX_INFO(logger, "Rendering mode set to model viewing mode (for testing renderer on a normal display)")
+			break;
+	case DSCP4_RENDER_MODE_STEREOGRAM_VIEWING:
+		LOG4CXX_INFO(logger, "Rendering mode set to panoramagram viewing mode (for testing renderer on a normal display)")
+			break;
+	case DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE:
+		LOG4CXX_INFO(logger, "Rendering mode set to holovideo fringe computation (for holovideo output)")
+	default:
+		break;
+	}
+
+	if (!dscp4_InitRenderer(renderContext))
+	{
+		LOG4CXX_FATAL(logger, "Could not initialize DSCP4 lib")
 		return -1;
 	}
 
 	std::string shadeModelString = options.getShadeModel();
 	if (shadeModelString == "off")
 	{
-		dscp4_SetShadeModel(DSCP4_SHADE_MODEL_OFF);
-		LOG4CXX_DEBUG(logger, "Turned off all lighting effects for renderer");
+		dscp4_SetShadeModel(renderContext, DSCP4_SHADE_MODEL_OFF);
+		LOG4CXX_DEBUG(logger, "Turned off all lighting effects for renderer")
 	}
 	else if (shadeModelString == "flat")
 	{
-		dscp4_SetShadeModel(DSCP4_SHADE_MODEL_FLAT);
-		LOG4CXX_DEBUG(logger, "Set renderer shading model to 'flat'");
+		dscp4_SetShadeModel(renderContext, DSCP4_SHADE_MODEL_FLAT);
+		LOG4CXX_DEBUG(logger, "Set renderer shading model to 'flat'")
 	}
 	else if (shadeModelString == "smooth")
 	{
-		dscp4_SetShadeModel(DSCP4_SHADE_MODEL_SMOOTH);
-		LOG4CXX_DEBUG(logger, "Set renderer shading model to 'smooth'");
+		dscp4_SetShadeModel(renderContext, DSCP4_SHADE_MODEL_SMOOTH);
+		LOG4CXX_DEBUG(logger, "Set renderer shading model to 'smooth'")
 	}
 
 	if ((shadeModelString == "flat" && generateNormals == "smooth") ||
 		(shadeModelString == "smooth" && generateNormals == "flat"))
-		LOG4CXX_WARN(logger, "Your normal generation mode and shading model are mis-matching.  Your model will probably look like crap");
+		LOG4CXX_WARN(logger, "Your normal generation mode and shading model are mis-matching.  Your model will probably look like crap")
 
 	autoScaleEnabled = options.getAutoscale();
+	dscp4_SetAutoScaleEnabled(renderContext, autoScaleEnabled);
 	if (autoScaleEnabled)
 	{
-		dscp4_SetAutoScaleEnabled(true);
-		LOG4CXX_DEBUG(logger, "Renderer model autoscaling and centering enabled");
+		LOG4CXX_DEBUG(logger, "Renderer model autoscaling and centering enabled")
 	}
 	else
 	{
-		dscp4_SetAutoScaleEnabled(false);
-		LOG4CXX_DEBUG(logger, "Renderer model autoscaling and centering disabled");
+		LOG4CXX_DEBUG(logger, "Renderer model autoscaling and centering disabled")
 	}
-		
 
 	for (unsigned int m = 0; m < objectScene->mNumMeshes; m++)
 	{
@@ -184,29 +208,35 @@ int main(int argc, const char* argv[])
 		{
 			std::string meshID;
 			meshID += std::string("Mesh ") += std::to_string(m);
-			LOG4CXX_INFO(logger, "Found " << meshID << " from 3D object file '" << objectFilePath.string() << "'");
-			LOG4CXX_INFO(logger, meshID << " has " << objectScene->mMeshes[m]->mNumVertices << " vertices");
+			LOG4CXX_INFO(logger, "Found " << meshID << " from 3D object file '" << objectFilePath.string() << "'")
+			LOG4CXX_INFO(logger, meshID << " has " << objectScene->mMeshes[m]->mNumVertices << " vertices")
 			if (objectScene->mMeshes[m]->HasNormals())
-				LOG4CXX_INFO(logger, meshID <<  " has normals")
+			{
+				LOG4CXX_INFO(logger, meshID << " has normals")
+			}
 			else
-			LOG4CXX_WARN(logger, meshID << " does not have normals, lighting effects might be fucked up");
+			{
+				LOG4CXX_WARN(logger, meshID << " does not have normals, lighting effects will look fucked up")
+			}
 
 			LOG4CXX_INFO(logger, meshID << " has " << objectScene->mMeshes[m]->mNumFaces << " faces")
 
 			if (objectScene->mMeshes[m]->HasVertexColors(0))
 			{
-				LOG4CXX_INFO(logger, meshID << " has vertex colors");
-				dscp4_AddMesh(meshID.c_str(), objectScene->mMeshes[m]->mNumVertices, (float*)objectScene->mMeshes[m]->mVertices, (float*)objectScene->mMeshes[m]->mNormals, (float*)objectScene->mMeshes[m]->mColors[0]);
+				LOG4CXX_INFO(logger, meshID << " has vertex colors")
+				dscp4_AddMesh(renderContext, meshID.c_str(), objectScene->mMeshes[m]->mNumVertices, (float*)objectScene->mMeshes[m]->mVertices, (float*)objectScene->mMeshes[m]->mNormals, (float*)objectScene->mMeshes[m]->mColors[0]);
 			}
 			else
 			{
-				LOG4CXX_WARN(logger, meshID << " does not have vertex colors--it may look dull");
-				dscp4_AddMesh(meshID.c_str(), objectScene->mMeshes[m]->mNumVertices, (float*)objectScene->mMeshes[m]->mVertices, (float*)objectScene->mMeshes[m]->mNormals);
+				LOG4CXX_WARN(logger, meshID << " does not have vertex colors--it may look dull")
+				dscp4_AddMesh(renderContext, meshID.c_str(), objectScene->mMeshes[m]->mNumVertices, (float*)objectScene->mMeshes[m]->mVertices, (float*)objectScene->mMeshes[m]->mNormals);
 			}
 				
 		}
 		else
-			LOG4CXX_DEBUG(logger, "Found mesh " << m << " with no faces.  Treating vertecies as point cloud");
+		{
+			LOG4CXX_DEBUG(logger, "Found mesh " << m << " with no faces.  Treating vertecies as point cloud")
+		}
 	}
 
 	for (unsigned int m = 0; m < objectScene->mNumMaterials; m++)
@@ -227,25 +257,29 @@ int main(int argc, const char* argv[])
 			//AddMesh((float*)objectScene->mMeshes[m]->mVertices, objectScene->mMeshes[m]->mNumVertices);
 		}
 		else
-			LOG4CXX_DEBUG(logger, "Found Mesh " << m << " with no faces.  Treating vertecies as point cloud");
+		{
+			LOG4CXX_DEBUG(logger, "Found Mesh " << m << " with no faces.  Treating vertecies as point cloud")
+		}
 	}
 
-
-	while(true)
-	{
-		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-	}
-
-	dscp4_RemoveMesh("Mesh 0");
 
 	for (size_t i = 0; i < 5; i++)
 	{
 		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 	}
 
-	dscp4_DeinitRenderer();
+	dscp4_RemoveMesh(renderContext, "Mesh 0");
 
-	LOG4CXX_INFO(logger, "DSCP4 test program successfully exited");
+	for (size_t i = 0; i < 5; i++)
+	{
+		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+	}
+
+	dscp4_DeinitRenderer(renderContext);
+
+	dscp4_DestroyContext(&renderContext);
+
+	LOG4CXX_INFO(logger, "DSCP4 test program successfully exited")
 
 	return 0;
 }

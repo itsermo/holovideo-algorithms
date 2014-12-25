@@ -8,6 +8,13 @@
 
 #ifdef DSCP4_HAVE_LOG4CXX
 #include <log4cxx/logger.h>
+#else
+#define LOG4CXX_TRACE(logger, expression)    
+#define LOG4CXX_DEBUG(logger, expression)    
+#define LOG4CXX_INFO(logger, expression)   
+#define LOG4CXX_WARN(logger, expression)    
+#define LOG4CXX_ERROR(logger, expression)    
+#define LOG4CXX_FATAL(logger, expression) 
 #endif
 
 #define DSCP4_CONF_FILENAME "dscp4.conf"
@@ -16,6 +23,7 @@
 #define DSCP4_INPUT_DEFAULT_OBJECT_FILENAME "bun_zipper_res4.ply"
 #define DSCP4_INPUT_DEFAULT_GEN_NORMALS "flat"
 #define DSCP4_INPUT_DEFAULT_TRIANGULATE_MESH true
+#define DSCP4_RENDER_DEFAULT_MODE "holovideo"
 #define DSCP4_RENDER_DEFAULT_AUTOSCALE true
 #define DSCP4_RENDER_DEFAULT_SHADEMODEL "flat"
 
@@ -31,6 +39,7 @@ public:
 	DSCP4ProgramOptions();
 	~DSCP4ProgramOptions();
 
+	void parseConfigFile();
 	void parseCommandLine(int argc, const char* argv[]);
 
 	void printOptions(DSCP4_OPTIONS_TYPE options);
@@ -42,13 +51,14 @@ public:
 	bool getTriangulateMesh() { return vm_["triangulate-mesh"].as<bool>(); }
 	bool getAutoscale() { return vm_["autoscale"].as<bool>(); }
 	std::string getShadeModel() { return vm_["shade-model"].as<std::string>(); }
-	
+	std::string getRenderMode() { return vm_["render-mode"].as<std::string>(); }
 
 	boost::filesystem::path getInstallPath() { return pt_.get<std::string>("general.install_path"); }
 	boost::filesystem::path getBinPath() { return pt_.get<std::string>("general.bin_path"); }
 	boost::filesystem::path getLibPath() { return pt_.get<std::string>("general.lib_path"); }
 	boost::filesystem::path getModelsPath() { return pt_.get<std::string>("general.models_path"); }
 	boost::filesystem::path getShadersPath() { return pt_.get<std::string>("general.shaders_path"); }
+
 
 private:
 	boost::property_tree::ptree pt_;

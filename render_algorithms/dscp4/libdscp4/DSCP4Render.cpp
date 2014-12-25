@@ -8,8 +8,8 @@
 #define CHECK_SDL_RC(rc_condition, what)				\
 	if (rc_condition)									\
 		{												\
-			LOG4CXX_ERROR(logger_, what);				\
-			LOG4CXX_ERROR(logger_, SDL_GetError());		\
+			LOG4CXX_ERROR(logger_, what)				\
+			LOG4CXX_ERROR(logger_, SDL_GetError())		\
 			deinit();									\
 			return false;								\
 		}												\
@@ -17,15 +17,15 @@
 #define CHECK_GLEW_RC(rc_condition, what)				\
 if (rc_condition)										\
 		{												\
-		LOG4CXX_ERROR(logger_, what);					\
-		LOG4CXX_ERROR(logger_, glewGetErrorString());	\
+		LOG4CXX_ERROR(logger_, what)					\
+		LOG4CXX_ERROR(logger_, glewGetErrorString())	\
 		}
 
 #define CHECK_GL_RC(what)								\
 if (glGetError() != GL_NO_ERROR)						\
 		{												\
-		LOG4CXX_ERROR(logger_, what);					\
-		LOG4CXX_ERROR(logger_, glewGetErrorString());	\
+		LOG4CXX_ERROR(logger_, what)					\
+		LOG4CXX_ERROR(logger_, glewGetErrorString())	\
 		}												\
 
 using namespace dscp4;
@@ -49,15 +49,33 @@ rotateAngle_(0),
 rotateIncrement_(1.0f),
 rotateOn_(false),
 shadeModel_(DSCP4_LIGHTING_SHADE_MODEL),
-autoScaleEnabled_(DSCP4_AUTO_SCALE_ENABLED)
+autoScaleEnabled_(DSCP4_AUTO_SCALE_ENABLED),
+renderMode_(DSCP4_RENDER_MODE_DEFAULT)
 {
 	if (shadersPath == nullptr)
 	{
-		LOG4CXX_WARN(logger_, "No shader path location specified, using current working path: " << boost::filesystem::current_path().string());
+		LOG4CXX_WARN(logger_, "No shader path location specified, using current working path: " << boost::filesystem::current_path().string())
 		shadersPath_ = boost::filesystem::current_path();
 	}
 	else
 		shadersPath_ = boost::filesystem::path(shadersPath);
+
+#ifdef DSCP4_HAVE_LOG4CXX
+	
+	log4cxx::BasicConfigurator::resetConfiguration();
+
+#ifdef WIN32
+	log4cxx::PatternLayoutPtr logLayoutPtr = new log4cxx::PatternLayout(L"%-5p %m%n");
+#else
+	log4cxx::PatternLayoutPtr logLayoutPtr = new log4cxx::PatternLayout("%-5p %m%n");
+#endif
+
+
+	log4cxx::ConsoleAppenderPtr logAppenderPtr = new log4cxx::ConsoleAppender(logLayoutPtr);
+	log4cxx::BasicConfigurator::configure(logAppenderPtr);
+
+#endif
+
 }
 
 DSCP4Render::~DSCP4Render()
@@ -69,8 +87,8 @@ bool DSCP4Render::init()
 {
 	LOG4CXX_INFO(logger_, "Initializing DSCP4...")
 
-	LOG4CXX_INFO(logger_, "Initializing SDL with video subsystem");
-	CHECK_SDL_RC(SDL_Init(SDL_INIT_VIDEO) < 0, "Could not initialize SDL");
+	LOG4CXX_INFO(logger_, "Initializing SDL with video subsystem")
+	CHECK_SDL_RC(SDL_Init(SDL_INIT_VIDEO) < 0, "Could not initialize SDL")
 
 	// If we can get the number of Windows from Xinerama
 	// we can create a pixel buffer for each Window
@@ -78,7 +96,7 @@ bool DSCP4Render::init()
 	if (numWindows_ == 0)
 		numWindows_ = SDL_GetNumVideoDisplays();
 
-	LOG4CXX_INFO(logger_, "Number of displays: " << numWindows_);
+	LOG4CXX_INFO(logger_, "Number of displays: " << numWindows_)
 
 	SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
@@ -107,34 +125,33 @@ bool DSCP4Render::init()
 
 bool DSCP4Render::initWindow(SDL_Window*& window, SDL_GLContext& glContext, int thisWindowNum)
 {
-	LOG4CXX_DEBUG(logger_, "Inititalizing SDL for Window " << thisWindowNum);
+	LOG4CXX_DEBUG(logger_, "Inititalizing SDL for Window " << thisWindowNum)
 	SDL_Rect bounds = { 0 };
 	SDL_GetDisplayBounds(thisWindowNum, &bounds);
 
-#ifdef _DEBUG
-	windowWidth_[thisWindowNum] = bounds.w/2;
-	windowHeight_[thisWindowNum] = bounds.h/2;
-	LOG4CXX_DEBUG(logger_, "Creating SDL OpenGL Window " << thisWindowNum << ": " << bounds.w/2 << "x" << bounds.h/2 << " @ " << "{" << bounds.x+80 << "," << bounds.y+80 << "}");
-#else
-	windowWidth_[thisWindowNum] = bounds.w;
-	windowHeight_[thisWindowNum] = bounds.h;
-	LOG4CXX_DEBUG(logger_, "Creating SDL OpenGL Window " << thisWindowNum << ": " << bounds.w << "x" << bounds.h << " @ " << "{" << bounds.x << "," << bounds.y << "}");
-#endif
-
+	switch (renderMode_)
+	{
+	case DSCP4_RENDER_MODE_MODEL_VIEWING:
+	case DSCP4_RENDER_MODE_STEREOGRAM_VIEWING:
+		windowWidth_[thisWindowNum] = bounds.w / 2;
+		windowHeight_[thisWindowNum] = bounds.h / 2;
+		LOG4CXX_DEBUG(logger_, "Creating SDL OpenGL Window " << thisWindowNum << ": " << bounds.w / 2 << "x" << bounds.h / 2 << " @ " << "{" << bounds.x + 80 << "," << bounds.y + 80 << "}")
+		window = SDL_CreateWindow(("dscp4-" + std::to_string(thisWindowNum)).c_str(), bounds.x + 80, bounds.y + 80, bounds.w / 2, bounds.h / 2, SDL_WINDOW_OPENGL);
+		break;
+	case DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE:
+		windowWidth_[thisWindowNum] = bounds.w;
+		windowHeight_[thisWindowNum] = bounds.h;
+		LOG4CXX_DEBUG(logger_, "Creating SDL OpenGL Window " << thisWindowNum << ": " << bounds.w << "x" << bounds.h << " @ " << "{" << bounds.x << "," << bounds.y << "}")
+		window = SDL_CreateWindow(("dscp4-" + std::to_string(thisWindowNum)).c_str(), bounds.x, bounds.y, bounds.w, bounds.h, SDL_WINDOW_OPENGL | SDL_WINDOW_BORDERLESS);
+		SDL_ShowCursor(SDL_DISABLE);
+		break;
+	default:
+		break;
+	}
 	
-
-#ifdef _DEBUG
-	window = SDL_CreateWindow(("dscp4-" + std::to_string(thisWindowNum)).c_str(), bounds.x+80, bounds.y+80, bounds.w/2, bounds.h/2, SDL_WINDOW_OPENGL);
 	CHECK_SDL_RC(window == nullptr, "Could not create SDL window");
-#else
-	window = SDL_CreateWindow(("dscp4-" + std::to_string(thisWindowNum)).c_str(), bounds.x, bounds.y, bounds.w, bounds.h, SDL_WINDOW_OPENGL | SDL_WINDOW_BORDERLESS);
-	CHECK_SDL_RC(window == nullptr, "Could not create SDL window");
-	SDL_ShowCursor(SDL_DISABLE);
-#endif
 
-	
-
-	LOG4CXX_DEBUG(logger_, "Creating GL Context from SDL window " << thisWindowNum);
+	LOG4CXX_DEBUG(logger_, "Creating GL Context from SDL window " << thisWindowNum)
 	glContext = SDL_GL_CreateContext(window);
 
 	return true;
@@ -142,18 +159,18 @@ bool DSCP4Render::initWindow(SDL_Window*& window, SDL_GLContext& glContext, int 
 
 void DSCP4Render::deinitWindow(SDL_Window*& window, SDL_GLContext& glContext, int thisWindowNum)
 {
-	LOG4CXX_DEBUG(logger_, "Deinitializing SDL for Window " << thisWindowNum);
+	LOG4CXX_DEBUG(logger_, "Deinitializing SDL for Window " << thisWindowNum)
 
 	if (glContext)
 	{
-		LOG4CXX_DEBUG(logger_, "Destroying GL Context " << thisWindowNum << "...");
+		LOG4CXX_DEBUG(logger_, "Destroying GL Context " << thisWindowNum << "...")
 		SDL_GL_DeleteContext(glContext);
 		glContext = nullptr;
 	}
 
 	if (window)
 	{
-		LOG4CXX_DEBUG(logger_, "Destroying SDL Window " << thisWindowNum << "...");
+		LOG4CXX_DEBUG(logger_, "Destroying SDL Window " << thisWindowNum << "...")
 		SDL_DestroyWindow(window);
 		window = nullptr;
 	}
@@ -385,7 +402,7 @@ void DSCP4Render::renderLoop()
 	}
 
 	if (resAreDifferent)
-		LOG4CXX_WARN(logger_, "Multiple displays with different resolutions. You're on your own...");
+		LOG4CXX_WARN(logger_, "Multiple displays with different resolutions. You're on your own...")
 
 	//init shaders
 
@@ -454,10 +471,10 @@ void DSCP4Render::renderLoop()
 		{
 			SDL_GL_MakeCurrent(windows_[i], glContexts_[i]);
 
-			if (shadeModel_ != SHADE_MODEL_OFF)
+			if (shadeModel_ != DSCP4_SHADE_MODEL_OFF)
 				glEnable(GL_LIGHTING);
 
-			glShadeModel(shadeModel_ == SHADE_MODEL_SMOOTH ? GL_SMOOTH : GL_FLAT );
+			glShadeModel(shadeModel_ == DSCP4_SHADE_MODEL_SMOOTH ? GL_SMOOTH : GL_FLAT);
 
 			/* Clear the color and depth buffers. */
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -514,9 +531,9 @@ void DSCP4Render::renderLoop()
 
 void DSCP4Render::deinit()
 {
-	LOG4CXX_INFO(logger_, "Deinitializing DSCP4...");
+	LOG4CXX_INFO(logger_, "Deinitializing DSCP4...")
 
-	LOG4CXX_DEBUG(logger_, "Waiting for render thread to stop...");
+	LOG4CXX_DEBUG(logger_, "Waiting for render thread to stop...")
 	shouldRender_ = false;
 	renderThread_.join();
 
@@ -538,7 +555,7 @@ void DSCP4Render::deinit()
 		glContexts_ = nullptr;
 	}
 
-	LOG4CXX_DEBUG(logger_, "Destroying SDL context");
+	LOG4CXX_DEBUG(logger_, "Destroying SDL context")
 	SDL_Quit();
 }
 
