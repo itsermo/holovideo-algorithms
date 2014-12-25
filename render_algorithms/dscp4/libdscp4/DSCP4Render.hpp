@@ -129,7 +129,8 @@ namespace dscp4
 
 		VSShaderLib* lightingShader_;
 
-		float rotateAngle_;
+		float rotateAngleX_;
+		float rotateAngleY_;
 		float rotateIncrement_;
 		bool rotateOn_;
 

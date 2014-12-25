@@ -45,7 +45,8 @@ windowHeight_(nullptr),
 numWindows_(0),
 lightingShaderFragmentFileName_(lightingShaderFragmentFileName),
 lightingShaderVertexFileName_(lightingShaderVertexFileName),
-rotateAngle_(0),
+rotateAngleX_(0),
+rotateAngleY_(0),
 rotateIncrement_(1.0f),
 rotateOn_(false),
 shadeModel_(DSCP4_LIGHTING_SHADE_MODEL),
@@ -327,7 +328,7 @@ void DSCP4Render::renderLoop()
 	
 	lightingShader_ = new VSShaderLib[numWindows_];
 
-	GLfloat lightPosition[] = { 1, 1, 1, 0.0 };
+	GLfloat lightPosition[] = { -0.7f, 0.7f, 0.5f, 0.0 };
 	GLfloat lightAmbientColor[] = { 0.2f, 0.2f, 0.2f, 1 };
 	GLfloat lightDiffuseColor[] = { 1.0f, 1.0f, 1.0f, 1 };
 	GLfloat lightSpecularColor[] = { 1, 1, 1, 1 };
@@ -419,17 +420,23 @@ void DSCP4Render::renderLoop()
 			{
 				switch (event.key.keysym.scancode)
 				{
+				case  SDL_Scancode::SDL_SCANCODE_UP:
+					rotateAngleX_ -= 10;
+					break;
+				case  SDL_Scancode::SDL_SCANCODE_DOWN:
+					rotateAngleX_ += 10;
+					break;
 				case  SDL_Scancode::SDL_SCANCODE_LEFT:
 					if (rotateOn_)
 						rotateIncrement_ -= 0.1f;
 					else
-						rotateAngle_ -= 10;
+						rotateAngleY_ -= 10;
 					break;
 				case SDL_Scancode::SDL_SCANCODE_RIGHT:
 					if (rotateOn_)
 						rotateIncrement_ += 0.1f;
 					else
-						rotateAngle_ += 10;
+						rotateAngleY_ += 10;
 					break;
 				case  SDL_Scancode::SDL_SCANCODE_W:
 					lightPosition[1] += 0.1f;
@@ -460,9 +467,9 @@ void DSCP4Render::renderLoop()
 		}
 
 		if (rotateOn_) {
-			rotateAngle_ += rotateIncrement_;
-			if (rotateAngle_ > 360.0f) {
-				rotateAngle_ = 0.0f;
+			rotateAngleY_ += rotateIncrement_;
+			if (rotateAngleY_ > 360.0f) {
+				rotateAngleY_ = 0.0f;
 			}
 
 		}
@@ -492,7 +499,8 @@ void DSCP4Render::renderLoop()
 			glTranslatef(0.0, 0.0, -2.0f);
 
 			/* Rotate. */
-			glRotatef(rotateAngle_, 0.0, 1.0, 0.0);
+			glRotatef(rotateAngleX_, 1.0, 0.0, 0.0);
+			glRotatef(rotateAngleY_, 0.0, 1.0, 0.0);
 
 			glEnable(GL_DEPTH_TEST);
 			glEnable(GL_LIGHT0);

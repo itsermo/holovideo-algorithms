@@ -48,7 +48,14 @@ int main(int argc, const char* argv[])
 
 	DSCP4ProgramOptions options;
 
-	options.parseConfigFile();
+	try
+	{
+		options.parseConfigFile();
+	}
+	catch (std::exception)
+	{
+		LOG4CXX_WARN(logger, "Could not find dscp4.conf file. Using default option values, but your milage will vary")
+	}
 
 	try {
 		options.parseCommandLine(argc, argv);
@@ -96,9 +103,20 @@ int main(int argc, const char* argv[])
 
 	if (!boost::filesystem::exists(objectFilePath))
 	{
-		std::cout << "Invalid 3D object input file path (file not found)" << std::endl;
-		options.printOptions(DSCP4ProgramOptions::DSCP4_OPTIONS_TYPE_INPUT);
-		return -1;
+		try {
+			objectFilePath = options.getModelsPath() / objectFilePath;
+		}
+		catch (std::exception)
+		{
+			LOG4CXX_ERROR(logger, "Couldn't find model path from '" << DSCP4_CONF_FILENAME << "' file")
+		}
+
+		if (!boost::filesystem::exists(objectFilePath))
+		{
+			std::cout << "Invalid 3D object input file path (file not found)" << std::endl;
+			options.printOptions(DSCP4ProgramOptions::DSCP4_OPTIONS_TYPE_INPUT);
+			return -1;
+		}
 	}
 
 	generateNormals = options.getGenerateNormals();
@@ -134,7 +152,6 @@ int main(int argc, const char* argv[])
 
 	LOG4CXX_INFO(logger, "Loading 3D object file \'" << objectFilePath.filename().string() << "\'...")
 	objectScene = objectFileImporter.ReadFile(objectFilePath.string(), aiFlags);
-
 
 	if (!objectScene->HasMeshes())
 	{
@@ -265,7 +282,8 @@ int main(int argc, const char* argv[])
 	}
 
 
-	for (size_t i = 0; i < 5; i++)
+	//for (size_t i = 0; i < 5; i++)
+	while (true)
 	{
 		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 	}

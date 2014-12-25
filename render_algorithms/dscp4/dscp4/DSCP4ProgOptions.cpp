@@ -7,7 +7,9 @@ generalOptions_("General options"),
 inputOptions_("Input options")
 {	
 	generalOptions_.add_options()
-		("verbosity,v", boost::program_options::value<int>()->default_value(DSCP4_DEFAULT_VERBOSITY), "level of detail for console output. valid values are [0-3] from least to most verbose")
+#ifdef DSCP4_HAVE_LOG4CXX
+		("verbosity,v", boost::program_options::value<int>()->default_value(DSCP4_DEFAULT_VERBOSITY), "level of detail for console output. valid values are [0-3] from least to most verbose")("verbosity,v", boost::program_options::value<int>()->default_value(DSCP4_DEFAULT_VERBOSITY), "level of detail for console output. valid values are [0-3] from least to most verbose")
+#endif
 		("help,h", "produce help message");
 
 	inputOptions_.add_options()
@@ -49,45 +51,44 @@ void DSCP4ProgramOptions::parseConfigFile()
 	}
 	catch (std::exception)
 	{
-		std::string homePathStr;
+		boost::filesystem::path homePath;
 
 #ifdef WIN32
-		homePathStr = std::string(getenv("HOMEDRIVE"));
-		homePathStr.append(getenv("HOMEPATH")).append("\\.").append(DSCP4_PATH_PREFIX).append("\\").append(DSCP4_CONF_FILENAME);
+		homePath /= getenv("HOMEDRIVE");
+		homePath /= getenv("HOMEPATH");
 #else
-		homePathStr = std::string(getenv("HOME")).append("/.").append(DSCP4_PATH_PREFIX).append("/").append(DSCP4_CONF_FILENAME);
+		homePath /= getenv("HOME");
 #endif
+
+		homePath /= std::string(".").append(DSCP4_PATH_PREFIX);
+		homePath /= DSCP4_CONF_FILENAME;
+
 		LOG4CXX_DEBUG(logger_, "Could not find '" << DSCP4_CONF_FILENAME << "' in current working dir '" << boost::filesystem::current_path().string() << "'")
-		LOG4CXX_DEBUG(logger_, "Continuing search for conf file at '" << homePathStr << "'...")
+		LOG4CXX_DEBUG(logger_, "Continuing search for conf file at '" << homePath.string() << "'...")
 		try
 		{
-			boost::property_tree::ini_parser::read_ini(homePathStr.c_str(), pt_);
+			boost::property_tree::ini_parser::read_ini(homePath.string(), pt_);
 		}
 		catch (std::exception)
 		{
-			std::string globalPathStr;
+			boost::filesystem::path globalPath;
 #ifdef WIN32
-			globalPathStr = std::string(getenv("PROGRAMDATA")).append("\\");
-			globalPathStr.append(DSCP4_PATH_PREFIX).append("\\").append(DSCP4_CONF_FILENAME);
-
+			globalPath /= getenv("PROGRAMDATA");
 #else
 			globalPathStr = std::string("/etc/").append(DSCP4_PATH_PREFIX).append(DSCP4_CONF_FILENAME);
-
 #endif
-			LOG4CXX_DEBUG(logger_, "Could not find conf file at '" << homePathStr << "'")
-			LOG4CXX_DEBUG(logger_, "Continuing search for conf file at '" << globalPathStr << "'...")
-			try{
-				boost::property_tree::ini_parser::read_ini(globalPathStr.c_str(), pt_);
-			}
-			catch (std::exception)
-			{
-				LOG4CXX_ERROR(logger_, "Could not find '" << DSCP4_CONF_FILENAME << "' configuration file. You're on your own!")
-					return;
-			}
+			globalPath /= DSCP4_PATH_PREFIX;
+			globalPath /= DSCP4_CONF_FILENAME;
+
+			LOG4CXX_DEBUG(logger_, "Could not find conf file at '" << homePath.string() << "'")
+			LOG4CXX_DEBUG(logger_, "Continuing search for conf file at '" << globalPath.string() << "'...")
+			
+			boost::property_tree::ini_parser::read_ini(globalPath.string(), pt_);
 		}
 
 	}
 
+#ifdef DSCP4_HAVE_LOG4CXX
 	try
 	{
 		verbosity_ = pt_.get<int>("general.verbosity");
@@ -96,14 +97,19 @@ void DSCP4ProgramOptions::parseConfigFile()
 	{
 		verbosity_ = DSCP4_DEFAULT_VERBOSITY;
 	}
+#endif
+
 }
 
 void DSCP4ProgramOptions::parseCommandLine(int argc, const char* argv[])
 {
 	boost::program_options::store(boost::program_options::parse_command_line(argc, argv, allOptions_), vm_);
 
+#ifdef DSCP4_HAVE_LOG4CXX
 	if (vm_.count("verbosity"))
 		verbosity_ = vm_["verbosity"].as<int>();
+#endif
+
 }
 
 void DSCP4ProgramOptions::printOptions(DSCP4_OPTIONS_TYPE options)

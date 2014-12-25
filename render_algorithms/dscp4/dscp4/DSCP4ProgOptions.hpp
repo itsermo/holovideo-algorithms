@@ -46,7 +46,11 @@ public:
 
 	std::string getFileName() { return vm_["input-file"].as<std::string>(); }
 	bool getWantHelp() { return vm_.count("help") == 0 ? false : true; }
+
+#ifdef DSCP4_HAVE_LOG4CXX
 	int getVerbosity() { return verbosity_; }
+#endif
+
 	std::string getGenerateNormals() { return vm_["generate-normals"].as<std::string>(); }
 	bool getTriangulateMesh() { return vm_["triangulate-mesh"].as<bool>(); }
 	bool getAutoscale() { return vm_["autoscale"].as<bool>(); }
@@ -70,9 +74,9 @@ private:
 	boost::program_options::options_description inputOptions_;
 	boost::program_options::options_description renderOptions_;
 
-	int verbosity_;
 
 #ifdef DSCP4_HAVE_LOG4CXX
+	int verbosity_;
 	log4cxx::LoggerPtr logger_ = log4cxx::Logger::getLogger("edu.mit.media.obmg.holovideo.dscp4");
 #endif
 
