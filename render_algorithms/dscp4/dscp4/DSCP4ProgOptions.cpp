@@ -75,7 +75,7 @@ void DSCP4ProgramOptions::parseConfigFile()
 #ifdef WIN32
 			globalPath /= getenv("PROGRAMDATA");
 #else
-			globalPathStr = std::string("/etc/").append(DSCP4_PATH_PREFIX).append(DSCP4_CONF_FILENAME);
+			globalPath = "/etc";
 #endif
 			globalPath /= DSCP4_PATH_PREFIX;
 			globalPath /= DSCP4_CONF_FILENAME;
