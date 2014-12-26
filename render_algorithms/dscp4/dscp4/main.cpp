@@ -13,7 +13,7 @@
 #define LOG4CXX_FATAL(logger, expression) 
 #endif
 
-#ifdef UNIX
+#ifndef WIN32
 #include <stdio.h>
 #include <termios.h>
 #include <unistd.h>
@@ -38,7 +38,8 @@
 log4cxx::LoggerPtr createLogger();
 #endif
 
-#ifdef UNIX
+#ifndef WIN32
+char _getch(void);
 int _kbhit(void);
 #endif
 
@@ -376,7 +377,32 @@ int main(int argc, const char* argv[])
 	return 0;
 }
 
-#ifdef UNIX
+#ifndef WIN32
+
+char _getch(){
+	/*#include <unistd.h>   //_getch*/
+	/*#include <termios.h>  //_getch*/
+	char buf=0;
+	struct termios old={0};
+	fflush(stdout);
+	if(tcgetattr(0, &old)<0)
+		perror("tcsetattr()");
+	old.c_lflag&=~ICANON;
+	old.c_lflag&=~ECHO;
+	old.c_cc[VMIN]=1;
+	old.c_cc[VTIME]=0;
+	if(tcsetattr(0, TCSANOW, &old)<0)
+		perror("tcsetattr ICANON");
+	if (read(0, &buf, 1)<0)
+		perror("read()");
+	old.c_lflag |= ICANON;
+	old.c_lflag |= ECHO;
+	if (tcsetattr(0, TCSADRAIN, &old)<0)
+		perror("tcsetattr ~ICANON");
+	//printf("%c\n", buf);
+	return buf;
+}
+
 int _kbhit(void)
 {
 	struct timeval tv;
