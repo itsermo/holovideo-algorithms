@@ -30,7 +30,7 @@ extern "C"{
 
 	typedef struct
 	{
-		float x, y, z;
+		float x, y, z, w;
 	} point4f_t;
 
 	typedef struct
@@ -55,7 +55,16 @@ extern "C"{
 
 	typedef struct
 	{
-		float center_x, center_y, center_z, sq_radius;
+		//axis/angle, where w is angle
+		point4f_t rotate;
+		point3f_t scale, translate;
+	} mesh_transform_t;
+
+	typedef struct
+	{
+		mesh_transform_t transform;
+		//w is radius squared, xyz is center
+		point4f_t bounding_sphere;
 		unsigned int num_vertices, num_points_per_vertex, num_color_channels;
 		unsigned int vertex_stride, color_stride;
 		bool is_point_cloud;

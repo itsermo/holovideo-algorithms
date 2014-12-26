@@ -42,5 +42,5 @@ extern "C" {
 
 	DSCP4_API void dscp4_TranslateObject(dscp4_context_t renderContext, const char *id, float x, float y, float z);
 	DSCP4_API void dscp4_ScaleObject(dscp4_context_t renderContext, const char* id, float x, float y, float z);
-	DSCP4_API void dscp4_RotateObject(dscp4_context_t renderContext, const char* id, float x, float y, float z);
+	DSCP4_API void dscp4_RotateObject(dscp4_context_t renderContext, const char* id, float angle, float x, float y, float z);
 }

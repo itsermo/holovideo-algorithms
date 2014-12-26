@@ -73,6 +73,10 @@ namespace dscp4
 		void setShadingModel(shade_model_t shadeModel) { shadeModel_ = shadeModel; }
 		void setAutoScaleEnabled(bool autoScaleEnabled) { autoScaleEnabled_ = autoScaleEnabled; }
 
+		void translateMesh(std::string meshID, float x, float y, float z);
+		void rotateMesh(std::string meshID, float angle, float x, float y, float z);
+		void scaleMesh(std::string meshID, float x, float y, float z);
+
 		void* getContext(); 
 
 	private:

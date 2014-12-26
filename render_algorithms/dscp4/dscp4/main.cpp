@@ -13,6 +13,16 @@
 #define LOG4CXX_FATAL(logger, expression) 
 #endif
 
+#ifdef UNIX
+#include <stdio.h>
+#include <termios.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/time.h>
+#else
+#include <conio.h>
+#endif
+
 #include "DSCP4ProgOptions.hpp"
 
 #include <dscp4.h>
@@ -28,6 +38,10 @@
 log4cxx::LoggerPtr createLogger();
 #endif
 
+#ifdef UNIX
+int _kbhit(void);
+#endif
+
 int main(int argc, const char* argv[])
 {
 #ifdef DSCP4_HAVE_LOG4CXX
@@ -36,6 +50,8 @@ int main(int argc, const char* argv[])
 	int logLevel;
 #endif
 
+	int key = 0;
+	bool shouldRun = true;
 	dscp4_context_t renderContext = nullptr;
 	boost::filesystem::path objectFilePath;
 	Assimp::Importer objectFileImporter;
@@ -45,6 +61,10 @@ int main(int argc, const char* argv[])
 	unsigned int aiFlags = 0;
 	bool autoScaleEnabled = false;
 	render_mode_t renderMode;
+
+	float translateX = 0, translateY = 0, translateZ = 0;
+	float scaleX = 0, scaleY = 0, scaleZ = 0;
+	float rotateAngleX = 0, rotateAngleY = 0;
 
 	DSCP4ProgramOptions options;
 
@@ -283,17 +303,69 @@ int main(int argc, const char* argv[])
 
 
 	//for (size_t i = 0; i < 5; i++)
-	while (true)
+	while (shouldRun)
 	{
-		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+		if (_kbhit())
+		{
+			key = _getch();
+
+			if (key == 224) { // if the first value is esc
+				switch (_getch()) { // the real value
+				case 72:
+					dscp4_RotateObject(renderContext, "Mesh 0", ++rotateAngleX, -1.0f, 0.0f, 0.0f);
+					break;
+				case 80:
+					dscp4_RotateObject(renderContext, "Mesh 0", --rotateAngleX, -1.0f, 0.0f, 0.0f);
+					// code for arrow down
+					break;
+				case 75:
+					// code for arrow right
+					dscp4_RotateObject(renderContext, "Mesh 0", ++rotateAngleY, 0.0f, -1.0f, 0.0f);
+					break;
+				case 77:
+					// code for arrow left
+					dscp4_RotateObject(renderContext, "Mesh 0", --rotateAngleY, 0.0f, -1.0f, 0.0f);
+					break;
+				}
+			}
+			else
+			{
+				switch (key)
+				{
+				case 'w':
+					dscp4_TranslateObject(renderContext, "Mesh 0", translateX*0.01f, ++translateY*0.01f, translateZ*0.01f);
+					break;
+				case 's':
+					dscp4_TranslateObject(renderContext, "Mesh 0", translateX*0.01f, --translateY*0.01f, translateZ*0.01f);
+					break;
+				case 'd':
+					dscp4_TranslateObject(renderContext, "Mesh 0", ++translateX*0.01f, translateY*0.01f, translateZ*0.01f);
+					break;
+				case 'a':
+					dscp4_TranslateObject(renderContext, "Mesh 0", --translateX*0.01f, translateY*0.01f, translateZ*0.01f);
+					break;
+				case '=':
+					dscp4_ScaleObject(renderContext, "Mesh 0", ++scaleX*0.1f, ++scaleY*0.1f, ++scaleZ*0.1f);
+					break;
+				case '-':
+					dscp4_ScaleObject(renderContext, "Mesh 0", --scaleX*0.1f, --scaleY*0.1f, --scaleZ*0.1f);
+					break;
+				case 'q':
+					LOG4CXX_INFO(logger, "Quit key detected, quitting...")
+						shouldRun = false;
+					break;
+				default:
+					break;
+				}
+			}
+		}
+		else
+			std::this_thread::sleep_for(std::chrono::milliseconds(10));
 	}
+
+
 
 	dscp4_RemoveMesh(renderContext, "Mesh 0");
-
-	for (size_t i = 0; i < 5; i++)
-	{
-		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-	}
 
 	dscp4_DeinitRenderer(renderContext);
 
@@ -303,6 +375,23 @@ int main(int argc, const char* argv[])
 
 	return 0;
 }
+
+#ifdef UNIX
+int _kbhit(void)
+{
+	struct timeval tv;
+	fd_set rdfs;
+
+	tv.tv_sec = 0;
+	tv.tv_usec = 0;
+
+	FD_ZERO(&rdfs);
+	FD_SET(STDIN_FILENO, &rdfs);
+
+	select(STDIN_FILENO + 1, &rdfs, NULL, NULL, &tv);
+	return FD_ISSET(STDIN_FILENO, &rdfs);
+}
+#endif
 
 #ifdef DSCP4_HAVE_LOG4CXX
 log4cxx::LoggerPtr createLogger()

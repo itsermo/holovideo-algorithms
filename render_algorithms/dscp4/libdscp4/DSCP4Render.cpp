@@ -569,12 +569,19 @@ void DSCP4Render::deinit()
 
 void DSCP4Render::drawMesh(const mesh_t& mesh)
 {
-	const float radius = sqrt(mesh.info.sq_radius);
+	const float radius = sqrt(mesh.info.bounding_sphere.w);
 	const float factor = 1.0f/radius;
-	
+	auto transform = mesh.info.transform;
+
 	glPushMatrix();
-	glScalef(factor, factor, factor);
-	glTranslatef(-mesh.info.center_x, -mesh.info.center_y, -mesh.info.center_z);
+
+	glRotatef(transform.rotate.w, transform.rotate.x, transform.rotate.y, transform.rotate.z);
+	
+	glScalef(factor + transform.scale.x, factor + transform.scale.y, factor + transform.scale.z);
+
+	glTranslatef(-mesh.info.bounding_sphere.x + transform.translate.x,
+		-mesh.info.bounding_sphere.y + transform.translate.y,
+		-mesh.info.bounding_sphere.z + transform.translate.z);
 
 	glEnable(GL_COLOR_MATERIAL);
 	glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
@@ -665,10 +672,10 @@ void DSCP4Render::addMesh(const char *id, int numVertices, float *vertices, floa
 
 		// miniball uses a quick method of determining the bounding sphere of all the vertices
 		auto miniball3f = Miniball::Miniball<Miniball::CoordAccessor<float**, float*>>(3, (float**)ap, (float**)(ap + numVertices));
-		mesh.info.center_x = miniball3f.center()[0];
-		mesh.info.center_y = miniball3f.center()[1];
-		mesh.info.center_z = miniball3f.center()[2];
-		mesh.info.sq_radius = miniball3f.squared_radius();
+		mesh.info.bounding_sphere.x = miniball3f.center()[0];
+		mesh.info.bounding_sphere.y = miniball3f.center()[1];
+		mesh.info.bounding_sphere.z = miniball3f.center()[2];
+		mesh.info.bounding_sphere.w = miniball3f.squared_radius();
 
 		delete[] ap;
 	}
@@ -720,4 +727,32 @@ void DSCP4Render::addPointCloud(const char *id, float *points, int numPoints, bo
 	//for (int i = 0; i<numVertices; ++i)
 	//	delete[] ap[i];
 	//delete[] ap;
+}
+
+void DSCP4Render::translateMesh(std::string meshID, float x, float y, float z)
+{
+	std::lock_guard<std::mutex> lg(meshMutex_);
+	auto mesh = &meshes_[meshID];
+	mesh->info.transform.translate.x = x;
+	mesh->info.transform.translate.y = y;
+	mesh->info.transform.translate.z = z;
+}
+
+void DSCP4Render::rotateMesh(std::string meshID, float angle, float x, float y, float z)
+{
+	std::lock_guard<std::mutex> lg(meshMutex_);
+	auto mesh = &meshes_[meshID];
+	mesh->info.transform.rotate.w = angle;
+	mesh->info.transform.rotate.x = x;
+	mesh->info.transform.rotate.y = y;
+	mesh->info.transform.rotate.z = z;
+}
+
+void DSCP4Render::scaleMesh(std::string meshID, float x, float y, float z)
+{
+	std::lock_guard<std::mutex> lg(meshMutex_);
+	auto mesh = &meshes_[meshID];
+	mesh->info.transform.scale.x = x;
+	mesh->info.transform.scale.y = y;
+	mesh->info.transform.scale.z = z;
 }
