@@ -75,19 +75,28 @@ displayOptions_(displayOptions)
 	switch (verbosity)
 	{
 	case 0:
-		logger_->setLevel(log4cxx::Level::getError());
+		logger_->setLevel(log4cxx::Level::getFatal());
 		break;
 	case 1:
-		logger_->setLevel(log4cxx::Level::getInfo());
+		logger_->setLevel(log4cxx::Level::getWarn());
 		break;
 	case 2:
-		logger_->setLevel(log4cxx::Level::getDebug());
+		logger_->setLevel(log4cxx::Level::getError());
 		break;
 	case 3:
+		logger_->setLevel(log4cxx::Level::getInfo());
+		break;
+	case 4:
+		logger_->setLevel(log4cxx::Level::getDebug());
+		break;
+	case 5:
+		logger_->setLevel(log4cxx::Level::getTrace());
+		break;
+	case 6:
 		logger_->setLevel(log4cxx::Level::getAll());
 		break;
 	default:
-		LOG4CXX_ERROR(logger_, "Invalid verbosity level")
+		LOG4CXX_ERROR(logger_, "Invalid verbosity setting: " << verbosity)
 		break;
 	}
 

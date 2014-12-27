@@ -8,7 +8,7 @@ extern "C"
 		render_options_t render_options,
 		algorithm_options_t algorithm_options,
 		display_options_t display_options,
-		unsigned int verbosity )
+		unsigned int verbosity)
 	{
 		return (dscp4_context_t*)(new dscp4::DSCP4Render(
 			render_options,

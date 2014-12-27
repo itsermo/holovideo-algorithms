@@ -48,7 +48,7 @@ public:
 	bool getWantHelp() { return vm_.count("help") == 0 ? false : true; }
 
 #ifdef DSCP4_HAVE_LOG4CXX
-		int getVerbosity() { return traverseOption<unsigned int>("verbosity", "general.verbosity"); }
+		unsigned int getVerbosity() { return traverseOption<unsigned int>("verbosity", "general.verbosity"); }
 #endif
 
 	// General options

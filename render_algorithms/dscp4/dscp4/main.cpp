@@ -102,7 +102,6 @@ int main(int argc, const char* argv[])
 	}
 
 #ifdef DSCP4_HAVE_LOG4CXX
-
 	try
 	{
 		logLevel = options.getVerbosity();
@@ -115,15 +114,24 @@ int main(int argc, const char* argv[])
 	switch (logLevel)
 	{
 	case 0:
-		logger->setLevel(log4cxx::Level::getError());
+		logger->setLevel(log4cxx::Level::getFatal());
 		break;
 	case 1:
-		logger->setLevel(log4cxx::Level::getInfo());
+		logger->setLevel(log4cxx::Level::getWarn());
 		break;
 	case 2:
-		logger->setLevel(log4cxx::Level::getDebug());
+		logger->setLevel(log4cxx::Level::getError());
 		break;
 	case 3:
+		logger->setLevel(log4cxx::Level::getInfo());
+		break;
+	case 4:
+		logger->setLevel(log4cxx::Level::getDebug());
+		break;
+	case 5:
+		logger->setLevel(log4cxx::Level::getTrace());
+		break;
+	case 6:
 		logger->setLevel(log4cxx::Level::getAll());
 		break;
 	default:

@@ -8,7 +8,7 @@ inputOptions_("Input options")
 {	
 	generalOptions_.add_options()
 #ifdef DSCP4_HAVE_LOG4CXX
-		("verbosity,v", boost::program_options::value<int>()->default_value(DSCP4_DEFAULT_VERBOSITY), "level of detail for console output. valid values are [0-3] from least to most verbose")("verbosity,v", boost::program_options::value<int>()->default_value(DSCP4_DEFAULT_VERBOSITY), "level of detail for console output. valid values are [0-3] from least to most verbose")
+		("verbosity,v", boost::program_options::value<unsigned int>(), "level of detail for console output. valid values are [0-3] from least to most verbose")
 #endif
 		("help,h", "produce help message");
 
