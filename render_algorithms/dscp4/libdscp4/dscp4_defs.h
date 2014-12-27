@@ -18,10 +18,10 @@ extern "C"{
 	} render_mode_t;
 
 	typedef enum {
-		DSCP4_SHADE_MODEL_OFF = 0,
-		DSCP4_SHADE_MODEL_FLAT = 1,
-		DSCP4_SHADE_MODEL_SMOOTH = 2
-	} shade_model_t;
+		DSCP4_SHADER_MODEL_OFF = 0,
+		DSCP4_SHADER_MODEL_FLAT = 1,
+		DSCP4_SHADER_MODEL_SMOOTH = 2
+	} shader_model_t;
 
 	typedef struct
 	{
@@ -78,6 +78,26 @@ extern "C"{
 		void *normals;
 	} mesh_t;
 
+	typedef struct
+	{
+		const char * shaders_path;
+		const char * shader_filename_prefix;
+		render_mode_t render_mode;
+		shader_model_t shader_model;
+		float light_pos_x, light_pos_y, light_pos_z;
+		bool auto_scale_enabled;
+	} render_options_t;
+
+	typedef struct
+	{
+		unsigned int num_views_x, num_views_y, num_wafels_per_scanline, num_scanlines;
+	} algorithm_options_t;
+
+	typedef struct
+	{
+		const char * name;
+		unsigned int num_heads, head_res_x, head_res_y;
+	} display_options_t;
 };
 
 #endif

@@ -31,7 +31,7 @@ inputOptions_("Input options")
 		boost::program_options::value<std::string>()->default_value(DSCP4_RENDER_DEFAULT_SHADEMODEL),
 		"the shading model. valid options are 'off' to turn off all lighting, 'flat' and 'smooth'")
 		("render-mode,m",
-		boost::program_options::value<std::string>()->default_value(DSCP4_RENDER_DEFAULT_MODE),
+		boost::program_options::value<std::string>(),
 		"sets the render mode. valid options are 'viewing', 'stereogram', and 'holovideo'");
 
 	allOptions_.add(generalOptions_).add(inputOptions_).add(renderOptions_);
@@ -87,29 +87,11 @@ void DSCP4ProgramOptions::parseConfigFile()
 		}
 
 	}
-
-#ifdef DSCP4_HAVE_LOG4CXX
-	try
-	{
-		verbosity_ = pt_.get<int>("general.verbosity");
-	}
-	catch (std::exception)
-	{
-		verbosity_ = DSCP4_DEFAULT_VERBOSITY;
-	}
-#endif
-
 }
 
 void DSCP4ProgramOptions::parseCommandLine(int argc, const char* argv[])
 {
 	boost::program_options::store(boost::program_options::parse_command_line(argc, argv, allOptions_), vm_);
-
-#ifdef DSCP4_HAVE_LOG4CXX
-	if (vm_.count("verbosity"))
-		verbosity_ = vm_["verbosity"].as<int>();
-#endif
-
 }
 
 void DSCP4ProgramOptions::printOptions(DSCP4_OPTIONS_TYPE options)

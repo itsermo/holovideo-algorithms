@@ -40,11 +40,13 @@
 
 #define DSCP4_DEFAULT_VOXEL_SIZE 5.0f
 #define DSCP4_XINERAMA_ENABLED true
-#define DSCP4_LIGHTING_SHADER_VERTEX_FILENAME "pointlight.vert"
-#define DSCP4_LIGHTING_SHADER_FRAGMENT_FILENAME "pointlight.frag"
+#define DSCP4_LIGHTING_SHADER_FILENAME_PREFIX "pointlight"
 #define DSCP4_AUTO_SCALE_ENABLED true
 #define DSCP4_LIGHTING_SHADE_MODEL DSCP4_SHADE_MODEL_FLAT
 #define DSCP4_RENDER_MODE_DEFAULT DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE
+#define DSCP4_RENDER_DEFAULT_ZNEAR 0.0f
+#define DSCP4_RENDER_DEFAULT_ZFAR 5.0f
+#define DSCP4_RENDER_DEFAULT_FOVY 60.0f //in degrees
 
 namespace dscp4
 {
@@ -53,37 +55,49 @@ namespace dscp4
 	public:
 		
 		DSCP4Render();
-		DSCP4Render(const char* shadersPath, const char* lightingShaderVertexFileName, const char* lightingShaderFragmentFileName);
+		DSCP4Render(render_options_t renderOptions,
+			algorithm_options_t algorithmOptions,
+			display_options_t displayOptions,
+			unsigned int verbosity);
 		~DSCP4Render();
+
 		bool init();
 		void deinit();
 
-		void addSimpleObject(simple_object_t object, float *center, float size);
-		
 		// Finds the bounding sphere of a mesh, centers the mesh and scales it down or up to radius == 1.0
 		void addMesh(const char *id, int numVertices, float *vertices, float * normals = nullptr, float *colors = nullptr, unsigned int numVertexDimensions = 3, unsigned int numColorChannels = 4);
 		void removeMesh(const char *id);
-		//void addMesh(const char* id, int numVertices, float *vertices);
+
 		//Expects PCL point cloud data type, or array of struct { float x,y,z,w; uchar r,g,b,a; }
 		//You can simply pass the pointer to the PCL::PointCloudPtr->Data[] array
-		void addPointCloud(const char *id, float *points, int numPoints, bool hasColorData = true);
+		void addPointCloud(const char *id, float *points, int numPoints, float pointSize, bool hasColorData = true);
 		void removePointCloud(const char *id) { this->removeMesh(id); }
 
-		void setRenderMode(render_mode_t renderMode) { renderMode_ = renderMode; }
-		void setShadingModel(shade_model_t shadeModel) { shadeModel_ = shadeModel; }
-		void setAutoScaleEnabled(bool autoScaleEnabled) { autoScaleEnabled_ = autoScaleEnabled; }
+		void setRenderMode(render_mode_t renderMode) { renderOptions_.render_mode = renderMode; }
+		void setShadingModel(shader_model_t shadeModel) { renderOptions_.shader_model = shadeModel; }
+		void setAutoScaleEnabled(bool autoScaleEnabled) { renderOptions_.auto_scale_enabled = autoScaleEnabled; }
 
 		void translateMesh(std::string meshID, float x, float y, float z);
 		void rotateMesh(std::string meshID, float angle, float x, float y, float z);
 		void scaleMesh(std::string meshID, float x, float y, float z);
 
-		void* getContext(); 
-
 	private:
+
+		// for testing
+		void drawCube();
+
+		static glm::mat4 buildOrthoXPerspYProjMat(
+			float left,
+			float right,
+			float bottom,
+			float top,
+			float zNear,
+			float zFar,
+			float q
+			);
 
 		bool initWindow(SDL_Window*& window, SDL_GLContext& glContext, int thisWindowNum);
 		void deinitWindow(SDL_Window*& window, SDL_GLContext& glContext, int thisWindowNum);
-
 
 		bool initLightingShader(int which);
 		void deinitLightingShader(int which);
@@ -95,10 +109,11 @@ namespace dscp4
 		void drawPointCloud();
 		void drawMesh(const mesh_t& mesh);
 		void drawObjects();
-		void drawCube();
 
-		void drawBackgroundGrid(GLfloat width, GLfloat height, GLfloat depth);
-		void drawSphere(GLfloat x, GLfloat y, GLfloat z, GLfloat radius);
+		// Renderer projection settings
+		float zNear_;
+		float zFar_;
+		float fovy_;
 
 		std::mutex localCloudMutex_;
 		std::mutex meshMutex_;
@@ -127,10 +142,6 @@ namespace dscp4
 
 		std::map<std::string, mesh_t> meshes_;
 
-		boost::filesystem::path shadersPath_;
-		std::string lightingShaderVertexFileName_;
-		std::string lightingShaderFragmentFileName_;
-
 		VSShaderLib* lightingShader_;
 
 		float rotateAngleX_;
@@ -138,9 +149,13 @@ namespace dscp4
 		float rotateIncrement_;
 		bool rotateOn_;
 
-		shade_model_t shadeModel_;
-		bool autoScaleEnabled_;
-		render_mode_t renderMode_;
+		render_options_t renderOptions_;
+		algorithm_options_t algorithmOptions_;
+		display_options_t displayOptions_;
+
+		glm::mat4 projectionMatrix_;
+		glm::mat4 viewMatrix_;
+		glm::mat4 modelMatrix_;
 
 #ifdef DSCP4_HAVE_LOG4CXX
 		log4cxx::LoggerPtr logger_ = log4cxx::Logger::getLogger("edu.mit.media.obmg.holovideo.dscp4.lib.renderer");

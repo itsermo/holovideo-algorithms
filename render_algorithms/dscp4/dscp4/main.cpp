@@ -48,7 +48,7 @@ int main(int argc, const char* argv[])
 #ifdef DSCP4_HAVE_LOG4CXX
 	auto logger = createLogger();
 	logger->setLevel(log4cxx::Level::getError());
-	int logLevel;
+	int logLevel = DSCP4_DEFAULT_VERBOSITY;
 #endif
 
 	int key = 0;
@@ -60,8 +60,13 @@ int main(int argc, const char* argv[])
 	bool triangulateMesh = false;
 	std::string generateNormals;
 	unsigned int aiFlags = 0;
-	bool autoScaleEnabled = false;
-	render_mode_t renderMode;
+
+	render_options_t renderOptions = { 0 };
+	algorithm_options_t algorithmOptions = { 0 };
+	display_options_t displayOptions = { 0 };
+	std::string displayName;
+	std::string shadersPath;
+	std::string shaderFileNamePrefix;
 
 	float translateX = 0, translateY = 0, translateZ = 0;
 	float scaleX = 0, scaleY = 0, scaleZ = 0;
@@ -75,7 +80,8 @@ int main(int argc, const char* argv[])
 	}
 	catch (std::exception)
 	{
-		LOG4CXX_WARN(logger, "Could not find dscp4.conf file. Using default option values, but your milage will vary")
+		LOG4CXX_FATAL(logger, "Could not parse dscp4.conf file. This is copied to /etc/dscp4 folder in Linux, or %PROGRAMDATA%\\\\dscp4 folder in Windows during the install process. Make sure you've built and installed dscp4 properly, and your account has permission to access the file. Exiting...")
+		return -1;
 	}
 
 	try {
@@ -96,7 +102,15 @@ int main(int argc, const char* argv[])
 	}
 
 #ifdef DSCP4_HAVE_LOG4CXX
-	logLevel = options.getVerbosity();
+
+	try
+	{
+		logLevel = options.getVerbosity();
+	}
+	catch (std::exception e)
+	{
+		LOG4CXX_ERROR(logger, "Could not parse verbosity setting from command line or conf file: " << e.what())
+	}
 
 	switch (logLevel)
 	{
@@ -180,14 +194,30 @@ int main(int argc, const char* argv[])
 		return -1;
 	}
 
-	LOG4CXX_INFO(logger, "Starting DSCP4 lib")
-	renderContext = dscp4_CreateContext();
 
-	std::string renderModeString = options.getRenderMode();
-	renderMode = renderModeString == "viewing" ? DSCP4_RENDER_MODE_MODEL_VIEWING : renderModeString == "stereogram" ? DSCP4_RENDER_MODE_STEREOGRAM_VIEWING : DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE;
-	dscp4_SetRenderMode(renderContext, renderMode);
+	try{
+		renderOptions.render_mode = options.getRenderMode() == "viewing" ? DSCP4_RENDER_MODE_MODEL_VIEWING : options.getRenderMode() == "stereogram" ? DSCP4_RENDER_MODE_STEREOGRAM_VIEWING : DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE;
+		renderOptions.shader_model = options.getShadeModel() == "off" ? DSCP4_SHADER_MODEL_OFF : options.getShadeModel() == "flat" ? DSCP4_SHADER_MODEL_FLAT : DSCP4_SHADER_MODEL_SMOOTH;
+		renderOptions.auto_scale_enabled = options.getAutoscale();
 
-	switch (renderMode)
+		shadersPath = options.getShadersPath().string();
+		shaderFileNamePrefix = options.getShaderFileName();
+
+		renderOptions.shaders_path = shadersPath.c_str();
+		renderOptions.shader_filename_prefix = shaderFileNamePrefix.c_str();
+		renderOptions.light_pos_x = options.getLightPosX();
+		renderOptions.light_pos_y = options.getLightPosY();
+		renderOptions.light_pos_z = options.getLightPosZ();
+	}
+	catch (std::exception e)
+	{
+		LOG4CXX_FATAL(logger, "Could not parse render options from command line or conf file: " << e.what())
+		return -1;
+	}
+
+	LOG4CXX_DEBUG(logger, "Render options parsed")
+
+	switch (renderOptions.render_mode)
 	{
 	case DSCP4_RENDER_MODE_MODEL_VIEWING:
 		LOG4CXX_INFO(logger, "Rendering mode set to model viewing mode (for testing renderer on a normal display)")
@@ -201,44 +231,80 @@ int main(int argc, const char* argv[])
 		break;
 	}
 
+	if (renderOptions.shader_model == DSCP4_SHADER_MODEL_OFF)
+	{
+		LOG4CXX_INFO(logger, "Turned off all lighting effects for renderer")
+	}
+	else if (renderOptions.shader_model == DSCP4_SHADER_MODEL_FLAT)
+	{
+		LOG4CXX_INFO(logger, "Set renderer shading model to 'flat'")
+		if (generateNormals == "smooth")
+		{
+			LOG4CXX_WARN(logger, "Your render shading model is set to flat, but input options are to generate smooth normals. Your model will probably look ugly...")
+		}
+	}
+	else if (renderOptions.shader_model == DSCP4_SHADER_MODEL_SMOOTH)
+	{
+		LOG4CXX_INFO(logger, "Set renderer shading model to 'smooth'")
+		if (generateNormals == "flat")
+		{
+			LOG4CXX_WARN(logger, "Your render shading model is set to smooth, but input options are to generate flat normals. Your model will probably look ugly...")
+		}
+	}
+
+	if (renderOptions.auto_scale_enabled)
+	{
+		LOG4CXX_INFO(logger, "Renderer model autoscaling and centering enabled")
+	}
+	else
+	{
+		LOG4CXX_INFO(logger, "Renderer model autoscaling and centering disabled")
+	}
+
+	try {
+		algorithmOptions.num_views_x = options.getNumViewsX();
+		algorithmOptions.num_views_y = options.getNumViewsY();
+		algorithmOptions.num_wafels_per_scanline = options.getNumWafelsPerScanline();
+		algorithmOptions.num_scanlines = options.getNumScanlines();
+	}
+	catch (std::exception e)
+	{
+		LOG4CXX_FATAL(logger, "Could not parse algorithm options from conf file or command line: " << e.what())
+		return -1;
+	}
+
+	LOG4CXX_INFO(logger, "Algorithm options parsed")
+	LOG4CXX_INFO(logger, "Number of stereogram views in X: " << algorithmOptions.num_views_x)
+	LOG4CXX_INFO(logger, "Number of stereogram views in Y: " << algorithmOptions.num_views_y)
+	LOG4CXX_INFO(logger, "Number of wafels per scanline: " << algorithmOptions.num_wafels_per_scanline)
+	LOG4CXX_INFO(logger, "Number of scanlines: " << algorithmOptions.num_scanlines)
+
+	try{
+		displayName = options.getDisplayName();
+		displayOptions.name = displayName.c_str();
+		displayOptions.num_heads = options.getNumHeads();
+		displayOptions.head_res_x = options.getHeadResX();
+		displayOptions.head_res_y = options.getHeadResY();
+	}
+	catch (std::exception e)
+	{
+		LOG4CXX_FATAL(logger, "Could not parse display options from conf file or command line: " << e.what())
+		return -1;
+	}
+
+	LOG4CXX_DEBUG(logger, "Display options parsed")
+	LOG4CXX_INFO(logger, "Display name: " << displayOptions.name)
+	LOG4CXX_INFO(logger, "Number of heads (physical ports): " << displayOptions.num_heads)
+	LOG4CXX_INFO(logger, "Head horizontal resolution (in pixels): " << displayOptions.head_res_x)
+	LOG4CXX_INFO(logger, "Head vertical resolution (in pixels): " << displayOptions.head_res_y)
+
+	LOG4CXX_DEBUG(logger, "Starting DSCP4 lib")
+	renderContext = dscp4_CreateContext(renderOptions, algorithmOptions, displayOptions, logLevel);
+
 	if (!dscp4_InitRenderer(renderContext))
 	{
 		LOG4CXX_FATAL(logger, "Could not initialize DSCP4 lib")
 		return -1;
-	}
-
-	std::string shadeModelString = options.getShadeModel();
-	if (shadeModelString == "off")
-	{
-		dscp4_SetShadeModel(renderContext, DSCP4_SHADE_MODEL_OFF);
-		LOG4CXX_DEBUG(logger, "Turned off all lighting effects for renderer")
-	}
-	else if (shadeModelString == "flat")
-	{
-		dscp4_SetShadeModel(renderContext, DSCP4_SHADE_MODEL_FLAT);
-		LOG4CXX_DEBUG(logger, "Set renderer shading model to 'flat'")
-	}
-	else if (shadeModelString == "smooth")
-	{
-		dscp4_SetShadeModel(renderContext, DSCP4_SHADE_MODEL_SMOOTH);
-		LOG4CXX_DEBUG(logger, "Set renderer shading model to 'smooth'")
-	}
-
-	if ((shadeModelString == "flat" && generateNormals == "smooth") ||
-		(shadeModelString == "smooth" && generateNormals == "flat"))
-	{
-		LOG4CXX_WARN(logger, "Your normal generation mode and shading model are mis-matching.  Your model will probably look like crap")
-	}
-
-	autoScaleEnabled = options.getAutoscale();
-	dscp4_SetAutoScaleEnabled(renderContext, autoScaleEnabled);
-	if (autoScaleEnabled)
-	{
-		LOG4CXX_DEBUG(logger, "Renderer model autoscaling and centering enabled")
-	}
-	else
-	{
-		LOG4CXX_DEBUG(logger, "Renderer model autoscaling and centering disabled")
 	}
 
 	for (unsigned int m = 0; m < objectScene->mNumMeshes; m++)
@@ -345,6 +411,12 @@ int main(int argc, const char* argv[])
 				case 'a':
 					dscp4_TranslateObject(renderContext, "Mesh 0", --translateX*0.01f, translateY*0.01f, translateZ*0.01f);
 					break;
+				case 'z':
+					dscp4_TranslateObject(renderContext, "Mesh 0", translateX*0.01f, translateY*0.01f, ++translateZ*0.01f);
+					break;
+				case 'x':
+					dscp4_TranslateObject(renderContext, "Mesh 0", translateX*0.01f, translateY*0.01f, --translateZ*0.01f);
+					break;
 				case '=':
 					dscp4_ScaleObject(renderContext, "Mesh 0", ++scaleX*0.1f, ++scaleY*0.1f, ++scaleZ*0.1f);
 					break;
@@ -363,8 +435,6 @@ int main(int argc, const char* argv[])
 		else
 			std::this_thread::sleep_for(std::chrono::milliseconds(10));
 	}
-
-
 
 	dscp4_RemoveMesh(renderContext, "Mesh 0");
 

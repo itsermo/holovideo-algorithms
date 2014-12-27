@@ -4,9 +4,18 @@
 extern "C"
 {
 
-	DSCP4_API dscp4_context_t dscp4_CreateContext()
+	DSCP4_API dscp4_context_t dscp4_CreateContext(
+		render_options_t render_options,
+		algorithm_options_t algorithm_options,
+		display_options_t display_options,
+		unsigned int verbosity )
 	{
-		return (dscp4_context_t*)(new dscp4::DSCP4Render());
+		return (dscp4_context_t*)(new dscp4::DSCP4Render(
+			render_options,
+			algorithm_options,
+			display_options,
+			verbosity)
+			);
 	}
 
 	DSCP4_API void dscp4_DestroyContext(dscp4_context_t* renderContext)
@@ -31,7 +40,7 @@ extern "C"
 	}
 
 
-	DSCP4_API void dscp4_SetShadeModel(dscp4_context_t renderContext, shade_model_t shadeModel)
+	DSCP4_API void dscp4_SetShadeModel(dscp4_context_t renderContext, shader_model_t shadeModel)
 	{
 		((dscp4::DSCP4Render*)renderContext)->setShadingModel(shadeModel);
 	}

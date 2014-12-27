@@ -30,12 +30,16 @@ if (glGetError() != GL_NO_ERROR)						\
 
 using namespace dscp4;
 
-DSCP4Render::DSCP4Render() : DSCP4Render(nullptr, DSCP4_LIGHTING_SHADER_VERTEX_FILENAME, DSCP4_LIGHTING_SHADER_FRAGMENT_FILENAME)
+DSCP4Render::DSCP4Render()
 {
 	
 }
 
-DSCP4Render::DSCP4Render(const char* shadersPath, const char* lightingShaderVertexFileName, const char* lightingShaderFragmentFileName) :
+DSCP4Render::DSCP4Render(render_options_t renderOptions,
+	algorithm_options_t algorithmOptions,
+	display_options_t displayOptions,
+	unsigned int verbosity
+	) :
 windows_(nullptr),
 glContexts_(nullptr),
 shouldRender_(false),
@@ -43,23 +47,17 @@ isInit_(false),
 windowWidth_(nullptr),
 windowHeight_(nullptr),
 numWindows_(0),
-lightingShaderFragmentFileName_(lightingShaderFragmentFileName),
-lightingShaderVertexFileName_(lightingShaderVertexFileName),
 rotateAngleX_(0),
 rotateAngleY_(0),
 rotateIncrement_(1.0f),
 rotateOn_(false),
-shadeModel_(DSCP4_LIGHTING_SHADE_MODEL),
-autoScaleEnabled_(DSCP4_AUTO_SCALE_ENABLED),
-renderMode_(DSCP4_RENDER_MODE_DEFAULT)
+zNear_(DSCP4_RENDER_DEFAULT_ZNEAR),
+zFar_(DSCP4_RENDER_DEFAULT_ZFAR),
+fovy_(DSCP4_RENDER_DEFAULT_FOVY),
+renderOptions_(renderOptions),
+algorithmOptions_(algorithmOptions),
+displayOptions_(displayOptions)
 {
-	if (shadersPath == nullptr)
-	{
-		LOG4CXX_WARN(logger_, "No shader path location specified, using current working path: " << boost::filesystem::current_path().string())
-		shadersPath_ = boost::filesystem::current_path();
-	}
-	else
-		shadersPath_ = boost::filesystem::path(shadersPath);
 
 #ifdef DSCP4_HAVE_LOG4CXX
 	
@@ -71,12 +69,35 @@ renderMode_(DSCP4_RENDER_MODE_DEFAULT)
 	log4cxx::PatternLayoutPtr logLayoutPtr = new log4cxx::PatternLayout("%-5p %m%n");
 #endif
 
-
 	log4cxx::ConsoleAppenderPtr logAppenderPtr = new log4cxx::ConsoleAppender(logLayoutPtr);
 	log4cxx::BasicConfigurator::configure(logAppenderPtr);
 
+	switch (verbosity)
+	{
+	case 0:
+		logger_->setLevel(log4cxx::Level::getError());
+		break;
+	case 1:
+		logger_->setLevel(log4cxx::Level::getInfo());
+		break;
+	case 2:
+		logger_->setLevel(log4cxx::Level::getDebug());
+		break;
+	case 3:
+		logger_->setLevel(log4cxx::Level::getAll());
+		break;
+	default:
+		LOG4CXX_ERROR(logger_, "Invalid verbosity level")
+		break;
+	}
+
 #endif
 
+	if (renderOptions.shaders_path == nullptr)
+	{
+		LOG4CXX_WARN(logger_, "No shader path location specified, using current working path: " << boost::filesystem::current_path().string())
+			renderOptions_.shaders_path = (char*)boost::filesystem::current_path().string().c_str();
+	}
 }
 
 DSCP4Render::~DSCP4Render()
@@ -130,7 +151,7 @@ bool DSCP4Render::initWindow(SDL_Window*& window, SDL_GLContext& glContext, int 
 	SDL_Rect bounds = { 0 };
 	SDL_GetDisplayBounds(thisWindowNum, &bounds);
 
-	switch (renderMode_)
+	switch (renderOptions_.render_mode)
 	{
 	case DSCP4_RENDER_MODE_MODEL_VIEWING:
 	case DSCP4_RENDER_MODE_STEREOGRAM_VIEWING:
@@ -181,8 +202,15 @@ void DSCP4Render::deinitWindow(SDL_Window*& window, SDL_GLContext& glContext, in
 bool DSCP4Render::initLightingShader(int which)
 {
 	lightingShader_[which].init();
-	lightingShader_[which].loadShader(VSShaderLib::VERTEX_SHADER, (shadersPath_ / lightingShaderVertexFileName_).string());
-	lightingShader_[which].loadShader(VSShaderLib::FRAGMENT_SHADER, (shadersPath_ / lightingShaderFragmentFileName_).string());
+	lightingShader_[which].loadShader(VSShaderLib::VERTEX_SHADER,
+		(boost::filesystem::path(renderOptions_.shaders_path) /
+		boost::filesystem::path(std::string((const char*)renderOptions_.shader_filename_prefix).append(".vert"))).string()
+		);
+
+	lightingShader_[which].loadShader(VSShaderLib::FRAGMENT_SHADER,
+		(boost::filesystem::path(renderOptions_.shaders_path) /
+		boost::filesystem::path(std::string((const char*)renderOptions_.shader_filename_prefix).append(".frag"))).string()
+		);
 
 	lightingShader_[which].setProgramOutput(0, "outputF");
 	lightingShader_[which].setVertexAttribName(VSShaderLib::VERTEX_COORD_ATTRIB, "position");
@@ -391,8 +419,14 @@ void DSCP4Render::renderLoop()
 		* EXERCISE:
 		* Replace this with a call to glFrustum.
 		*/
-		gluPerspective(60.0f, ratio, 0.1f, 10.0f);
-		
+		//gluPerspective(fovy_, ratio, zNear_, zFar_);
+
+		//auto perspective = glm::perspective(fovy_ * (float)M_PI / 180.0f, ratio, zNear_, zFar_);
+
+		projectionMatrix_ = buildOrthoXPerspYProjMat(-ratio, ratio, -1.0f, 1.0f, zNear_, zFar_, tan(0.1f));
+
+		glMultMatrixf(glm::value_ptr(projectionMatrix_));
+		//glOrtho(-ratio, ratio, -1.0f,1.0f ,1.0f, -1.0f);
 	}
 
 	bool resAreDifferent = false;
@@ -478,10 +512,10 @@ void DSCP4Render::renderLoop()
 		{
 			SDL_GL_MakeCurrent(windows_[i], glContexts_[i]);
 
-			if (shadeModel_ != DSCP4_SHADE_MODEL_OFF)
+			if (renderOptions_.shader_model != DSCP4_SHADER_MODEL_OFF)
 				glEnable(GL_LIGHTING);
 
-			glShadeModel(shadeModel_ == DSCP4_SHADE_MODEL_SMOOTH ? GL_SMOOTH : GL_FLAT);
+			glShadeModel(renderOptions_.shader_model == DSCP4_SHADER_MODEL_SMOOTH ? GL_SMOOTH : GL_FLAT);
 
 			/* Clear the color and depth buffers. */
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -496,7 +530,7 @@ void DSCP4Render::renderLoop()
 			glLoadIdentity();
 
 			/* Move down the z-axis. */
-			glTranslatef(0.0, 0.0, -2.0f);
+			glTranslatef(0.0, 0.0, -0.4f);
 
 			/* Rotate. */
 			glRotatef(rotateAngleX_, 1.0, 0.0, 0.0);
@@ -660,7 +694,7 @@ void DSCP4Render::addMesh(const char *id, int numVertices, float *vertices, floa
 	mesh.info.num_vertices = numVertices;
 	mesh.info.is_point_cloud = false;
 
-	if (autoScaleEnabled_)
+	if (renderOptions_.auto_scale_enabled)
 	{
 		// create a 2D array for miniball algorithm
 		float **ap = new float*[numVertices];
@@ -692,7 +726,7 @@ void DSCP4Render::removeMesh(const char *id)
 	meshLock.unlock();
 }
 
-void DSCP4Render::addPointCloud(const char *id, float *points, int numPoints, bool hasColorData)
+void DSCP4Render::addPointCloud(const char *id, float *points, int numPoints, float pointSize, bool hasColorData)
 {
 	// create a 2D array for miniball algorithm
 	//float** ap = new float*[numPoints];
@@ -755,4 +789,47 @@ void DSCP4Render::scaleMesh(std::string meshID, float x, float y, float z)
 	mesh->info.transform.scale.x = x;
 	mesh->info.transform.scale.y = y;
 	mesh->info.transform.scale.z = z;
+}
+
+glm::mat4 DSCP4Render::buildOrthoXPerspYProjMat(
+	float left,
+	float right,
+	float bottom,
+	float top,
+	float zNear,
+	float zFar,
+	float q
+	)
+{
+	glm::mat4 shearOrtho = glm::mat4(1.0f);
+
+	shearOrtho[0] = glm::vec4(
+		2.f / (right - left),
+		0.f,
+		2 * q / (right - left),
+		-(right + left - 2 * q * (zNear + zFar) / 2.f) / (right - left)
+		);
+
+	shearOrtho[1] = glm::vec4(
+		0.f,
+		2.f / (top - bottom),
+		0.f,
+		-(top + bottom) / (top - bottom)
+		);
+
+	shearOrtho[2] = glm::vec4(
+		0.f,
+		0.f,
+		-2.f / (zFar - zNear),
+		-(zFar + zNear) / (zFar - zNear)
+		);
+
+	shearOrtho[3] = glm::vec4(
+		0.f,
+		0.f,
+		0.f,
+		1.0f
+		);
+
+	return shearOrtho;
 }

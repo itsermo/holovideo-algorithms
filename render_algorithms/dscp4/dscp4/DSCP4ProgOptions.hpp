@@ -48,23 +48,56 @@ public:
 	bool getWantHelp() { return vm_.count("help") == 0 ? false : true; }
 
 #ifdef DSCP4_HAVE_LOG4CXX
-	int getVerbosity() { return verbosity_; }
+		int getVerbosity() { return traverseOption<unsigned int>("verbosity", "general.verbosity"); }
 #endif
 
-	std::string getGenerateNormals() { return vm_["generate-normals"].as<std::string>(); }
-	bool getTriangulateMesh() { return vm_["triangulate-mesh"].as<bool>(); }
-	bool getAutoscale() { return vm_["autoscale"].as<bool>(); }
-	std::string getShadeModel() { return vm_["shade-model"].as<std::string>(); }
-	std::string getRenderMode() { return vm_["render-mode"].as<std::string>(); }
-
+	// General options
 	boost::filesystem::path getInstallPath() { return pt_.get<std::string>("general.install_path"); }
 	boost::filesystem::path getBinPath() { return pt_.get<std::string>("general.bin_path"); }
 	boost::filesystem::path getLibPath() { return pt_.get<std::string>("general.lib_path"); }
 	boost::filesystem::path getModelsPath() { return pt_.get<std::string>("general.models_path"); }
 	boost::filesystem::path getShadersPath() { return pt_.get<std::string>("general.shaders_path"); }
 
+	//Input options
+	std::string getGenerateNormals() { return vm_["generate-normals"].as<std::string>(); }
+	bool getTriangulateMesh() { return vm_["triangulate-mesh"].as<bool>(); }
+
+	//Render options
+	bool getAutoscale() { return vm_["autoscale"].as<bool>(); }
+	std::string getShadeModel() { return vm_["shade-model"].as<std::string>(); }
+	std::string getRenderMode() { return traverseOption<std::string>("render-mode", "render.render_mode"); }
+	std::string getShaderFileName() { return pt_.get<std::string>("render.shader_filename"); }
+	float getLightPosX() { return pt_.get<float>("render.light_pos_x"); }
+	float getLightPosY() { return pt_.get<float>("render.light_pos_y"); }
+	float getLightPosZ() { return pt_.get<float>("render.light_pos_z"); }
+
+	//Algorithm options
+	unsigned int getNumViewsX() { return pt_.get<unsigned int>("algorithm.num_views_x"); }
+	unsigned int getNumViewsY() { return pt_.get<unsigned int>("algorithm.num_views_y"); }
+	unsigned int getNumWafelsPerScanline() { return pt_.get<unsigned int>("algorithm.num_wafels"); }
+	unsigned int getNumScanlines() { return pt_.get<unsigned int>("algorithm.num_scanlines"); }
+
+	//Display options
+	std::string getDisplayName() { return pt_.get<std::string>("display.display_name"); }
+	unsigned int getNumHeads() { return pt_.get<unsigned int>("display.num_heads"); }
+	unsigned int getHeadResX() { return pt_.get<unsigned int>("display.head_x"); }
+	unsigned int getHeadResY(){ return pt_.get<unsigned int>("display.head_y"); }
+
 
 private:
+	// looks for option on the cmd line first, if no cmd line options,
+	// then return conf file option
+	template<typename T>
+	T traverseOption(std::string cmdVarName, std::string confVarName){
+		try {
+			return vm_[cmdVarName].as<T>();
+		}
+		catch (std::exception)
+		{
+			return pt_.get<T>(confVarName);
+		}
+	}
+
 	boost::property_tree::ptree pt_;
 
 	boost::program_options::variables_map vm_;
@@ -74,9 +107,7 @@ private:
 	boost::program_options::options_description inputOptions_;
 	boost::program_options::options_description renderOptions_;
 
-
 #ifdef DSCP4_HAVE_LOG4CXX
-	int verbosity_;
 	log4cxx::LoggerPtr logger_ = log4cxx::Logger::getLogger("edu.mit.media.obmg.holovideo.dscp4");
 #endif
 
