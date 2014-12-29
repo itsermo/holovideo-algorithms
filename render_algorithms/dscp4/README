@@ -6,6 +6,7 @@
  4.) Installing
  5.) Configuring
  6.) Running
+ 7.) Uninstalling
  
 == 1. PREREQUISITES ==
 
@@ -156,4 +157,10 @@
  "dragon.ply" locally, if it can't be found, it will navigate to the
  model_path, as defined by /etc/dscp4.conf and look for the file there.
  
+ == 7. UNINSTALLING ==
  
+ Simply running the following command:
+	
+	sudo make uninstall
+
+ Will delete all traces of dscp4 from your computer
