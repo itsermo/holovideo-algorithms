@@ -57,16 +57,16 @@ light_pos_z = 0.5
 
 [algorithm]
 ;the number of panorama scene views in horizontal dimension
-num_views_x = 512
+num_views_x = 16
 
 ;the number of panorama scene views in vertical (1 because it's an HPO display)
 num_views_y = 1
 
 ;the horizontal resolution of a scanline (how many wafels per scanline), in wafels
-num_wafels = 512
+num_wafels = 693
 
 ;the vertical resolution (number of scanlines total), in scanlines
-num_scanlines = 460
+num_scanlines = 468
 
 [display]
 ;friendly name of the display

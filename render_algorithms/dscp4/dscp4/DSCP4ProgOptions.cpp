@@ -4,7 +4,8 @@
 
 DSCP4ProgramOptions::DSCP4ProgramOptions() :
 generalOptions_("General options"),
-inputOptions_("Input options")
+inputOptions_("Input options"),
+renderOptions_("Render options")
 {	
 	generalOptions_.add_options()
 #ifdef DSCP4_HAVE_LOG4CXX
