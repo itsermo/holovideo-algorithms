@@ -30,7 +30,27 @@ if (glGetError() != GL_NO_ERROR)						\
 
 using namespace dscp4;
 
-DSCP4Render::DSCP4Render()
+DSCP4Render::DSCP4Render() :
+		DSCP4Render(render_options_t {
+						DSCP4_DEFAULT_RENDER_SHADERS_PATH,
+						DSCP4_DEFAULT_RENDER_SHADER_FILENAME_PREFIX,
+						DSCP4_DEFAULT_RENDER_RENDER_MODE,
+						DSCP4_DEFAULT_RENDER_SHADER_MODEL,
+						DSCP4_DEFAULT_RENDER_LIGHT_POS_X,
+						DSCP4_DEFAULT_RENDER_LIGHT_POS_Y,
+						DSCP4_DEFAULT_RENDER_LIGHT_POS_Z,
+						DSCP4_DEFAULT_RENDER_AUTOSCALE_ENABLED },
+					algorithm_options_t {
+							DSCP4_DEFAULT_ALGORITHM_NUM_VIEWS_X,
+							DSCP4_DEFAULT_ALGORITHM_NUM_VIEWS_Y,
+							DSCP4_DEFAULT_ALGORITHM_NUM_WAFELS,
+							DSCP4_DEFAULT_ALGORITHM_NUM_SCANLINES },
+					display_options_t {
+								DSCP4_DEFAULT_DISPLAY_NAME,
+								DSCP4_DEFAULT_DISPLAY_NUM_HEADS,
+								DSCP4_DEFAULT_DISPLAY_HEAD_RES_X,
+								DSCP4_DEFAULT_DISPLAY_HEAD_RES_Y},
+								DSCP4_DEFAULT_LOG_VERBOSITY)
 {
 	
 }
@@ -56,7 +76,10 @@ zFar_(DSCP4_RENDER_DEFAULT_ZFAR),
 fovy_(DSCP4_RENDER_DEFAULT_FOVY),
 renderOptions_(renderOptions),
 algorithmOptions_(algorithmOptions),
-displayOptions_(displayOptions)
+displayOptions_(displayOptions),
+isFullScreen_(false),
+lightingShader_(nullptr),
+currentWindow_(0)
 {
 
 #ifdef DSCP4_HAVE_LOG4CXX
@@ -586,7 +609,9 @@ void DSCP4Render::deinit()
 
 	LOG4CXX_DEBUG(logger_, "Waiting for render thread to stop...")
 	shouldRender_ = false;
-	renderThread_.join();
+
+	if(renderThread_.joinable())
+		renderThread_.join();
 
 	if (lightingShader_)
 	{

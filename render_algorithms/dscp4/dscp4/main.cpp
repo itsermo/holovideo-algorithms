@@ -78,7 +78,7 @@ int main(int argc, const char* argv[])
 	{
 		options.parseConfigFile();
 	}
-	catch (std::exception)
+	catch (std::exception&)
 	{
 		LOG4CXX_FATAL(logger, "Could not parse dscp4.conf file. This is copied to /etc/dscp4 folder in Linux, or %PROGRAMDATA%\\\\dscp4 folder in Windows during the install process. Make sure you've built and installed dscp4 properly, and your account has permission to access the file. Exiting...")
 		return -1;
@@ -87,7 +87,7 @@ int main(int argc, const char* argv[])
 	try {
 		options.parseCommandLine(argc, argv);
 	}
-	catch (std::exception)
+	catch (std::exception&)
 	{
 		std::cout << "Uknown arguments detected" << std::endl;
 		options.printOptions(DSCP4ProgramOptions::DSCP4_OPTIONS_TYPE_ALL);
@@ -106,7 +106,7 @@ int main(int argc, const char* argv[])
 	{
 		logLevel = options.getVerbosity();
 	}
-	catch (std::exception e)
+	catch (std::exception& e)
 	{
 		LOG4CXX_ERROR(logger, "Could not parse verbosity setting from command line or conf file: " << e.what())
 	}
@@ -149,7 +149,7 @@ int main(int argc, const char* argv[])
 		try {
 			objectFilePath = options.getModelsPath() / objectFilePath;
 		}
-		catch (std::exception)
+		catch (std::exception&)
 		{
 			LOG4CXX_ERROR(logger, "Couldn't find model path from '" << DSCP4_CONF_FILENAME << "' file")
 		}
@@ -217,7 +217,7 @@ int main(int argc, const char* argv[])
 		renderOptions.light_pos_y = options.getLightPosY();
 		renderOptions.light_pos_z = options.getLightPosZ();
 	}
-	catch (std::exception e)
+	catch (std::exception& e)
 	{
 		LOG4CXX_FATAL(logger, "Could not parse render options from command line or conf file: " << e.what())
 		return -1;
@@ -235,6 +235,7 @@ int main(int argc, const char* argv[])
 			break;
 	case DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE:
 		LOG4CXX_INFO(logger, "Rendering mode set to holovideo fringe computation (for holovideo output)")
+			break;
 	default:
 		break;
 	}
@@ -275,7 +276,7 @@ int main(int argc, const char* argv[])
 		algorithmOptions.num_wafels_per_scanline = options.getNumWafelsPerScanline();
 		algorithmOptions.num_scanlines = options.getNumScanlines();
 	}
-	catch (std::exception e)
+	catch (std::exception& e)
 	{
 		LOG4CXX_FATAL(logger, "Could not parse algorithm options from conf file or command line: " << e.what())
 		return -1;
@@ -294,7 +295,7 @@ int main(int argc, const char* argv[])
 		displayOptions.head_res_x = options.getHeadResX();
 		displayOptions.head_res_y = options.getHeadResY();
 	}
-	catch (std::exception e)
+	catch (std::exception& e)
 	{
 		LOG4CXX_FATAL(logger, "Could not parse display options from conf file or command line: " << e.what())
 		return -1;

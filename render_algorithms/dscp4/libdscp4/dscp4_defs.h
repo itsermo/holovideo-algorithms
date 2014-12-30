@@ -1,6 +1,29 @@
 #ifndef DSCP4_DEFS_H
 #define DSCP4_DEFS_H
 
+// These are some default values you can reference, which are
+// only called by the default constructor of C++ DSCP4Render class
+//
+// Changing these will only affect the default constructor,
+// DSCP4 program will load and overwrite these values from dscp4.conf file
+#define DSCP4_DEFAULT_RENDER_SHADERS_PATH 			"/usr/local/dscp4/shaders"
+#define DSCP4_DEFAULT_RENDER_SHADER_FILENAME_PREFIX	"pointlight"
+#define DSCP4_DEFAULT_RENDER_SHADER_MODEL			DSCP4_SHADER_MODEL_FLAT
+#define DSCP4_DEFAULT_RENDER_RENDER_MODE 			DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE
+#define DSCP4_DEFAULT_RENDER_LIGHT_POS_X 			-0.7f
+#define DSCP4_DEFAULT_RENDER_LIGHT_POS_Y 			0.7f
+#define DSCP4_DEFAULT_RENDER_LIGHT_POS_Z 			0.5f
+#define DSCP4_DEFAULT_RENDER_AUTOSCALE_ENABLED 		true
+#define DSCP4_DEFAULT_ALGORITHM_NUM_VIEWS_X 		16
+#define DSCP4_DEFAULT_ALGORITHM_NUM_VIEWS_Y 		1
+#define DSCP4_DEFAULT_ALGORITHM_NUM_WAFELS 			693
+#define DSCP4_DEFAULT_ALGORITHM_NUM_SCANLINES 		460
+#define DSCP4_DEFAULT_DISPLAY_NAME					"MIT Mark IV"
+#define DSCP4_DEFAULT_DISPLAY_NUM_HEADS				6
+#define DSCP4_DEFAULT_DISPLAY_HEAD_RES_X			3552
+#define DSCP4_DEFAULT_DISPLAY_HEAD_RES_Y			2476
+#define DSCP4_DEFAULT_LOG_VERBOSITY					3
+
 extern "C"{
 
 	typedef void* dscp4_context_t;

@@ -91,7 +91,7 @@ private:
 		try {
 			return vm_[cmdVarName].as<T>();
 		}
-		catch (std::exception)
+		catch (std::exception&)
 		{
 			return pt_.get<T>(confVarName);
 		}
