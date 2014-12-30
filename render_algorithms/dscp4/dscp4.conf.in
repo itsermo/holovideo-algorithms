@@ -51,9 +51,9 @@ render_mode = holovideo
 shader_filename = pointlight
 
 ;shader light position
-light_pos_x = -0.7
-light_pos_y = 0.7
-light_pos_z = 0.5
+light_pos_x = -4.0
+light_pos_y = 4.0
+light_pos_z = 2.0
 
 [algorithm]
 ;the number of panorama scene views in horizontal dimension

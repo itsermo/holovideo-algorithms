@@ -44,10 +44,27 @@
 
 namespace dscp4
 {
+
+	struct Camera
+	{
+		glm::vec3 eye;
+		glm::vec3 center;
+		glm::vec3 up;
+	};
+
+	struct Lighting
+	{
+		glm::vec4 position;
+		glm::vec4 ambientColor;
+		glm::vec4 diffuseColor;
+		glm::vec4 specularColor;
+		glm::vec4 globalAmbientColor;
+	};
+
 	class DSCP4Render
 	{
 	public:
-		
+
 		DSCP4Render();
 		DSCP4Render(render_options_t renderOptions,
 			algorithm_options_t algorithmOptions,
@@ -90,13 +107,18 @@ namespace dscp4
 			float q
 			);
 
+		bool isRunning() { return isInit_; }
+
 		bool initWindow(SDL_Window*& window, SDL_GLContext& glContext, int thisWindowNum);
 		void deinitWindow(SDL_Window*& window, SDL_GLContext& glContext, int thisWindowNum);
 
 		bool initLightingShader(int which);
 		void deinitLightingShader(int which);
 
-		void renderLoop();
+		void renderLoop();			// The general rendering loop
+		void drawForViewing();	// The function that renders viewing mode
+		void drawForStereogram(int which); // Generates and renders stereograms
+		void drawForFringe(int which);     // Renders the fringe pattern from stereograms
 
 		void glCheckErrors();
 
@@ -114,7 +136,7 @@ namespace dscp4
 
 		std::atomic<bool> haveNewRemoteCloud_;
 
-		bool isInit_;
+		std::atomic<bool> isInit_;
 
 		std::mutex isInitMutex_;
 		std::condition_variable isInitCV_;
@@ -150,6 +172,9 @@ namespace dscp4
 		glm::mat4 projectionMatrix_;
 		glm::mat4 viewMatrix_;
 		glm::mat4 modelMatrix_;
+
+		Camera camera_;
+		Lighting lighting_;
 
 #ifdef DSCP4_HAVE_LOG4CXX
 		log4cxx::LoggerPtr logger_ = log4cxx::Logger::getLogger("edu.mit.media.obmg.holovideo.dscp4.lib.renderer");
