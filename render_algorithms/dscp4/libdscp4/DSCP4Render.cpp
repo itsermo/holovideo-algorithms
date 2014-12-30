@@ -3,7 +3,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-
 // This checks for a true condition, prints the error message, cleans up and returns false
 #define CHECK_SDL_RC(rc_condition, what)				\
 	if (rc_condition)									\
@@ -292,6 +291,10 @@ void DSCP4Render::drawCube()
 	static GLubyte orange[] = { 255, 255, 0, 255 };
 	static GLubyte purple[] = { 255, 0, 255, 0 };
 
+	glEnable(GL_COLOR_MATERIAL);
+	glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
+	glEnable(GL_NORMALIZE);
+
 	/* Send our triangle data to the pipeline. */
 	glBegin(GL_TRIANGLES);
 
@@ -380,6 +383,9 @@ void DSCP4Render::drawCube()
 	glVertex3fv(v5);
 
 	glEnd();
+
+	glDisable(GL_NORMALIZE);
+	glDisable(GL_COLOR_MATERIAL);
 }
 
 void DSCP4Render::renderLoop()
@@ -393,6 +399,7 @@ void DSCP4Render::renderLoop()
 	GLfloat lightDiffuseColor[] = { 1.0f, 1.0f, 1.0f, 1 };
 	GLfloat lightSpecularColor[] = { 1, 1, 1, 1 };
 	GLfloat lightGlobalAmbient[] = { 0.0f, 0.0f, 0.0f, 1 };
+	float q = 0.f;
 
 	for (int i = 0; i < numWindows_; i++)
 	{
@@ -424,29 +431,29 @@ void DSCP4Render::renderLoop()
 		* Change to the projection matrix and set
 		* our viewing volume.
 		*/
-		glMatrixMode(GL_PROJECTION);
-		glLoadIdentity();
+		//glMatrixMode(GL_PROJECTION);
+		//glLoadIdentity();
 
 		// For model viewing, we should set up a normal perspective projection
 		// For holovideo and stereogram generation, we need to make a perspective
 		// where lines in Z are parallel going along X axis, but converging in Y axis
 		// (i.e. orthographic for X axis, projection for Y axis)
 		// This is because our display is horizontal parallax only
-		switch (renderOptions_.render_mode)
-		{
-		case DSCP4_RENDER_MODE_MODEL_VIEWING:
-			//create a perspective projection for model viewing
-			projectionMatrix_ = glm::perspective(fovy_ * (float)M_PI/180.f, ratio, zNear_, zFar_);
-			break;
-		case DSCP4_RENDER_MODE_STEREOGRAM_VIEWING:
-		case DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE:
-			projectionMatrix_ = buildOrthoXPerspYProjMat(-ratio, ratio, -1.0f, 1.0f, zNear_, zFar_, tan(0.1f));
-			break;
-		default:
-			break;
-		}
+		//switch (renderOptions_.render_mode)
+		//{
+		//case DSCP4_RENDER_MODE_MODEL_VIEWING:
+		//	//create a perspective projection for model viewing
+		//	projectionMatrix_ = glm::perspective(fovy_ * (float)M_PI/180.f, ratio, zNear_, zFar_);
+		//	break;
+		//case DSCP4_RENDER_MODE_STEREOGRAM_VIEWING:
+		//case DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE:
+		//	projectionMatrix_ = buildOrthoXPerspYProjMat(-ratio, ratio, -1.0f, 1.0f, zNear_, zFar_, tan(q));
+		//	break;
+		//default:
+		//	break;
+		//}
 
-		glMultMatrixf(glm::value_ptr(projectionMatrix_));
+		//glMultMatrixf(glm::value_ptr(projectionMatrix_));
 
 	}
 
@@ -471,6 +478,42 @@ void DSCP4Render::renderLoop()
 	{
 		SDL_Event event;
 		while (SDL_PollEvent(&event)) {
+
+			if (event.key.keysym.mod == SDL_Keymod::KMOD_LSHIFT)
+			{
+				switch (event.key.keysym.scancode)
+				{
+				case  SDL_Scancode::SDL_SCANCODE_W:
+					lightPosition[1] += 0.1f;
+					break;
+				case SDL_Scancode::SDL_SCANCODE_S:
+					lightPosition[1] -= 0.1f;
+					break;
+				case  SDL_Scancode::SDL_SCANCODE_A:
+					lightPosition[0] -= 0.1f;
+					break;
+				case SDL_Scancode::SDL_SCANCODE_D:
+					lightPosition[0] += 0.1f;
+					break;
+				case  SDL_Scancode::SDL_SCANCODE_Z:
+					lightPosition[2] -= 0.1f;
+					break;
+				case SDL_Scancode::SDL_SCANCODE_X:
+					lightPosition[2] += 0.1f;
+					break;
+				case  SDL_Scancode::SDL_SCANCODE_UP:
+					break;
+				case  SDL_Scancode::SDL_SCANCODE_DOWN:
+					break;
+				case  SDL_Scancode::SDL_SCANCODE_LEFT:
+					break;
+				case SDL_Scancode::SDL_SCANCODE_RIGHT:
+					break;
+				default:
+					break;
+				}
+			}
+
 			if (event.key.type == SDL_KEYDOWN)
 			{
 				switch (event.key.keysym.scancode)
@@ -493,26 +536,14 @@ void DSCP4Render::renderLoop()
 					else
 						rotateAngleY_ += 10;
 					break;
-				case  SDL_Scancode::SDL_SCANCODE_W:
-					lightPosition[1] += 0.1f;
-					break;
-				case SDL_Scancode::SDL_SCANCODE_S:
-					lightPosition[1] -= 0.1f;
-					break;
-				case  SDL_Scancode::SDL_SCANCODE_A:
-					lightPosition[0] -= 0.1f;
-					break;
-				case SDL_Scancode::SDL_SCANCODE_D:
-					lightPosition[0] += 0.1f;
-					break;
-				case  SDL_Scancode::SDL_SCANCODE_Z:
-					lightPosition[2] -= 0.1f;
-					break;
-				case SDL_Scancode::SDL_SCANCODE_X:
-					lightPosition[2] += 0.1f;
-					break;
 				case  SDL_Scancode::SDL_SCANCODE_R:
 					rotateOn_ = !rotateOn_;
+					break;
+				case SDL_Scancode::SDL_SCANCODE_LEFTBRACKET:
+					q += 0.01f;
+					break;
+				case SDL_Scancode::SDL_SCANCODE_RIGHTBRACKET:
+					q -= 0.01f;
 					break;
 				default:
 					break;
@@ -533,6 +564,36 @@ void DSCP4Render::renderLoop()
 		{
 			SDL_GL_MakeCurrent(windows_[i], glContexts_[i]);
 
+
+
+			glMatrixMode(GL_PROJECTION);
+
+			float ratio = (float)windowWidth_[i] / (float)windowHeight_[i];
+			
+			projectionMatrix_ = glm::mat4();
+
+			// For model viewing, we should set up a normal perspective projection
+			// For holovideo and stereogram generation, we need to make a perspective
+			// where lines in Z are parallel going along X axis, but converging in Y axis
+			// (i.e. orthographic for X axis, projection for Y axis)
+			// This is because our display is horizontal parallax only
+			switch (renderOptions_.render_mode)
+			{
+			case DSCP4_RENDER_MODE_MODEL_VIEWING:
+				//create a perspective projection for model viewing
+				projectionMatrix_ *= glm::perspective(fovy_ * DEG_TO_RAD, ratio, zNear_, zFar_);
+				break;
+			case DSCP4_RENDER_MODE_STEREOGRAM_VIEWING:
+			case DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE:
+				// create a sheared orthographic projection matrix
+				projectionMatrix_ *= buildOrthoXPerspYProjMat(-ratio, ratio, -1.0f, 1.0f, zNear_, zFar_, tan(q));
+				break;
+			default:
+				break;
+			}
+
+			glLoadMatrixf(glm::value_ptr(projectionMatrix_));
+
 			if (renderOptions_.shader_model != DSCP4_SHADER_MODEL_OFF)
 				glEnable(GL_LIGHTING);
 
@@ -541,21 +602,26 @@ void DSCP4Render::renderLoop()
 			/* Clear the color and depth buffers. */
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-			glPushMatrix();
-			glMatrixMode(GL_PROJECTION);
-			glLightfv(GL_LIGHT0, GL_POSITION, lightPosition);
-			glPopMatrix();
-
 			/* We don't want to modify the projection matrix. */
 			glMatrixMode(GL_MODELVIEW);
-			glLoadIdentity();
 
-			/* Move down the z-axis so we can actually see the object. */
-			glTranslatef(0.0, 0.0, renderOptions_.render_mode == DSCP4_RENDER_MODE_MODEL_VIEWING ? -2.0f : -0.4f);
+			// Move the camera (back away from the scene a bit)
+			viewMatrix_ = glm::mat4() * glm::lookAt(
+				glm::vec3(0, 0, renderOptions_.render_mode == DSCP4_RENDER_MODE_MODEL_VIEWING ? 2.0f : 0.4f), //eye point, or the point where your camera is located
+				glm::vec3(0, 0, 0), //center point, or the point where your camera is pointed toward
+				glm::vec3(0, 1, 0)); //up vector, explains the orientation of the camera (which axis is up)
 
-			/* Rotate. */
-			glRotatef(rotateAngleX_, 1.0, 0.0, 0.0);
-			glRotatef(rotateAngleY_, 0.0, 1.0, 0.0);
+
+			glLoadMatrixf(glm::value_ptr(viewMatrix_));
+
+			glLightfv(GL_LIGHT0, GL_POSITION, lightPosition);
+
+			// Rotate the scene
+			viewMatrix_ = glm::rotate(viewMatrix_, rotateAngleX_ * DEG_TO_RAD, glm::vec3(1.0f, 0.0f, 0.0f));
+			viewMatrix_ = glm::rotate(viewMatrix_, rotateAngleY_ * DEG_TO_RAD, glm::vec3(0.0f, 1.0f, 0.0f));
+
+			glLoadMatrixf(glm::value_ptr(viewMatrix_));
+
 
 			glEnable(GL_DEPTH_TEST);
 			glEnable(GL_LIGHT0);
@@ -563,6 +629,25 @@ void DSCP4Render::renderLoop()
 			std::unique_lock<std::mutex> meshLock(meshMutex_);
 			for (auto it = meshes_.begin(); it != meshes_.end(); it++)
 			{
+
+
+				// create the model matrix
+				auto &mesh = it->second;
+				auto &transform = it->second.info.transform;
+				const float scaleFactor = 1.0f / sqrt(mesh.info.bounding_sphere.w); //scaling factor is 1/r, r = sqrt(radius squared)
+
+				modelMatrix_ = glm::mat4();
+				modelMatrix_ *= viewMatrix_;
+				modelMatrix_ = glm::scale(modelMatrix_, glm::vec3(scaleFactor + transform.scale.x, scaleFactor + transform.scale.y, scaleFactor + transform.scale.z));
+
+				modelMatrix_ = glm::translate(modelMatrix_, glm::vec3(
+					-mesh.info.bounding_sphere.x + transform.translate.x,
+					-mesh.info.bounding_sphere.y + transform.translate.y,
+					-mesh.info.bounding_sphere.z + transform.translate.z));
+
+				glLoadMatrixf(glm::value_ptr(modelMatrix_));
+
+				//draw the actual mesh
 				drawMesh(it->second);
 			}
 			meshLock.unlock();
@@ -626,20 +711,6 @@ void DSCP4Render::deinit()
 
 void DSCP4Render::drawMesh(const mesh_t& mesh)
 {
-	const float radius = sqrt(mesh.info.bounding_sphere.w);
-	const float factor = 1.0f/radius;
-	auto transform = mesh.info.transform;
-
-	glPushMatrix();
-
-	glRotatef(transform.rotate.w, transform.rotate.x, transform.rotate.y, transform.rotate.z);
-	
-	glScalef(factor + transform.scale.x, factor + transform.scale.y, factor + transform.scale.z);
-
-	glTranslatef(-mesh.info.bounding_sphere.x + transform.translate.x,
-		-mesh.info.bounding_sphere.y + transform.translate.y,
-		-mesh.info.bounding_sphere.z + transform.translate.z);
-
 	glEnable(GL_COLOR_MATERIAL);
 	glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
 	glEnable(GL_NORMALIZE);
@@ -700,8 +771,6 @@ void DSCP4Render::drawMesh(const mesh_t& mesh)
 
 	glDisable(GL_NORMALIZE);
 	glDisable(GL_COLOR_MATERIAL);
-
-	glPopMatrix();
 }
 
 void DSCP4Render::addMesh(const char *id, int numVertices, float *vertices, float * normals, float *colors, unsigned int numVertexDimensions, unsigned int numColorChannels)

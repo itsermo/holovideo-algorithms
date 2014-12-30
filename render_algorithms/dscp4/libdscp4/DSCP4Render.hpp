@@ -155,8 +155,7 @@ namespace dscp4
 		log4cxx::LoggerPtr logger_ = log4cxx::Logger::getLogger("edu.mit.media.obmg.holovideo.dscp4.lib.renderer");
 #endif
 
+		const float DEG_TO_RAD = (float)M_PI / 180.0f; // just multiply this constant to degrees to get radians
+
 	};
-
-	static DSCP4Render *gCurrentDSCP4Instance = nullptr;
-
 }
