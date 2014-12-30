@@ -38,7 +38,7 @@
 
 #include <boost/filesystem.hpp>
 
-#define DSCP4_RENDER_DEFAULT_ZNEAR 0.0f
+#define DSCP4_RENDER_DEFAULT_ZNEAR 0.01f
 #define DSCP4_RENDER_DEFAULT_ZFAR 5.0f
 #define DSCP4_RENDER_DEFAULT_FOVY 60.0f //in degrees
 

@@ -408,35 +408,14 @@ void DSCP4Render::renderLoop()
 
 		float ratio = (float)windowWidth_[i] / (float)windowHeight_[i];
 
-
-		/* Culling. */
-		//glCullFace(GL_BACK);
-		//glFrontFace(GL_CCW);
-		//glEnable(GL_CULL_FACE);
-
-		/* Set the clear color. */
-		//glClearColor(0, 0, 0, 0);
-
 		// GLUT settings
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glClearColor(0.0f, 0.0f, 0.0f, 0.0f); // Black Background
 
-		//glShadeModel(GL_FLAT); // Enable Smooth Shading
 		glLightfv(GL_LIGHT0, GL_AMBIENT, lightAmbientColor);
 		glLightfv(GL_LIGHT0, GL_DIFFUSE, lightDiffuseColor);
-		//glLightfv(GL_LIGHT0, GL_SPECULAR, lightSpecularColor);
 
 		glLightModelfv(GL_AMBIENT_AND_DIFFUSE, lightGlobalAmbient);
-
-		//glMaterialfv(GL_FRONT, GL_SPECULAR, materialSpecular);
-		//glMaterialfv(GL_FRONT, GL_SHININESS, materialShininess);
-		//glLightfv(GL_LIGHT0, GL_POSITION, lightPosition);
-
-		
-		//glEnable(GL_LIGHT0);
-		//Takes care of occlusions for point cloud
-		//glEnable(GL_DEPTH_TEST);
-
 
 		/* Setup our viewport. */
 		glViewport(0, 0, windowWidth_[i], windowHeight_[i]);
@@ -447,18 +426,28 @@ void DSCP4Render::renderLoop()
 		*/
 		glMatrixMode(GL_PROJECTION);
 		glLoadIdentity();
-		/*
-		* EXERCISE:
-		* Replace this with a call to glFrustum.
-		*/
-		//gluPerspective(fovy_, ratio, zNear_, zFar_);
 
-		//auto perspective = glm::perspective(fovy_ * (float)M_PI / 180.0f, ratio, zNear_, zFar_);
-
-		projectionMatrix_ = buildOrthoXPerspYProjMat(-ratio, ratio, -1.0f, 1.0f, zNear_, zFar_, tan(0.1f));
+		// For model viewing, we should set up a normal perspective projection
+		// For holovideo and stereogram generation, we need to make a perspective
+		// where lines in Z are parallel going along X axis, but converging in Y axis
+		// (i.e. orthographic for X axis, projection for Y axis)
+		// This is because our display is horizontal parallax only
+		switch (renderOptions_.render_mode)
+		{
+		case DSCP4_RENDER_MODE_MODEL_VIEWING:
+			//create a perspective projection for model viewing
+			projectionMatrix_ = glm::perspective(fovy_ * (float)M_PI/180.f, ratio, zNear_, zFar_);
+			break;
+		case DSCP4_RENDER_MODE_STEREOGRAM_VIEWING:
+		case DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE:
+			projectionMatrix_ = buildOrthoXPerspYProjMat(-ratio, ratio, -1.0f, 1.0f, zNear_, zFar_, tan(0.1f));
+			break;
+		default:
+			break;
+		}
 
 		glMultMatrixf(glm::value_ptr(projectionMatrix_));
-		//glOrtho(-ratio, ratio, -1.0f,1.0f ,1.0f, -1.0f);
+
 	}
 
 	bool resAreDifferent = false;
@@ -561,8 +550,8 @@ void DSCP4Render::renderLoop()
 			glMatrixMode(GL_MODELVIEW);
 			glLoadIdentity();
 
-			/* Move down the z-axis. */
-			glTranslatef(0.0, 0.0, -0.4f);
+			/* Move down the z-axis so we can actually see the object. */
+			glTranslatef(0.0, 0.0, renderOptions_.render_mode == DSCP4_RENDER_MODE_MODEL_VIEWING ? -2.0f : -0.4f);
 
 			/* Rotate. */
 			glRotatef(rotateAngleX_, 1.0, 0.0, 0.0);
