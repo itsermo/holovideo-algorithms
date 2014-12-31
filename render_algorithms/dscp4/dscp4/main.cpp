@@ -66,6 +66,7 @@ int main(int argc, const char* argv[])
 	display_options_t displayOptions = { 0 };
 	std::string displayName;
 	std::string shadersPath;
+	std::string kernelsPath;
 	std::string shaderFileNamePrefix;
 
 	float translateX = 0, translateY = 0, translateZ = 0;
@@ -209,9 +210,11 @@ int main(int argc, const char* argv[])
 		renderOptions.auto_scale_enabled = options.getAutoscale();
 
 		shadersPath = options.getShadersPath().string();
+		kernelsPath = options.getKernelsPath().string();
 		shaderFileNamePrefix = options.getShaderFileName();
 
 		renderOptions.shaders_path = shadersPath.c_str();
+		renderOptions.kernels_path = kernelsPath.c_str();
 		renderOptions.shader_filename_prefix = shaderFileNamePrefix.c_str();
 		renderOptions.light_pos_x = options.getLightPosX();
 		renderOptions.light_pos_y = options.getLightPosY();
@@ -275,6 +278,8 @@ int main(int argc, const char* argv[])
 		algorithmOptions.num_views_y = options.getNumViewsY();
 		algorithmOptions.num_wafels_per_scanline = options.getNumWafelsPerScanline();
 		algorithmOptions.num_scanlines = options.getNumScanlines();
+		algorithmOptions.fov_x = options.getFovX();
+		algorithmOptions.fov_y = options.getFovY();
 	}
 	catch (std::exception& e)
 	{

@@ -6,7 +6,15 @@
 //
 // Changing these will only affect the default constructor,
 // DSCP4 program will load and overwrite these values from dscp4.conf file
+#ifdef WIN32
+#define DSCP4_DEFAULT_RENDER_SHADERS_PATH 			"C:\\Program Files\\dscp4\\share\\dscp4\\shaders"
+#define DSCP4_DEFAULT_RENDER_KERNELS_PATH			"C:\\Program Files\\dscp4\\share\\dscp4\\kernels"
+#define DSCP4_DEFAULT_RENDER_MODELS_PATH			"C:\\Program Files\\dscp4\\share\\dscp4\\models"
+#else
 #define DSCP4_DEFAULT_RENDER_SHADERS_PATH 			"/usr/local/dscp4/shaders"
+#define DSCP4_DEFAULT_RENDER_KERNELS_PATH			"/usr/local/dscp4/kernels"
+#define DSCP4_DEFAULT_RENDER_MODELS_PATH			"/usr/local/dscp4/models"
+#endif
 #define DSCP4_DEFAULT_RENDER_SHADER_FILENAME_PREFIX	"pointlight"
 #define DSCP4_DEFAULT_RENDER_SHADER_MODEL			DSCP4_SHADER_MODEL_FLAT
 #define DSCP4_DEFAULT_RENDER_RENDER_MODE 			DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE
@@ -18,6 +26,8 @@
 #define DSCP4_DEFAULT_ALGORITHM_NUM_VIEWS_Y 		1
 #define DSCP4_DEFAULT_ALGORITHM_NUM_WAFELS 			693
 #define DSCP4_DEFAULT_ALGORITHM_NUM_SCANLINES 		460
+#define DSCP4_DEFAULT_ALGORITHM_FOV_X 				30.f
+#define DSCP4_DEFAULT_ALGORITHM_FOV_Y 				30.f
 #define DSCP4_DEFAULT_DISPLAY_NAME					"MIT Mark IV"
 #define DSCP4_DEFAULT_DISPLAY_NUM_HEADS				6
 #define DSCP4_DEFAULT_DISPLAY_HEAD_RES_X			3552
@@ -104,6 +114,7 @@ extern "C"{
 	typedef struct
 	{
 		const char * shaders_path;
+		const char * kernels_path;
 		const char * shader_filename_prefix;
 		render_mode_t render_mode;
 		shader_model_t shader_model;
@@ -114,6 +125,7 @@ extern "C"{
 	typedef struct
 	{
 		unsigned int num_views_x, num_views_y, num_wafels_per_scanline, num_scanlines;
+		float fov_x, fov_y;
 	} algorithm_options_t;
 
 	typedef struct

@@ -40,7 +40,6 @@
 
 #define DSCP4_RENDER_DEFAULT_ZNEAR 0.01f
 #define DSCP4_RENDER_DEFAULT_ZFAR 5.0f
-#define DSCP4_RENDER_DEFAULT_FOVY 60.0f //in degrees
 
 namespace dscp4
 {
@@ -130,7 +129,6 @@ namespace dscp4
 		// Renderer projection settings
 		float zNear_;
 		float zFar_;
-		float fovy_;
 
 		std::mutex localCloudMutex_;
 		std::mutex meshMutex_;

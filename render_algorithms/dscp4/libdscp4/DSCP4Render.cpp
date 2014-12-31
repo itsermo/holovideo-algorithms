@@ -32,6 +32,7 @@ using namespace dscp4;
 DSCP4Render::DSCP4Render() :
 		DSCP4Render(render_options_t {
 						DSCP4_DEFAULT_RENDER_SHADERS_PATH,
+						DSCP4_DEFAULT_RENDER_KERNELS_PATH,
 						DSCP4_DEFAULT_RENDER_SHADER_FILENAME_PREFIX,
 						DSCP4_DEFAULT_RENDER_RENDER_MODE,
 						DSCP4_DEFAULT_RENDER_SHADER_MODEL,
@@ -43,7 +44,9 @@ DSCP4Render::DSCP4Render() :
 							DSCP4_DEFAULT_ALGORITHM_NUM_VIEWS_X,
 							DSCP4_DEFAULT_ALGORITHM_NUM_VIEWS_Y,
 							DSCP4_DEFAULT_ALGORITHM_NUM_WAFELS,
-							DSCP4_DEFAULT_ALGORITHM_NUM_SCANLINES },
+							DSCP4_DEFAULT_ALGORITHM_NUM_SCANLINES,
+							DSCP4_DEFAULT_ALGORITHM_FOV_X,
+							DSCP4_DEFAULT_ALGORITHM_FOV_Y },
 					display_options_t {
 								DSCP4_DEFAULT_DISPLAY_NAME,
 								DSCP4_DEFAULT_DISPLAY_NUM_HEADS,
@@ -72,7 +75,6 @@ rotateIncrement_(1.0f),
 rotateOn_(false),
 zNear_(DSCP4_RENDER_DEFAULT_ZNEAR),
 zFar_(DSCP4_RENDER_DEFAULT_ZFAR),
-fovy_(DSCP4_RENDER_DEFAULT_FOVY),
 renderOptions_(renderOptions),
 algorithmOptions_(algorithmOptions),
 displayOptions_(displayOptions),
@@ -408,7 +410,7 @@ void DSCP4Render::renderLoop()
 
 	lightingShader_ = new VSShaderLib[numWindows_];
 
-	camera_.eye = glm::vec3(0, 0, renderOptions_.render_mode == DSCP4_RENDER_MODE_MODEL_VIEWING ? 2.0f : 0.4f);
+	camera_.eye = glm::vec3(0, 0, renderOptions_.render_mode == DSCP4_RENDER_MODE_MODEL_VIEWING ? 4.0f : .5f);
 	camera_.center = glm::vec3(0, 0, 0);
 	camera_.up = glm::vec3(0, 1, 0);
 
@@ -550,7 +552,12 @@ void DSCP4Render::renderLoop()
 					case SDL_Scancode::SDL_SCANCODE_RIGHT:
 						camera_.eye[0] += 0.1f;
 						camera_.center[0] += 0.1f;
-
+						break;
+					case SDL_Scancode::SDL_SCANCODE_EQUALS:
+						zFar_ += 0.01f;
+						break;
+					case SDL_Scancode::SDL_SCANCODE_MINUS:
+						zFar_ -= 0.01f;
 						break;
 					default:
 						break;
@@ -590,6 +597,13 @@ void DSCP4Render::renderLoop()
 						break;
 					case SDL_Scancode::SDL_SCANCODE_Q:
 						shouldRender_ = false;
+						break;
+					case SDL_Scancode::SDL_SCANCODE_EQUALS:
+						zNear_ += 0.01f;
+						break;
+					case SDL_Scancode::SDL_SCANCODE_MINUS:
+						zNear_ -= 0.01f;
+						break;
 					default:
 						break;
 					}
@@ -616,7 +630,7 @@ void DSCP4Render::drawForViewing()
 	glMatrixMode(GL_PROJECTION);
 
 	projectionMatrix_ = glm::mat4();
-	projectionMatrix_ *= glm::perspective(fovy_ * DEG_TO_RAD, (float)windowWidth_[0] / (float)windowHeight_[0], zNear_, zFar_);
+	projectionMatrix_ *= glm::perspective(algorithmOptions_.fov_y * DEG_TO_RAD, (float)windowWidth_[0] / (float)windowHeight_[0], zNear_, zFar_);
 
 	glLoadMatrixf(glm::value_ptr(projectionMatrix_));
 
@@ -663,13 +677,13 @@ void DSCP4Render::drawForStereogram()
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	for (int i = 0; i < algorithmOptions_.num_views_x; i++)
+	for (unsigned int i = 0; i < algorithmOptions_.num_views_x; i++)
 	{
 		glViewport(tileX*(i%4), tileY*(i/4), algorithmOptions_.num_wafels_per_scanline / 2, algorithmOptions_.num_scanlines / 2);
 		glMatrixMode(GL_PROJECTION);
 
 		const float ratio = (float)windowWidth_[0] / (float)windowHeight_[0];
-		const float q = (i - algorithmOptions_.num_views_x / 2.f) / algorithmOptions_.num_views_x * 30.0f * M_PI / 180.f;
+		const float q = (i - algorithmOptions_.num_views_x * 0.5f) / static_cast<float>(algorithmOptions_.num_views_x) * 30.f * DEG_TO_RAD;
 
 		projectionMatrix_ = buildOrthoXPerspYProjMat(-ratio, ratio, -1.0f, 1.0f, zNear_, zFar_, q);
 

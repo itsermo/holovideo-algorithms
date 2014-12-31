@@ -56,6 +56,7 @@ public:
 	boost::filesystem::path getLibPath() { return pt_.get<std::string>("general.lib_path"); }
 	boost::filesystem::path getModelsPath() { return pt_.get<std::string>("general.models_path"); }
 	boost::filesystem::path getShadersPath() { return pt_.get<std::string>("general.shaders_path"); }
+	boost::filesystem::path getKernelsPath() { return pt_.get<std::string>("general.kernels_path"); }
 
 	//Input options
 	std::string getGenerateNormals() { return vm_["generate-normals"].as<std::string>(); }
@@ -75,6 +76,8 @@ public:
 	unsigned int getNumViewsY() { return pt_.get<unsigned int>("algorithm.num_views_y"); }
 	unsigned int getNumWafelsPerScanline() { return pt_.get<unsigned int>("algorithm.num_wafels"); }
 	unsigned int getNumScanlines() { return pt_.get<unsigned int>("algorithm.num_scanlines"); }
+	float getFovX() { return pt_.get<float>("algorithm.fov_x"); }
+	float getFovY() { return pt_.get<float>("algorithm.fov_y"); }
 
 	//Display options
 	std::string getDisplayName() { return pt_.get<std::string>("display.display_name"); }
