@@ -149,7 +149,7 @@ bool DSCP4Render::init()
 	CHECK_SDL_RC(SDL_Init(SDL_INIT_VIDEO) < 0, "Could not initialize SDL")
 
 	// If we can get the number of Windows from Xinerama
-	// we can create a pixel buffer for each Window
+	// we can create a pixel buffer object for each Window
 	// for displaying the final fringe pattern textures
 	if (numWindows_ == 0)
 		numWindows_ = SDL_GetNumVideoDisplays();
@@ -190,11 +190,16 @@ bool DSCP4Render::initWindow(SDL_Window*& window, SDL_GLContext& glContext, int 
 	switch (renderOptions_.render_mode)
 	{
 	case DSCP4_RENDER_MODE_MODEL_VIEWING:
+		windowWidth_[thisWindowNum] = algorithmOptions_.num_wafels_per_scanline;
+		windowHeight_[thisWindowNum] = algorithmOptions_.num_scanlines;
+		LOG4CXX_DEBUG(logger_, "Creating SDL OpenGL Window " << thisWindowNum << ": " << windowWidth_[thisWindowNum] << "x" << windowHeight_[thisWindowNum] << " @ " << "{" << bounds.x + 80 << "," << bounds.y + 80 << "}")
+		window = SDL_CreateWindow(("dscp4-" + std::to_string(thisWindowNum)).c_str(), bounds.x + 80, bounds.y + 80, windowWidth_[thisWindowNum], windowHeight_[thisWindowNum], SDL_WINDOW_OPENGL);
+		break;
 	case DSCP4_RENDER_MODE_STEREOGRAM_VIEWING:
-		windowWidth_[thisWindowNum] = bounds.w / 2;
-		windowHeight_[thisWindowNum] = bounds.h / 2;
-		LOG4CXX_DEBUG(logger_, "Creating SDL OpenGL Window " << thisWindowNum << ": " << bounds.w / 2 << "x" << bounds.h / 2 << " @ " << "{" << bounds.x + 80 << "," << bounds.y + 80 << "}")
-		window = SDL_CreateWindow(("dscp4-" + std::to_string(thisWindowNum)).c_str(), bounds.x + 80, bounds.y + 80, bounds.w / 2, bounds.h / 2, SDL_WINDOW_OPENGL);
+		windowWidth_[thisWindowNum] = algorithmOptions_.num_wafels_per_scanline*2;
+		windowHeight_[thisWindowNum] = algorithmOptions_.num_scanlines*2;
+		LOG4CXX_DEBUG(logger_, "Creating SDL OpenGL Window " << thisWindowNum << ": " << windowWidth_[thisWindowNum] << "x" << windowHeight_[thisWindowNum] << " @ " << "{" << bounds.x + 80 << "," << bounds.y + 80 << "}")
+		window = SDL_CreateWindow(("dscp4-" + std::to_string(thisWindowNum)).c_str(), bounds.x + 80, bounds.y + 80, windowWidth_[thisWindowNum], windowHeight_[thisWindowNum], SDL_WINDOW_OPENGL);
 		break;
 	case DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE:
 		windowWidth_[thisWindowNum] = bounds.w;
@@ -397,6 +402,7 @@ void DSCP4Render::renderLoop()
 {
 	std::unique_lock<std::mutex> initLock(isInitMutex_);
 	
+	float ratio = 0.f;
 	float q = 0.f; //offset for rendering stereograms
 	SDL_Event event = { 0 };
 
@@ -412,20 +418,18 @@ void DSCP4Render::renderLoop()
 	lighting_.specularColor = glm::vec4(1.f, 1.f, 1.f, 1.f);
 	lighting_.globalAmbientColor = glm::vec4(0.f, 0.f, 0.f, 1.f);
 
-
-	for (int i = 0; i < numWindows_; i++)
+	// Both model viewing and stereogram viewing just require 1 window,
+	// so we only initialize one context and window
+	// These modes are only for debugging/visualizing purposes
+	switch (renderOptions_.render_mode)
 	{
-		initWindow(windows_[i], glContexts_[i], i);
-
-		SDL_GL_MakeCurrent(windows_[i], glContexts_[i]);
-		
-		//glewInit();
-
-		//bool isShader = initLightingShader(i);
-
+	case DSCP4_RENDER_MODE_MODEL_VIEWING:
+	case DSCP4_RENDER_MODE_STEREOGRAM_VIEWING:
+		initWindow(windows_[0], glContexts_[0], 0);
+		SDL_GL_MakeCurrent(windows_[0], glContexts_[0]);
 		SDL_GL_SetSwapInterval(1);
 
-		float ratio = (float)windowWidth_[i] / (float)windowHeight_[i];
+		ratio = (float)windowWidth_[0] / (float)windowHeight_[0];
 
 		// GLUT settings
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -437,18 +441,35 @@ void DSCP4Render::renderLoop()
 		glLightModelfv(GL_AMBIENT_AND_DIFFUSE, glm::value_ptr(lighting_.globalAmbientColor));
 
 		/* Setup our viewport. */
-		glViewport(0, 0, windowWidth_[i], windowHeight_[i]);
+		glViewport(0, 0, windowWidth_[0], windowHeight_[0]);
+		break;
+	case DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE:
+		break;
+	default:
+		break;
 	}
 
-	bool resAreDifferent = false;
-	for (int i = 1; i < numWindows_; i++)
-	{
-		if (windowWidth_[i] != windowWidth_[i-1] || windowHeight_[i] != windowHeight_[i-1])
-			resAreDifferent = true;
-	}
+	//for (int i = 0; i < numWindows_; i++)
+	//{
+		//initWindow(windows_[i], glContexts_[i], i);
 
-	if (resAreDifferent)
-		LOG4CXX_WARN(logger_, "Multiple displays with different resolutions. You're on your own...")
+		
+		//glewInit();
+
+		//bool isShader = initLightingShader(i);
+
+
+	//}
+
+	//bool resAreDifferent = false;
+	//for (int i = 1; i < numWindows_; i++)
+	//{
+	//	if (windowWidth_[i] != windowWidth_[i-1] || windowHeight_[i] != windowHeight_[i-1])
+	//		resAreDifferent = true;
+	//}
+
+	//if (resAreDifferent)
+	//	LOG4CXX_WARN(logger_, "Multiple displays with different resolutions. You're on your own...")
 
 	//init shaders
 
@@ -469,92 +490,109 @@ void DSCP4Render::renderLoop()
 		{
 		case DSCP4_RENDER_MODE_MODEL_VIEWING:
 			drawForViewing();
+			SDL_GL_SwapWindow(windows_[0]);
 			break;
 		case DSCP4_RENDER_MODE_STEREOGRAM_VIEWING:
+			drawForStereogram();
+			SDL_GL_SwapWindow(windows_[0]);
+			break;
 		case DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE:
 			break;
 		default:
 			break;
 		}
 
-		for (int h = 0; h < numWindows_; h++)
-		{
-			SDL_GL_MakeCurrent(windows_[h], glContexts_[h]);
-			SDL_GL_SwapWindow(windows_[h]);
-		}
+		//for (int h = 0; h < numWindows_; h++)
+		//{
+		//	SDL_GL_MakeCurrent(windows_[h], glContexts_[h]);
+		//	SDL_GL_SwapWindow(windows_[h]);
+		//}
 
 		while (SDL_PollEvent(&event)) {
 
-			if (event.key.keysym.mod == SDL_Keymod::KMOD_LSHIFT)
-			{
-				switch (event.key.keysym.scancode)
-				{
-				case  SDL_Scancode::SDL_SCANCODE_W:
-					lighting_.position[1] += 0.1f;
-					break;
-				case SDL_Scancode::SDL_SCANCODE_S:
-					lighting_.position[1] -= 0.1f;
-					break;
-				case  SDL_Scancode::SDL_SCANCODE_A:
-					lighting_.position[0] -= 0.1f;
-					break;
-				case SDL_Scancode::SDL_SCANCODE_D:
-					lighting_.position[0] += 0.1f;
-					break;
-				case  SDL_Scancode::SDL_SCANCODE_Z:
-					lighting_.position[2] -= 0.1f;
-					break;
-				case SDL_Scancode::SDL_SCANCODE_X:
-					lighting_.position[2] += 0.1f;
-					break;
-				case  SDL_Scancode::SDL_SCANCODE_UP:
-					break;
-				case  SDL_Scancode::SDL_SCANCODE_DOWN:
-					break;
-				case  SDL_Scancode::SDL_SCANCODE_LEFT:
-					break;
-				case SDL_Scancode::SDL_SCANCODE_RIGHT:
-					break;
-				default:
-					break;
-				}
-			}
-
 			if (event.key.type == SDL_KEYDOWN)
 			{
-				switch (event.key.keysym.scancode)
+
+				if (event.key.keysym.mod == SDL_Keymod::KMOD_LSHIFT)
 				{
-				case  SDL_Scancode::SDL_SCANCODE_UP:
-					rotateAngleX_ -= 10;
-					break;
-				case  SDL_Scancode::SDL_SCANCODE_DOWN:
-					rotateAngleX_ += 10;
-					break;
-				case  SDL_Scancode::SDL_SCANCODE_LEFT:
-					if (rotateOn_)
-						rotateIncrement_ -= 0.1f;
-					else
-						rotateAngleY_ -= 10;
-					break;
-				case SDL_Scancode::SDL_SCANCODE_RIGHT:
-					if (rotateOn_)
-						rotateIncrement_ += 0.1f;
-					else
-						rotateAngleY_ += 10;
-					break;
-				case  SDL_Scancode::SDL_SCANCODE_R:
-					rotateOn_ = !rotateOn_;
-					break;
-				case SDL_Scancode::SDL_SCANCODE_LEFTBRACKET:
-					q += 0.01f;
-					break;
-				case SDL_Scancode::SDL_SCANCODE_RIGHTBRACKET:
-					q -= 0.01f;
-					break;
-				case SDL_Scancode::SDL_SCANCODE_Q:
-					shouldRender_ = false;
-				default:
-					break;
+					switch (event.key.keysym.scancode)
+					{
+					case  SDL_Scancode::SDL_SCANCODE_W:
+						lighting_.position[1] += 0.1f;
+						break;
+					case SDL_Scancode::SDL_SCANCODE_S:
+						lighting_.position[1] -= 0.1f;
+						break;
+					case  SDL_Scancode::SDL_SCANCODE_A:
+						lighting_.position[0] -= 0.1f;
+						break;
+					case SDL_Scancode::SDL_SCANCODE_D:
+						lighting_.position[0] += 0.1f;
+						break;
+					case  SDL_Scancode::SDL_SCANCODE_Z:
+						lighting_.position[2] -= 0.1f;
+						break;
+					case SDL_Scancode::SDL_SCANCODE_X:
+						lighting_.position[2] += 0.1f;
+						break;
+					case  SDL_Scancode::SDL_SCANCODE_UP:
+						camera_.eye[1] += 0.1f;
+						camera_.center[1] += 0.1f;
+						break;
+					case  SDL_Scancode::SDL_SCANCODE_DOWN:
+						camera_.eye[1] -= 0.1f;
+						camera_.center[1] -= 0.1f;
+						break;
+					case  SDL_Scancode::SDL_SCANCODE_LEFT:
+						camera_.eye[0] -= 0.1f;
+						camera_.center[0] -= 0.1f;
+						break;
+					case SDL_Scancode::SDL_SCANCODE_RIGHT:
+						camera_.eye[0] += 0.1f;
+						camera_.center[0] += 0.1f;
+
+						break;
+					default:
+						break;
+					}
+				}
+				else
+				{
+
+					switch (event.key.keysym.scancode)
+					{
+					case  SDL_Scancode::SDL_SCANCODE_UP:
+						rotateAngleX_ += 10;
+						break;
+					case  SDL_Scancode::SDL_SCANCODE_DOWN:
+						rotateAngleX_ -= 10;
+						break;
+					case  SDL_Scancode::SDL_SCANCODE_LEFT:
+						if (rotateOn_)
+							rotateIncrement_ += 0.1f;
+						else
+							rotateAngleY_ += 10;
+						break;
+					case SDL_Scancode::SDL_SCANCODE_RIGHT:
+						if (rotateOn_)
+							rotateIncrement_ -= 0.1f;
+						else
+							rotateAngleY_ -= 10;
+						break;
+					case  SDL_Scancode::SDL_SCANCODE_R:
+						rotateOn_ = !rotateOn_;
+						break;
+					case SDL_Scancode::SDL_SCANCODE_LEFTBRACKET:
+						q += 0.01f;
+						break;
+					case SDL_Scancode::SDL_SCANCODE_RIGHTBRACKET:
+						q -= 0.01f;
+						break;
+					case SDL_Scancode::SDL_SCANCODE_Q:
+						shouldRender_ = false;
+					default:
+						break;
+					}
 				}
 			}
 		}
@@ -575,14 +613,65 @@ void DSCP4Render::renderLoop()
 
 void DSCP4Render::drawForViewing()
 {
-	for (int i = 0; i < numWindows_; i++)
-	{
-		SDL_GL_MakeCurrent(windows_[i], glContexts_[i]);
+	glMatrixMode(GL_PROJECTION);
 
+	projectionMatrix_ = glm::mat4();
+	projectionMatrix_ *= glm::perspective(fovy_ * DEG_TO_RAD, (float)windowWidth_[0] / (float)windowHeight_[0], zNear_, zFar_);
+
+	glLoadMatrixf(glm::value_ptr(projectionMatrix_));
+
+	if (renderOptions_.shader_model != DSCP4_SHADER_MODEL_OFF)
+		glEnable(GL_LIGHTING);
+
+	glShadeModel(renderOptions_.shader_model == DSCP4_SHADER_MODEL_SMOOTH ? GL_SMOOTH : GL_FLAT);
+
+	/* Clear the color and depth buffers. */
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	/* We don't want to modify the projection matrix. */
+	glMatrixMode(GL_MODELVIEW);
+
+	viewMatrix_ = glm::mat4() * glm::lookAt(
+		camera_.eye,
+		camera_.center,
+		camera_.up
+		);
+
+	glLoadMatrixf(glm::value_ptr(viewMatrix_));
+
+	glLightfv(GL_LIGHT0, GL_POSITION, glm::value_ptr(lighting_.position));
+
+	// Rotate the scene
+	viewMatrix_ = glm::rotate(viewMatrix_, rotateAngleX_ * DEG_TO_RAD, glm::vec3(1.0f, 0.0f, 0.0f));
+	viewMatrix_ = glm::rotate(viewMatrix_, rotateAngleY_ * DEG_TO_RAD, glm::vec3(0.0f, 1.0f, 0.0f));
+
+	glLoadMatrixf(glm::value_ptr(viewMatrix_));
+
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_LIGHT0);
+
+	drawAllMeshes();
+
+	glDisable(GL_LIGHT0);
+	glDisable(GL_DEPTH_TEST);
+}
+
+void DSCP4Render::drawForStereogram()
+{
+	const int tileX = algorithmOptions_.num_wafels_per_scanline / 2;
+	const int tileY = algorithmOptions_.num_scanlines / 2;
+
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	for (int i = 0; i < algorithmOptions_.num_views_x; i++)
+	{
+		glViewport(tileX*(i%4), tileY*(i/4), algorithmOptions_.num_wafels_per_scanline / 2, algorithmOptions_.num_scanlines / 2);
 		glMatrixMode(GL_PROJECTION);
 
-		projectionMatrix_ = glm::mat4();
-		projectionMatrix_ *= glm::perspective(fovy_ * DEG_TO_RAD, (float)windowWidth_[i] / (float)windowHeight_[i], zNear_, zFar_);
+		const float ratio = (float)windowWidth_[0] / (float)windowHeight_[0];
+		const float q = (i - algorithmOptions_.num_views_x / 2.f) / algorithmOptions_.num_views_x * 30.0f * M_PI / 180.f;
+
+		projectionMatrix_ = buildOrthoXPerspYProjMat(-ratio, ratio, -1.0f, 1.0f, zNear_, zFar_, q);
 
 		glLoadMatrixf(glm::value_ptr(projectionMatrix_));
 
@@ -592,16 +681,10 @@ void DSCP4Render::drawForViewing()
 		glShadeModel(renderOptions_.shader_model == DSCP4_SHADER_MODEL_SMOOTH ? GL_SMOOTH : GL_FLAT);
 
 		/* Clear the color and depth buffers. */
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		/* We don't want to modify the projection matrix. */
 		glMatrixMode(GL_MODELVIEW);
-
-		// Move the camera (back away from the scene a bit)
-		//viewMatrix_ = glm::mat4() * glm::lookAt(
-		//	glm::vec3(0, 0, renderOptions_.render_mode == DSCP4_RENDER_MODE_MODEL_VIEWING ? 2.0f : 0.4f), //eye point, or the point where your camera is located
-		//	glm::vec3(0, 0, 0), //center point, or the point where your camera is pointed toward
-		//	glm::vec3(0, 1, 0)); //up vector, explains the orientation of the camera (which axis is up)
 
 		viewMatrix_ = glm::mat4() * glm::lookAt(
 			camera_.eye,
@@ -622,36 +705,12 @@ void DSCP4Render::drawForViewing()
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_LIGHT0);
 
-		std::unique_lock<std::mutex> meshLock(meshMutex_);
-		for (auto it = meshes_.begin(); it != meshes_.end(); it++)
-		{
-			// create the model matrix
-			auto &mesh = it->second;
-			auto &transform = it->second.info.transform;
-			const float scaleFactor = 1.0f / sqrt(mesh.info.bounding_sphere.w); //scaling factor is 1/r, r = sqrt(radius squared)
-
-			modelMatrix_ = glm::mat4();
-			modelMatrix_ *= viewMatrix_;
-			modelMatrix_ = glm::scale(modelMatrix_, glm::vec3(scaleFactor + transform.scale.x, scaleFactor + transform.scale.y, scaleFactor + transform.scale.z));
-
-			modelMatrix_ = glm::translate(modelMatrix_, glm::vec3(
-				-mesh.info.bounding_sphere.x + transform.translate.x,
-				-mesh.info.bounding_sphere.y + transform.translate.y,
-				-mesh.info.bounding_sphere.z + transform.translate.z));
-
-			glLoadMatrixf(glm::value_ptr(modelMatrix_));
-
-			//draw the actual mesh
-			drawMesh(it->second);
-		}
-		meshLock.unlock();
+		drawAllMeshes();
 
 		glDisable(GL_LIGHT0);
 		glDisable(GL_DEPTH_TEST);
 	}
-
 }
-
 
 
 void DSCP4Render::deinit()
@@ -748,6 +807,33 @@ void DSCP4Render::drawMesh(const mesh_t& mesh)
 
 	glDisable(GL_NORMALIZE);
 	glDisable(GL_COLOR_MATERIAL);
+}
+
+void DSCP4Render::drawAllMeshes()
+{
+	std::unique_lock<std::mutex> meshLock(meshMutex_);
+	for (auto it = meshes_.begin(); it != meshes_.end(); it++)
+	{
+		// create the model matrix
+		auto &mesh = it->second;
+		auto &transform = it->second.info.transform;
+		const float scaleFactor = 1.0f / sqrt(mesh.info.bounding_sphere.w); //scaling factor is 1/r, r = sqrt(radius squared)
+
+		modelMatrix_ = glm::mat4();
+		modelMatrix_ *= viewMatrix_;
+		modelMatrix_ = glm::scale(modelMatrix_, glm::vec3(scaleFactor + transform.scale.x, scaleFactor + transform.scale.y, scaleFactor + transform.scale.z));
+
+		modelMatrix_ = glm::translate(modelMatrix_, glm::vec3(
+			-mesh.info.bounding_sphere.x + transform.translate.x,
+			-mesh.info.bounding_sphere.y + transform.translate.y,
+			-mesh.info.bounding_sphere.z + transform.translate.z));
+
+		glLoadMatrixf(glm::value_ptr(modelMatrix_));
+
+		//draw the actual mesh
+		drawMesh(it->second);
+	}
+	meshLock.unlock();
 }
 
 void DSCP4Render::addMesh(const char *id, int numVertices, float *vertices, float * normals, float *colors, unsigned int numVertexDimensions, unsigned int numColorChannels)

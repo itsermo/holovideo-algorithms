@@ -117,12 +117,13 @@ namespace dscp4
 
 		void renderLoop();			// The general rendering loop
 		void drawForViewing();	// The function that renders viewing mode
-		void drawForStereogram(int which); // Generates and renders stereograms
+		void drawForStereogram(); // Generates and renders stereograms
 		void drawForFringe(int which);     // Renders the fringe pattern from stereograms
 
 		void glCheckErrors();
 
 		void drawPointCloud();
+		void drawAllMeshes();
 		void drawMesh(const mesh_t& mesh);
 		void drawObjects();
 
