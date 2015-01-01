@@ -142,7 +142,7 @@ namespace dscp4
 
 		void drawPointCloud();
 		void drawAllMeshes();
-		void drawMesh(const mesh_t& mesh);
+		void drawMesh(mesh_t& mesh);
 		void drawObjects();
 
 		// Renderer projection settings

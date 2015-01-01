@@ -432,6 +432,8 @@ void DSCP4Render::renderLoop()
 	case DSCP4_RENDER_MODE_STEREOGRAM_VIEWING:
 		initWindow(windows_[0], glContexts_[0], 0);
 		SDL_GL_MakeCurrent(windows_[0], glContexts_[0]);
+		glewInit();
+
 		SDL_GL_SetSwapInterval(1);
 
 		ratio = (float)windowWidth_[0] / (float)windowHeight_[0];
@@ -450,36 +452,34 @@ void DSCP4Render::renderLoop()
 		numWindows_ = 0;
 		break;
 	case DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE:
+		//for (int i = 0; i < numWindows_; i++)
+		//{
+		//initWindow(windows_[i], glContexts_[i], i);
+
+
+
+		//bool isShader = initLightingShader(i);
+
+
+		//}
+
+		//bool resAreDifferent = false;
+		//for (int i = 1; i < numWindows_; i++)
+		//{
+		//	if (windowWidth_[i] != windowWidth_[i-1] || windowHeight_[i] != windowHeight_[i-1])
+		//		resAreDifferent = true;
+		//}
+
+		//if (resAreDifferent)
+		//	LOG4CXX_WARN(logger_, "Multiple displays with different resolutions. You're on your own...")
+
+		//init shaders
 		break;
 	default:
 		break;
 	}
 
 	SDL_AddEventWatch(DSCP4Render::inputStateChanged, this);
-
-	//for (int i = 0; i < numWindows_; i++)
-	//{
-		//initWindow(windows_[i], glContexts_[i], i);
-
-		
-		//glewInit();
-
-		//bool isShader = initLightingShader(i);
-
-
-	//}
-
-	//bool resAreDifferent = false;
-	//for (int i = 1; i < numWindows_; i++)
-	//{
-	//	if (windowWidth_[i] != windowWidth_[i-1] || windowHeight_[i] != windowHeight_[i-1])
-	//		resAreDifferent = true;
-	//}
-
-	//if (resAreDifferent)
-	//	LOG4CXX_WARN(logger_, "Multiple displays with different resolutions. You're on your own...")
-
-	//init shaders
 
 	isInit_ = true;
 
@@ -488,58 +488,73 @@ void DSCP4Render::renderLoop()
 
 	while (shouldRender_)
 	{
-		SDL_Event event = { 0 };
+			SDL_Event event = { 0 };
 
+			std::unique_lock<std::mutex> updateFrameLock(updateFrameMutex_);
+			if (!(meshChanged_ || cameraChanged_ || lightingChanged_ || spinOn_))
+			{
+				if (std::cv_status::timeout == updateFrameCV_.wait_for(updateFrameLock, std::chrono::milliseconds(1)))
+					goto poll;
+			}
 
-		std::unique_lock<std::mutex> updateFrameLock(updateFrameMutex_);
-		if (!(meshChanged_ || cameraChanged_ || lightingChanged_ || spinOn_))
-		{
-			if (std::cv_status::timeout == updateFrameCV_.wait_for(updateFrameLock, std::chrono::milliseconds(1)))
-				goto poll;
-		}
-
-		// Increments if spinOn_ is true
-		// Otherwise rotates by rotateAngle_
-		rotateAngleY_ = spinOn_.load() == true ?
-			rotateAngleY_ > 360.0f ?
-			0.f : rotateAngleY_ + rotateIncrement_ : rotateAngleY_.load();
-
-		switch (renderOptions_.render_mode)
-		{
-		case DSCP4_RENDER_MODE_MODEL_VIEWING:
-		{
 #ifdef DSCP4_ENABLE_TRACE_LOG
-			auto duration = measureTime<>(std::bind(&DSCP4Render::drawForViewing, this));
-			LOG4CXX_TRACE(logger_, "Rendering a single view took " << duration << " milliseconds")
-#else
-			drawForViewing();
+			auto duration = measureTime<>([&](){
 #endif
-			SDL_GL_SwapWindow(windows_[0]);
-		}
-			break;
-		case DSCP4_RENDER_MODE_STEREOGRAM_VIEWING:
-		{
-#ifdef DSCP4_ENABLE_TRACE_LOG
-			auto duration = measureTime<>(std::bind(&DSCP4Render::drawForStereogram, this));
-			LOG4CXX_TRACE(logger_, "Rendering " << algorithmOptions_.num_views_x << " views for stereogram took " << duration << " milliseconds")
-#else
-			drawForStereogram();
-#endif
-			SDL_GL_SwapWindow(windows_[0]);
-		}
-			break;
-		case DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE:
-			break;
-		default:
-			break;
-		}
 
-poll:
-		SDL_PollEvent(&event);
+			// Increments rotation if spinOn_ is true
+			// Otherwise rotates by rotateAngle_
+			rotateAngleY_ = spinOn_.load() == true ?
+				rotateAngleY_ > 360.0f ?
+				0.f : rotateAngleY_ + rotateIncrement_ : rotateAngleY_.load();
+
+			switch (renderOptions_.render_mode)
+			{
+			case DSCP4_RENDER_MODE_MODEL_VIEWING:
+			{
+#ifdef DSCP4_ENABLE_TRACE_LOG
+				auto duration = measureTime<>(std::bind(&DSCP4Render::drawForViewing, this));
+				LOG4CXX_TRACE(logger_, "Generating a single view took " << duration << " ms (" << 1.f / duration * 1000 << "fps)")
+#else
+				drawForViewing();
+#endif
+				SDL_GL_SwapWindow(windows_[0]);
+			}
+				break;
+			case DSCP4_RENDER_MODE_STEREOGRAM_VIEWING:
+			{
+#ifdef DSCP4_ENABLE_TRACE_LOG
+				auto duration = measureTime<>(std::bind(&DSCP4Render::drawForStereogram, this));
+				LOG4CXX_TRACE(logger_, "Generating " << algorithmOptions_.num_views_x << " views took " << duration << " ms (" << 1.f / duration * 1000 << "fps)")
+#else
+				drawForStereogram();
+#endif
+				SDL_GL_SwapWindow(windows_[0]);
+			}
+				break;
+			case DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE:
+				break;
+			default:
+				break;
+			}
+
+#ifdef DSCP4_ENABLE_TRACE_LOG
+		});
+
+		LOG4CXX_TRACE(logger_, "Rendering the frame took " << duration << " ms (" << 1.f/duration * 1000 << "fps)");
+#endif
+
+		poll:
+			SDL_PollEvent(&event);
+
 
 	}
 
 	initLock.lock();
+
+	std::unique_lock<std::mutex> meshLock(meshMutex_);
+	for (auto it = meshes_.begin(); it != meshes_.end(); it++)
+		glDeleteBuffers(3, &it->second.info.gl_vertex_buf_id);
+	meshLock.unlock();
 
 	if (lightingShader_)
 	{
@@ -675,7 +690,7 @@ void DSCP4Render::drawForStereogram()
 
 	cameraChanged_ = false;
 	meshChanged_ = false;
-	meshChanged_ = false;
+	lightingChanged_ = false;
 }
 
 
@@ -718,65 +733,55 @@ void DSCP4Render::deinit()
 	isInit_ = false;
 }
 
-void DSCP4Render::drawMesh(const mesh_t& mesh)
+void DSCP4Render::drawMesh(mesh_t& mesh)
 {
+	if (mesh.info.gl_vertex_buf_id == -1)
+	{
+		glGenBuffers(3, &mesh.info.gl_vertex_buf_id);
+		glBindBuffer(GL_ARRAY_BUFFER, mesh.info.gl_vertex_buf_id);
+		glBufferData(GL_ARRAY_BUFFER, mesh.info.vertex_stride * mesh.info.num_vertices, mesh.vertices, GL_STATIC_DRAW);
+		if (mesh.normals)
+		{
+			glBindBuffer(GL_ARRAY_BUFFER, mesh.info.gl_normal_buf_id);
+			glBufferData(GL_ARRAY_BUFFER, mesh.info.vertex_stride * mesh.info.num_vertices, mesh.normals, GL_STATIC_DRAW);
+		}
+
+		if (mesh.colors)
+		{
+			glBindBuffer(GL_ARRAY_BUFFER, mesh.info.gl_color_buf_id);
+			glBufferData(GL_ARRAY_BUFFER, mesh.info.color_stride * mesh.info.num_vertices, mesh.colors, GL_STATIC_DRAW);
+		}
+	}
+
 	glEnable(GL_COLOR_MATERIAL);
 	glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
 	glEnable(GL_NORMALIZE);
 
-	if (mesh.colors && mesh.normals)
+	glBindBuffer(GL_ARRAY_BUFFER, mesh.info.gl_vertex_buf_id);
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glVertexPointer(mesh.info.num_points_per_vertex, GL_FLOAT, mesh.info.vertex_stride, 0);
+
+	if (mesh.colors)
 	{
-		glEnableClientState(GL_VERTEX_ARRAY);
+		glBindBuffer(GL_ARRAY_BUFFER, mesh.info.gl_color_buf_id);
 		glEnableClientState(GL_COLOR_ARRAY);
-		glEnableClientState(GL_NORMAL_ARRAY);
-
-		glNormalPointer(GL_FLOAT, mesh.info.vertex_stride, mesh.normals);
-		glColorPointer(mesh.info.num_color_channels, GL_FLOAT, mesh.info.color_stride, mesh.colors);
-		glVertexPointer(mesh.info.num_points_per_vertex, GL_FLOAT, mesh.info.vertex_stride, mesh.vertices);
-		glDrawArrays(GL_TRIANGLES, 0, mesh.info.num_vertices);
-	
-		glDisableClientState(GL_NORMAL_ARRAY);
-		glDisableClientState(GL_COLOR_ARRAY);
-		glDisableClientState(GL_VERTEX_ARRAY);
-
-	}
-	else if (mesh.colors)
-	{
-		glEnableClientState(GL_VERTEX_ARRAY);
-		glEnableClientState(GL_COLOR_ARRAY);
-
-		glColorPointer(mesh.info.num_color_channels, GL_FLOAT, mesh.info.color_stride, mesh.colors);
-		glVertexPointer(mesh.info.num_points_per_vertex, GL_FLOAT, mesh.info.vertex_stride, mesh.vertices);
-		glDrawArrays(GL_TRIANGLES, 0, mesh.info.num_vertices);
-
-		glDisableClientState(GL_COLOR_ARRAY);
-		glDisableClientState(GL_VERTEX_ARRAY);
-	}
-	else if (mesh.normals)
-	{
-		glColor4f(0.5f, 0.5f, 0.5f, 1.0f);
-
-		glEnableClientState(GL_VERTEX_ARRAY);
-		glEnableClientState(GL_NORMAL_ARRAY);
-
-		glNormalPointer(GL_FLOAT, mesh.info.vertex_stride, mesh.normals);
-		glVertexPointer(mesh.info.num_points_per_vertex, GL_FLOAT, mesh.info.vertex_stride, mesh.vertices);
-		glDrawArrays(GL_TRIANGLES, mesh.info.vertex_stride, mesh.info.num_vertices);
-
-		glDisableClientState(GL_VERTEX_ARRAY);
-		glDisableClientState(GL_NORMAL_ARRAY);
+		glColorPointer(mesh.info.num_color_channels, GL_FLOAT, mesh.info.color_stride, 0);
 	}
 	else
-	{
 		glColor4f(0.5f, 0.5f, 0.5f, 1.0f);
 
-		glEnableClientState(GL_VERTEX_ARRAY);
-
-		glVertexPointer(mesh.info.num_points_per_vertex, GL_FLOAT, mesh.info.vertex_stride, mesh.vertices);
-		glDrawArrays(GL_TRIANGLES, mesh.info.vertex_stride, mesh.info.num_vertices);
-
-		glDisableClientState(GL_VERTEX_ARRAY);
+	if (mesh.normals)
+	{
+		glBindBuffer(GL_ARRAY_BUFFER, mesh.info.gl_normal_buf_id);
+		glEnableClientState(GL_NORMAL_ARRAY);
+		glNormalPointer(GL_FLOAT, mesh.info.vertex_stride, 0);
 	}
+
+	glDrawArrays(GL_TRIANGLES, 0, mesh.info.num_vertices);
+	glDisableClientState(GL_VERTEX_ARRAY);
+	glDisableClientState(GL_NORMAL_ARRAY);
+	glDisableClientState(GL_COLOR_ARRAY);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	glDisable(GL_NORMALIZE);
 	glDisable(GL_COLOR_MATERIAL);
@@ -819,6 +824,9 @@ void DSCP4Render::addMesh(const char *id, int numVertices, float *vertices, floa
 	mesh.info.color_stride = numColorChannels * sizeof(float);
 	mesh.info.num_vertices = numVertices;
 	mesh.info.is_point_cloud = false;
+	mesh.info.gl_color_buf_id = -1;
+	mesh.info.gl_vertex_buf_id = -1;
+	mesh.info.gl_normal_buf_id = -1;
 
 	if (renderOptions_.auto_scale_enabled)
 	{
@@ -849,6 +857,8 @@ void DSCP4Render::addMesh(const char *id, int numVertices, float *vertices, floa
 void DSCP4Render::removeMesh(const char *id)
 {
 	std::unique_lock<std::mutex> meshLock(meshMutex_);
+	auto &mesh = meshes_[id];
+
 	meshes_.erase(id);
 	meshChanged_ = true;
 	meshLock.unlock();
@@ -1059,13 +1069,13 @@ int DSCP4Render::inputStateChanged(void* userdata, SDL_Event* event)
 				break;
 			case  SDL_Scancode::SDL_SCANCODE_LEFT:
 				if (render->getSpinOn())
-					render->setRotateIncrement(render->getRotateIncrement() + 0.3f);
+					render->setRotateIncrement(render->getRotateIncrement() - 0.2f);
 				else
 					render->setRotateViewAngleY(render->getRotateViewAngleY() + 10.f);
 				break;
 			case SDL_Scancode::SDL_SCANCODE_RIGHT:
 				if (render->getSpinOn())
-					render->setRotateIncrement(render->getRotateIncrement() - 0.3f);
+					render->setRotateIncrement(render->getRotateIncrement() + 0.2f);
 				else
 					render->setRotateViewAngleY(render->getRotateViewAngleY() - 10.f);
 				break;
