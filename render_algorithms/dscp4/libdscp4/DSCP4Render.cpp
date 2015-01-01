@@ -72,7 +72,7 @@ numWindows_(0),
 rotateAngleX_(0),
 rotateAngleY_(0),
 rotateIncrement_(1.0f),
-rotateOn_(false),
+spinOn_(false),
 zNear_(DSCP4_RENDER_DEFAULT_ZNEAR),
 zFar_(DSCP4_RENDER_DEFAULT_ZFAR),
 renderOptions_(renderOptions),
@@ -85,7 +85,10 @@ projectionMatrix_(),
 viewMatrix_(),
 modelMatrix_(),
 camera_(),
-lighting_()
+lighting_(),
+cameraChanged_(false),
+lightingChanged_(false),
+meshChanged_(false)
 {
 
 #ifdef DSCP4_HAVE_LOG4CXX
@@ -444,12 +447,15 @@ void DSCP4Render::renderLoop()
 
 		/* Setup our viewport. */
 		glViewport(0, 0, windowWidth_[0], windowHeight_[0]);
+		numWindows_ = 0;
 		break;
 	case DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE:
 		break;
 	default:
 		break;
 	}
+
+	SDL_AddEventWatch(DSCP4Render::inputStateChanged, this);
 
 	//for (int i = 0; i < numWindows_; i++)
 	//{
@@ -482,21 +488,45 @@ void DSCP4Render::renderLoop()
 
 	while (shouldRender_)
 	{
-		// Increments if rotateOn_ is true
+		SDL_Event event = { 0 };
+
+
+		std::unique_lock<std::mutex> updateFrameLock(updateFrameMutex_);
+		if (!(meshChanged_ || cameraChanged_ || lightingChanged_ || spinOn_))
+		{
+			if (std::cv_status::timeout == updateFrameCV_.wait_for(updateFrameLock, std::chrono::milliseconds(1)))
+				goto poll;
+		}
+
+		// Increments if spinOn_ is true
 		// Otherwise rotates by rotateAngle_
-		rotateAngleY_ = rotateOn_ == true ?
-			rotateAngleY_ > 360.0f ? 
-			0.f : rotateAngleY_ + rotateIncrement_ : rotateAngleY_;
+		rotateAngleY_ = spinOn_.load() == true ?
+			rotateAngleY_ > 360.0f ?
+			0.f : rotateAngleY_ + rotateIncrement_ : rotateAngleY_.load();
 
 		switch (renderOptions_.render_mode)
 		{
 		case DSCP4_RENDER_MODE_MODEL_VIEWING:
+		{
+#ifdef DSCP4_ENABLE_TRACE_LOG
+			auto duration = measureTime<>(std::bind(&DSCP4Render::drawForViewing, this));
+			LOG4CXX_TRACE(logger_, "Rendering a single view took " << duration << " milliseconds")
+#else
 			drawForViewing();
+#endif
 			SDL_GL_SwapWindow(windows_[0]);
+		}
 			break;
 		case DSCP4_RENDER_MODE_STEREOGRAM_VIEWING:
+		{
+#ifdef DSCP4_ENABLE_TRACE_LOG
+			auto duration = measureTime<>(std::bind(&DSCP4Render::drawForStereogram, this));
+			LOG4CXX_TRACE(logger_, "Rendering " << algorithmOptions_.num_views_x << " views for stereogram took " << duration << " milliseconds")
+#else
 			drawForStereogram();
+#endif
 			SDL_GL_SwapWindow(windows_[0]);
+		}
 			break;
 		case DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE:
 			break;
@@ -504,117 +534,18 @@ void DSCP4Render::renderLoop()
 			break;
 		}
 
-		//for (int h = 0; h < numWindows_; h++)
-		//{
-		//	SDL_GL_MakeCurrent(windows_[h], glContexts_[h]);
-		//	SDL_GL_SwapWindow(windows_[h]);
-		//}
+poll:
+		SDL_PollEvent(&event);
 
-		while (SDL_PollEvent(&event)) {
-
-			if (event.key.type == SDL_KEYDOWN)
-			{
-
-				if (event.key.keysym.mod == SDL_Keymod::KMOD_LSHIFT)
-				{
-					switch (event.key.keysym.scancode)
-					{
-					case  SDL_Scancode::SDL_SCANCODE_W:
-						lighting_.position[1] += 0.1f;
-						break;
-					case SDL_Scancode::SDL_SCANCODE_S:
-						lighting_.position[1] -= 0.1f;
-						break;
-					case  SDL_Scancode::SDL_SCANCODE_A:
-						lighting_.position[0] -= 0.1f;
-						break;
-					case SDL_Scancode::SDL_SCANCODE_D:
-						lighting_.position[0] += 0.1f;
-						break;
-					case  SDL_Scancode::SDL_SCANCODE_Z:
-						lighting_.position[2] -= 0.1f;
-						break;
-					case SDL_Scancode::SDL_SCANCODE_X:
-						lighting_.position[2] += 0.1f;
-						break;
-					case  SDL_Scancode::SDL_SCANCODE_UP:
-						camera_.eye[1] += 0.1f;
-						camera_.center[1] += 0.1f;
-						break;
-					case  SDL_Scancode::SDL_SCANCODE_DOWN:
-						camera_.eye[1] -= 0.1f;
-						camera_.center[1] -= 0.1f;
-						break;
-					case  SDL_Scancode::SDL_SCANCODE_LEFT:
-						camera_.eye[0] -= 0.1f;
-						camera_.center[0] -= 0.1f;
-						break;
-					case SDL_Scancode::SDL_SCANCODE_RIGHT:
-						camera_.eye[0] += 0.1f;
-						camera_.center[0] += 0.1f;
-						break;
-					case SDL_Scancode::SDL_SCANCODE_EQUALS:
-						zFar_ += 0.01f;
-						break;
-					case SDL_Scancode::SDL_SCANCODE_MINUS:
-						zFar_ -= 0.01f;
-						break;
-					default:
-						break;
-					}
-				}
-				else
-				{
-
-					switch (event.key.keysym.scancode)
-					{
-					case  SDL_Scancode::SDL_SCANCODE_UP:
-						rotateAngleX_ += 10;
-						break;
-					case  SDL_Scancode::SDL_SCANCODE_DOWN:
-						rotateAngleX_ -= 10;
-						break;
-					case  SDL_Scancode::SDL_SCANCODE_LEFT:
-						if (rotateOn_)
-							rotateIncrement_ += 0.1f;
-						else
-							rotateAngleY_ += 10;
-						break;
-					case SDL_Scancode::SDL_SCANCODE_RIGHT:
-						if (rotateOn_)
-							rotateIncrement_ -= 0.1f;
-						else
-							rotateAngleY_ -= 10;
-						break;
-					case  SDL_Scancode::SDL_SCANCODE_R:
-						rotateOn_ = !rotateOn_;
-						break;
-					case SDL_Scancode::SDL_SCANCODE_LEFTBRACKET:
-						q += 0.01f;
-						break;
-					case SDL_Scancode::SDL_SCANCODE_RIGHTBRACKET:
-						q -= 0.01f;
-						break;
-					case SDL_Scancode::SDL_SCANCODE_Q:
-						shouldRender_ = false;
-						break;
-					case SDL_Scancode::SDL_SCANCODE_EQUALS:
-						zNear_ += 0.01f;
-						break;
-					case SDL_Scancode::SDL_SCANCODE_MINUS:
-						zNear_ -= 0.01f;
-						break;
-					default:
-						break;
-					}
-				}
-			}
-		}
-		//std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	}
 
-	delete[] lightingShader_;
-	lightingShader_ = nullptr;
+	initLock.lock();
+
+	if (lightingShader_)
+	{
+		delete[] lightingShader_;
+		lightingShader_ = nullptr;
+	}
 
 	for (int i = 0; i < numWindows_; i++)
 	{
@@ -622,49 +553,61 @@ void DSCP4Render::renderLoop()
 		deinitWindow(windows_[i], glContexts_[i], i);
 	}
 
-	isInit_ = false;
+	initLock.unlock();
+	isInitCV_.notify_all();
 }
 
 void DSCP4Render::drawForViewing()
 {
-	glMatrixMode(GL_PROJECTION);
+	const float ratio = (float)windowWidth_[0] / (float)windowHeight_[0];
+	{
+		std::lock_guard<std::mutex> lgc(cameraMutex_);
+		glMatrixMode(GL_PROJECTION);
 
-	projectionMatrix_ = glm::mat4();
-	projectionMatrix_ *= glm::perspective(algorithmOptions_.fov_y * DEG_TO_RAD, (float)windowWidth_[0] / (float)windowHeight_[0], zNear_, zFar_);
+		projectionMatrix_ = glm::mat4();
+		projectionMatrix_ *= glm::perspective(algorithmOptions_.fov_y * DEG_TO_RAD, ratio, zNear_, zFar_);
 
-	glLoadMatrixf(glm::value_ptr(projectionMatrix_));
 
-	if (renderOptions_.shader_model != DSCP4_SHADER_MODEL_OFF)
-		glEnable(GL_LIGHTING);
+		glLoadMatrixf(glm::value_ptr(projectionMatrix_));
 
-	glShadeModel(renderOptions_.shader_model == DSCP4_SHADER_MODEL_SMOOTH ? GL_SMOOTH : GL_FLAT);
+		if (renderOptions_.shader_model != DSCP4_SHADER_MODEL_OFF)
+			glEnable(GL_LIGHTING);
 
-	/* Clear the color and depth buffers. */
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glShadeModel(renderOptions_.shader_model == DSCP4_SHADER_MODEL_SMOOTH ? GL_SMOOTH : GL_FLAT);
 
-	/* We don't want to modify the projection matrix. */
-	glMatrixMode(GL_MODELVIEW);
+		/* Clear the color and depth buffers. */
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	viewMatrix_ = glm::mat4() * glm::lookAt(
-		camera_.eye,
-		camera_.center,
-		camera_.up
-		);
+		/* We don't want to modify the projection matrix. */
+		glMatrixMode(GL_MODELVIEW);
 
-	glLoadMatrixf(glm::value_ptr(viewMatrix_));
+		viewMatrix_ = glm::mat4() * glm::lookAt(
+			camera_.eye,
+			camera_.center,
+			camera_.up
+			);
 
-	glLightfv(GL_LIGHT0, GL_POSITION, glm::value_ptr(lighting_.position));
+		glLoadMatrixf(glm::value_ptr(viewMatrix_));
+		{
+			std::lock_guard<std::mutex> lgl(lightingMutex_);
+			glLightfv(GL_LIGHT0, GL_POSITION, glm::value_ptr(lighting_.position));
+			lightingChanged_ = false;
+		}
+		// Rotate the scene
+		viewMatrix_ = glm::rotate(viewMatrix_, rotateAngleX_ * DEG_TO_RAD, glm::vec3(1.0f, 0.0f, 0.0f));
+		viewMatrix_ = glm::rotate(viewMatrix_, rotateAngleY_ * DEG_TO_RAD, glm::vec3(0.0f, 1.0f, 0.0f));
 
-	// Rotate the scene
-	viewMatrix_ = glm::rotate(viewMatrix_, rotateAngleX_ * DEG_TO_RAD, glm::vec3(1.0f, 0.0f, 0.0f));
-	viewMatrix_ = glm::rotate(viewMatrix_, rotateAngleY_ * DEG_TO_RAD, glm::vec3(0.0f, 1.0f, 0.0f));
-
-	glLoadMatrixf(glm::value_ptr(viewMatrix_));
-
+		glLoadMatrixf(glm::value_ptr(viewMatrix_));
+		cameraChanged_ = false;
+	}
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_LIGHT0);
 
-	drawAllMeshes();
+	{
+		std::lock_guard<std::mutex> meshLock(meshMutex_);
+		drawAllMeshes();
+		meshChanged_ = false;
+	}
 
 	glDisable(GL_LIGHT0);
 	glDisable(GL_DEPTH_TEST);
@@ -677,9 +620,14 @@ void DSCP4Render::drawForStereogram()
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+	std::lock_guard<std::mutex> lgc(cameraMutex_);
+	std::lock_guard<std::mutex> lgl(lightingMutex_);
+	std::lock_guard<std::mutex> lgm(meshMutex_);
+
 	for (unsigned int i = 0; i < algorithmOptions_.num_views_x; i++)
 	{
 		glViewport(tileX*(i%4), tileY*(i/4), algorithmOptions_.num_wafels_per_scanline / 2, algorithmOptions_.num_scanlines / 2);
+		
 		glMatrixMode(GL_PROJECTION);
 
 		const float ratio = (float)windowWidth_[0] / (float)windowHeight_[0];
@@ -724,6 +672,10 @@ void DSCP4Render::drawForStereogram()
 		glDisable(GL_LIGHT0);
 		glDisable(GL_DEPTH_TEST);
 	}
+
+	cameraChanged_ = false;
+	meshChanged_ = false;
+	meshChanged_ = false;
 }
 
 
@@ -732,10 +684,14 @@ void DSCP4Render::deinit()
 	LOG4CXX_INFO(logger_, "Deinitializing DSCP4...")
 
 	LOG4CXX_DEBUG(logger_, "Waiting for render thread to stop...")
+
+	//if(renderThread_.joinable())
+	//	renderThread_.join();
+
+	std::unique_lock<std::mutex> lg(isInitMutex_);
 	shouldRender_ = false;
 
-	if(renderThread_.joinable())
-		renderThread_.join();
+	//isInitCV_.wait(lg);
 
 	if (lightingShader_)
 	{
@@ -757,6 +713,9 @@ void DSCP4Render::deinit()
 
 	LOG4CXX_DEBUG(logger_, "Destroying SDL context")
 	SDL_Quit();
+
+	isInit_ = false;
+	lg.unlock();
 }
 
 void DSCP4Render::drawMesh(const mesh_t& mesh)
@@ -825,7 +784,6 @@ void DSCP4Render::drawMesh(const mesh_t& mesh)
 
 void DSCP4Render::drawAllMeshes()
 {
-	std::unique_lock<std::mutex> meshLock(meshMutex_);
 	for (auto it = meshes_.begin(); it != meshes_.end(); it++)
 	{
 		// create the model matrix
@@ -847,7 +805,6 @@ void DSCP4Render::drawAllMeshes()
 		//draw the actual mesh
 		drawMesh(it->second);
 	}
-	meshLock.unlock();
 }
 
 void DSCP4Render::addMesh(const char *id, int numVertices, float *vertices, float * normals, float *colors, unsigned int numVertexDimensions, unsigned int numColorChannels)
@@ -885,6 +842,7 @@ void DSCP4Render::addMesh(const char *id, int numVertices, float *vertices, floa
 
 	std::unique_lock<std::mutex> meshLock(meshMutex_);
 	meshes_[id] = mesh;
+	meshChanged_ = true;
 	meshLock.unlock();
 }
 
@@ -892,6 +850,7 @@ void DSCP4Render::removeMesh(const char *id)
 {
 	std::unique_lock<std::mutex> meshLock(meshMutex_);
 	meshes_.erase(id);
+	meshChanged_ = true;
 	meshLock.unlock();
 }
 
@@ -1001,4 +960,138 @@ glm::mat4 DSCP4Render::buildOrthoXPerspYProjMat(
 		);
 
 	return shearOrtho;
+}
+
+int DSCP4Render::inputStateChanged(void* userdata, SDL_Event* event)
+{
+	auto render = (DSCP4Render*)userdata;
+
+	if (event->key.type == SDL_KEYDOWN)
+	{
+
+		if (event->key.keysym.mod == SDL_Keymod::KMOD_LSHIFT)
+		{
+			auto camera = render->getCameraView();
+			auto lighting = render->getLighting();
+
+			switch (event->key.keysym.scancode)
+			{
+			case  SDL_Scancode::SDL_SCANCODE_W:
+				lighting.position[1] += 0.1f;
+				break;
+			case SDL_Scancode::SDL_SCANCODE_S:
+				lighting.position[1] -= 0.1f;
+				break;
+			case  SDL_Scancode::SDL_SCANCODE_A:
+				lighting.position[0] -= 0.1f;
+				break;
+			case SDL_Scancode::SDL_SCANCODE_D:
+				lighting.position[0] += 0.1f;
+				break;
+			case  SDL_Scancode::SDL_SCANCODE_Z:
+				lighting.position[2] -= 0.1f;
+				break;
+			case SDL_Scancode::SDL_SCANCODE_X:
+				lighting.position[2] += 0.1f;
+				break;
+			case  SDL_Scancode::SDL_SCANCODE_UP:
+				camera.eye[1] += 0.1f;
+				camera.center[1] += 0.1f;
+				break;
+			case  SDL_Scancode::SDL_SCANCODE_DOWN:
+				camera.eye[1] -= 0.1f;
+				camera.center[1] -= 0.1f;
+				break;
+			case  SDL_Scancode::SDL_SCANCODE_LEFT:
+				camera.eye[0] -= 0.1f;
+				camera.center[0] -= 0.1f;
+				break;
+			case SDL_Scancode::SDL_SCANCODE_RIGHT:
+				camera.eye[0] += 0.1f;
+				camera.center[0] += 0.1f;
+				break;
+			case SDL_Scancode::SDL_SCANCODE_EQUALS:
+				//zFar_ += 0.01f;
+				break;
+			case SDL_Scancode::SDL_SCANCODE_MINUS:
+				//zFar_ -= 0.01f;
+				break;
+			default:
+				break;
+			}
+
+			switch (event->key.keysym.scancode)
+			{
+			case  SDL_Scancode::SDL_SCANCODE_W:
+			case SDL_Scancode::SDL_SCANCODE_S:
+			case  SDL_Scancode::SDL_SCANCODE_A:
+			case SDL_Scancode::SDL_SCANCODE_D:
+			case  SDL_Scancode::SDL_SCANCODE_Z:
+			case SDL_Scancode::SDL_SCANCODE_X:
+				render->setLighting(lighting);
+				break;
+			default:
+				break;
+			}
+
+			switch (event->key.keysym.scancode)
+			{
+			case  SDL_Scancode::SDL_SCANCODE_UP:
+			case  SDL_Scancode::SDL_SCANCODE_DOWN:
+			case  SDL_Scancode::SDL_SCANCODE_LEFT:
+			case SDL_Scancode::SDL_SCANCODE_RIGHT:
+				render->setCameraView(camera);
+				break;
+			default:
+				break;
+			}
+		}
+		else
+		{
+
+			switch (event->key.keysym.scancode)
+			{
+			case  SDL_Scancode::SDL_SCANCODE_UP:
+				render->setRotateViewAngleX(render->getRotateViewAngleX() + 10.f);
+				break;
+			case  SDL_Scancode::SDL_SCANCODE_DOWN:
+				render->setRotateViewAngleX(render->getRotateViewAngleX() - 10.f);
+				break;
+			case  SDL_Scancode::SDL_SCANCODE_LEFT:
+				if (render->getSpinOn())
+					render->setRotateIncrement(render->getRotateIncrement() + 0.3f);
+				else
+					render->setRotateViewAngleY(render->getRotateViewAngleY() + 10.f);
+				break;
+			case SDL_Scancode::SDL_SCANCODE_RIGHT:
+				if (render->getSpinOn())
+					render->setRotateIncrement(render->getRotateIncrement() - 0.3f);
+				else
+					render->setRotateViewAngleY(render->getRotateViewAngleY() - 10.f);
+				break;
+			case  SDL_Scancode::SDL_SCANCODE_R:
+				render->setSpinOn(!render->getSpinOn());
+				break;
+			case SDL_Scancode::SDL_SCANCODE_LEFTBRACKET:
+				//q += 0.01f;
+				break;
+			case SDL_Scancode::SDL_SCANCODE_RIGHTBRACKET:
+				//q -= 0.01f;
+				break;
+			case SDL_Scancode::SDL_SCANCODE_Q:
+				render->deinit();
+				break;
+			case SDL_Scancode::SDL_SCANCODE_EQUALS:
+				//zNear_ += 0.01f;
+				break;
+			case SDL_Scancode::SDL_SCANCODE_MINUS:
+				//zNear_ -= 0.01f;
+				break;
+			default:
+				break;
+			}
+		}
+	}
+
+	return 0;
 }

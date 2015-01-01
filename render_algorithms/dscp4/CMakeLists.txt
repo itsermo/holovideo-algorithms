@@ -41,6 +41,7 @@ option(BUILD_DSCP4_APP "Builds the executable application for testing the DSCP4 
 option(BUILD_DSCP4_STATIC "Builds the DSCP4 lib as a static lib" ${WIN32})
 option(WITH_CUDA "Enables CUDA building" ${CUDA_FOUND})
 option(WITH_LIBLOG4CXX "Uses Log4Cxx library for logging status and error messages" ${LIBLOG4CXX_FOUND})
+option(WITH_TRACE_LOG "Enables trace log to resolve code performance and behavior, such as showing FPS calculations in the log. Requires liblog4cxx" OFF)
 
 if(LIBLOG4CXX_FOUND)
 	option(LIBLOG4CXX_USING_STATICLIB "Defines LOG4CXX_STATIC for use with static LOG4CXX libraries" ${WIN32})
@@ -58,14 +59,18 @@ if(LIBLOG4CXX_USING_STATICLIB)
 	add_definitions(-DLOG4CXX_STATIC)
 endif()
 
+if(WITH_TRACE_LOG)
+	add_definitions(-DDSCP4_ENABLE_TRACE_LOG)
+endif()
+
 # use, i.e. don't skip the full RPATH for the build tree
-SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
+SET(CMAKE_SKIP_BUILD_RPATH FALSE)
 
 # when building, don't use the install RPATH already
 # (but later on when installing)
 SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE) 
 
-SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lieeb")
+SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 
 # add the automatically determined parts of the RPATH
 # which point to directories outside the build tree to the install RPATH
@@ -98,10 +103,8 @@ configure_file(dscp4.conf.in dscp4.conf)
 
 if(UNIX)
 	install(FILES ${CMAKE_BINARY_DIR}/dscp4.conf DESTINATION /etc/dscp4)
-	#install(FILES ${CMAKE_BINARY_DIR}/dscp4.conf DESTINATION $ENV{HOME}/.dscp4)
 elseif(WIN32)
 	install(FILES ${CMAKE_BINARY_DIR}/dscp4.conf DESTINATION $ENV{PROGRAMDATA}/dscp4)
-	#install(FILES ${CMAKE_BINARY_DIR}/dscp4.conf DESTINATION $ENV{HOMEDRIVE}$ENV{HOMEPATH}/.dscp4)
 endif()
 
 

@@ -91,6 +91,25 @@ namespace dscp4
 		void rotateMesh(std::string meshID, float angle, float x, float y, float z);
 		void scaleMesh(std::string meshID, float x, float y, float z);
 
+		bool getSpinOn() { return spinOn_; }
+		void setSpinOn(bool spinOn) { spinOn_ = spinOn; Update(); }
+		void setRotateIncrement(float rotateIncrement) { rotateIncrement_ = rotateIncrement; }
+		float getRotateIncrement() { return rotateIncrement_; }
+
+		float getRotateViewAngleX() { return rotateAngleX_; }
+		float getRotateViewAngleY() { return rotateAngleY_; }
+		void setRotateViewAngleX(float angleX) { rotateAngleX_ = angleX; cameraChanged_ = true; }
+		void setRotateViewAngleY(float angleY) { rotateAngleY_ = angleY; cameraChanged_ = true; }
+
+		Lighting getLighting() { std::lock_guard<std::mutex> lg(lightingMutex_); return lighting_; }
+		Camera getCameraView() { std::lock_guard<std::mutex> lg(cameraMutex_);  return camera_; }
+
+		void setCameraView(Camera cameraView) { std::lock_guard<std::mutex> lg(cameraMutex_);  camera_ = cameraView; cameraChanged_ = true; }
+		void setLighting(Lighting lighting) { std::lock_guard<std::mutex> lg(lightingMutex_);  lighting_ = lighting; lightingChanged_ = true; }
+
+		// Force frame to redraw
+		void Update() { updateFrameCV_.notify_all(); }
+
 	private:
 
 		// for testing
@@ -115,7 +134,7 @@ namespace dscp4
 		void deinitLightingShader(int which);
 
 		void renderLoop();			// The general rendering loop
-		void drawForViewing();	// The function that renders viewing mode
+		void drawForViewing();
 		void drawForStereogram(); // Generates and renders stereograms
 		void drawForFringe(int which);     // Renders the fringe pattern from stereograms
 
@@ -130,10 +149,13 @@ namespace dscp4
 		float zNear_;
 		float zFar_;
 
-		std::mutex localCloudMutex_;
 		std::mutex meshMutex_;
+		std::mutex lightingMutex_;
+		std::mutex cameraMutex_;
 
-		std::atomic<bool> haveNewRemoteCloud_;
+		std::atomic<bool> meshChanged_;
+		std::atomic<bool> cameraChanged_;
+		std::atomic<bool> lightingChanged_;
 
 		std::atomic<bool> isInit_;
 
@@ -142,6 +164,8 @@ namespace dscp4
 
 		std::atomic<bool> shouldRender_;
 		std::thread renderThread_;
+		std::mutex updateFrameMutex_;
+		std::condition_variable updateFrameCV_;
 
 		std::mutex glContextMutex_;
 		std::condition_variable glContextCV_;
@@ -154,15 +178,16 @@ namespace dscp4
 
 		SDL_Window **windows_;
 		SDL_GLContext *glContexts_;
+		static int inputStateChanged(void* userdata, SDL_Event* event);
 
 		std::map<std::string, mesh_t> meshes_;
 
 		VSShaderLib* lightingShader_;
 
-		float rotateAngleX_;
-		float rotateAngleY_;
-		float rotateIncrement_;
-		bool rotateOn_;
+		std::atomic<float> rotateAngleX_;
+		std::atomic<float> rotateAngleY_;
+		std::atomic<float> rotateIncrement_;
+		std::atomic<bool> spinOn_;
 
 		render_options_t renderOptions_;
 		algorithm_options_t algorithmOptions_;
@@ -180,6 +205,23 @@ namespace dscp4
 #endif
 
 		const float DEG_TO_RAD = (float)M_PI / 180.0f; // just multiply this constant to degrees to get radians
+
+#ifdef DSCP4_ENABLE_TRACE_LOG
+		// function for measuring time elapsed when executing a function
+		template<typename F, typename ...Args>
+		static typename std::chrono::milliseconds::rep measureTime(F func, Args&&... args)
+		{
+			auto start = std::chrono::system_clock::now();
+
+			// Now call the function with all the parameters you need.
+			func(std::forward<Args>(args)...);
+
+			auto duration = std::chrono::duration_cast<std::chrono::milliseconds>
+				(std::chrono::system_clock::now() - start);
+
+			return duration.count();
+		};
+#endif
 
 	};
 }
