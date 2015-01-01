@@ -407,6 +407,10 @@ void DSCP4Render::renderLoop()
 {
 	std::unique_lock<std::mutex> initLock(isInitMutex_);
 	
+#ifdef DSCP4_ENABLE_TRACE_LOG
+	long long duration = 0;
+#endif
+
 	float ratio = 0.f;
 	float q = 0.f; //offset for rendering stereograms
 	SDL_Event event = { 0 };
@@ -498,7 +502,7 @@ void DSCP4Render::renderLoop()
 			}
 
 #ifdef DSCP4_ENABLE_TRACE_LOG
-			auto duration = measureTime<>([&](){
+			duration = measureTime<>([&](){
 #endif
 
 			// Increments rotation if spinOn_ is true
@@ -513,7 +517,7 @@ void DSCP4Render::renderLoop()
 			{
 #ifdef DSCP4_ENABLE_TRACE_LOG
 				auto duration = measureTime<>(std::bind(&DSCP4Render::drawForViewing, this));
-				LOG4CXX_TRACE(logger_, "Generating a single view took " << duration << " ms (" << 1.f / duration * 1000 << "fps)")
+				LOG4CXX_TRACE(logger_, "Generating a single view took " << duration << " ms (" << 1.f / duration * 1000 << " fps)")
 #else
 				drawForViewing();
 #endif
@@ -524,7 +528,7 @@ void DSCP4Render::renderLoop()
 			{
 #ifdef DSCP4_ENABLE_TRACE_LOG
 				auto duration = measureTime<>(std::bind(&DSCP4Render::drawForStereogram, this));
-				LOG4CXX_TRACE(logger_, "Generating " << algorithmOptions_.num_views_x << " views took " << duration << " ms (" << 1.f / duration * 1000 << "fps)")
+				LOG4CXX_TRACE(logger_, "Generating " << algorithmOptions_.num_views_x << " views took " << duration << " ms (" << 1.f / duration * 1000 << " fps)")
 #else
 				drawForStereogram();
 #endif
@@ -540,7 +544,7 @@ void DSCP4Render::renderLoop()
 #ifdef DSCP4_ENABLE_TRACE_LOG
 		});
 
-		LOG4CXX_TRACE(logger_, "Rendering the frame took " << duration << " ms (" << 1.f/duration * 1000 << "fps)");
+		LOG4CXX_TRACE(logger_, "Rendering the frame took " << duration << " ms (" << 1.f/duration * 1000 << " fps)");
 #endif
 
 		poll:
@@ -704,10 +708,6 @@ void DSCP4Render::deinit()
 
 	if(renderThread_.joinable() && (std::this_thread::get_id() != renderThread_.get_id()))
 		renderThread_.join();
-
-	//std::unique_lock<std::mutex> lg(isInitMutex_);
-
-	//isInitCV_.wait(lg);
 
 	if (lightingShader_)
 	{
