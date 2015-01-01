@@ -685,11 +685,12 @@ void DSCP4Render::deinit()
 
 	LOG4CXX_DEBUG(logger_, "Waiting for render thread to stop...")
 
-	//if(renderThread_.joinable())
-	//	renderThread_.join();
-
-	std::unique_lock<std::mutex> lg(isInitMutex_);
 	shouldRender_ = false;
+
+	if(renderThread_.joinable() && (std::this_thread::get_id() != renderThread_.get_id()))
+		renderThread_.join();
+
+	//std::unique_lock<std::mutex> lg(isInitMutex_);
 
 	//isInitCV_.wait(lg);
 
@@ -715,7 +716,6 @@ void DSCP4Render::deinit()
 	SDL_Quit();
 
 	isInit_ = false;
-	lg.unlock();
 }
 
 void DSCP4Render::drawMesh(const mesh_t& mesh)
