@@ -44,6 +44,9 @@ verbosity = 3
 ;             useful for looking at 3D model input data and debugging.
 ; "stereogram" - will output tiled view texture of multiple scene views to an OpenGL window,
 ;              useful for debugging the panoramagram, seeing what's in the buffers.
+; "aerial" - will find the number of windows, and create that many windows, rendering
+;			 a different view to each window. this is meant for a display where each head
+;			 is connected to a projector, each showing a different viewpoint
 ; "holovideo" - creates and outputs the computed fringe patterns from stereograms.
 ; 				(this is the default option, and must
 ;				 be selected to show proper image on Mark IV)

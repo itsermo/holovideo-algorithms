@@ -136,6 +136,7 @@ namespace dscp4
 		void renderLoop();			// The general rendering loop
 		void drawForViewing();
 		void drawForStereogram(); // Generates and renders stereograms
+		void drawForAerialDisplay();
 		void drawForFringe(int which);     // Renders the fringe pattern from stereograms
 
 		void glCheckErrors();
@@ -170,11 +171,10 @@ namespace dscp4
 		std::mutex glContextMutex_;
 		std::condition_variable glContextCV_;
 
-		int numWindows_;
-		int currentWindow_;
+		unsigned int numWindows_;
 
 		bool isFullScreen_;
-		int *windowWidth_, *windowHeight_;
+		unsigned int *windowWidth_, *windowHeight_;
 
 		SDL_Window **windows_;
 		SDL_GLContext *glContexts_;

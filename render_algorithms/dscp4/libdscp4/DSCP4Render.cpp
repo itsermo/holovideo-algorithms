@@ -80,7 +80,6 @@ algorithmOptions_(algorithmOptions),
 displayOptions_(displayOptions),
 isFullScreen_(false),
 lightingShader_(nullptr),
-currentWindow_(0),
 projectionMatrix_(),
 viewMatrix_(),
 modelMatrix_(),
@@ -172,8 +171,8 @@ bool DSCP4Render::init()
 
 	windows_ = new SDL_Window*[numWindows_];
 	glContexts_ = new SDL_GLContext[numWindows_];
-	windowWidth_ = new int[numWindows_];
-	windowHeight_ = new int[numWindows_];
+	windowWidth_ = new unsigned int[numWindows_];
+	windowHeight_ = new unsigned int[numWindows_];
 
 	std::unique_lock<std::mutex> initLock(isInitMutex_);
 	shouldRender_ = true;
@@ -206,10 +205,11 @@ bool DSCP4Render::initWindow(SDL_Window*& window, SDL_GLContext& glContext, int 
 		LOG4CXX_DEBUG(logger_, "Creating SDL OpenGL Window " << thisWindowNum << ": " << windowWidth_[thisWindowNum] << "x" << windowHeight_[thisWindowNum] << " @ " << "{" << bounds.x + 80 << "," << bounds.y + 80 << "}")
 		window = SDL_CreateWindow(("dscp4-" + std::to_string(thisWindowNum)).c_str(), bounds.x + 80, bounds.y + 80, windowWidth_[thisWindowNum], windowHeight_[thisWindowNum], SDL_WINDOW_OPENGL);
 		break;
+	case DSCP4_RENDER_MODE_AERIAL_DISPLAY:
 	case DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE:
 		windowWidth_[thisWindowNum] = bounds.w;
 		windowHeight_[thisWindowNum] = bounds.h;
-		LOG4CXX_DEBUG(logger_, "Creating SDL OpenGL Window " << thisWindowNum << ": " << bounds.w << "x" << bounds.h << " @ " << "{" << bounds.x << "," << bounds.y << "}")
+		LOG4CXX_DEBUG(logger_, "Creating fullscreen SDL OpenGL Window " << thisWindowNum << ": " << bounds.w << "x" << bounds.h << " @ " << "{" << bounds.x << "," << bounds.y << "}")
 		window = SDL_CreateWindow(("dscp4-" + std::to_string(thisWindowNum)).c_str(), bounds.x, bounds.y, bounds.w, bounds.h, SDL_WINDOW_OPENGL | SDL_WINDOW_BORDERLESS);
 		SDL_ShowCursor(SDL_DISABLE);
 		break;
@@ -220,7 +220,31 @@ bool DSCP4Render::initWindow(SDL_Window*& window, SDL_GLContext& glContext, int 
 	CHECK_SDL_RC(window == nullptr, "Could not create SDL window");
 
 	LOG4CXX_DEBUG(logger_, "Creating GL Context from SDL window " << thisWindowNum)
+	
+	SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1);
+
 	glContext = SDL_GL_CreateContext(window);
+
+	LOG4CXX_DEBUG(logger_, "Initializing GLEW")
+	
+	GLenum err = glewInit();
+	if (err != GLEW_OK)
+	{
+		LOG4CXX_ERROR(logger_, "Could not initialize GLEW: " << glewGetString(err))
+	}
+
+	SDL_GL_MakeCurrent(window, glContext);
+
+	LOG4CXX_DEBUG(logger_, "Turning on VSYNC")
+	SDL_GL_SetSwapInterval(1);
+
+	glViewport(0, 0, windowWidth_[thisWindowNum], windowHeight_[thisWindowNum]);
+
+	// Set a black background
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glClearColor(0.0f, 0.0f, 0.0f, 0.0f); // Black Background
+
+	SDL_GL_SwapWindow(window);
 
 	return true;
 }
@@ -417,7 +441,7 @@ void DSCP4Render::renderLoop()
 
 	lightingShader_ = new VSShaderLib[numWindows_];
 
-	camera_.eye = glm::vec3(0, 0, renderOptions_.render_mode == DSCP4_RENDER_MODE_MODEL_VIEWING ? 4.0f : .5f);
+	camera_.eye = glm::vec3(0, 0, (renderOptions_.render_mode == DSCP4_RENDER_MODE_MODEL_VIEWING) || (renderOptions_.render_mode == DSCP4_RENDER_MODE_AERIAL_DISPLAY) ? 4.0f : .5f);
 	camera_.center = glm::vec3(0, 0, 0);
 	camera_.up = glm::vec3(0, 1, 0);
 
@@ -434,48 +458,34 @@ void DSCP4Render::renderLoop()
 	{
 	case DSCP4_RENDER_MODE_MODEL_VIEWING:
 	case DSCP4_RENDER_MODE_STEREOGRAM_VIEWING:
+		numWindows_ = 1;
+
 		initWindow(windows_[0], glContexts_[0], 0);
-		SDL_GL_MakeCurrent(windows_[0], glContexts_[0]);
-		glewInit();
 
-		SDL_GL_SetSwapInterval(1);
-
-		ratio = (float)windowWidth_[0] / (float)windowHeight_[0];
-
-		// GLUT settings
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		glClearColor(0.0f, 0.0f, 0.0f, 0.0f); // Black Background
-
+		// Add ambient and diffuse lighting to the scene
 		glLightfv(GL_LIGHT0, GL_AMBIENT, glm::value_ptr(lighting_.ambientColor));
 		glLightfv(GL_LIGHT0, GL_DIFFUSE, glm::value_ptr(lighting_.diffuseColor));
 
 		glLightModelfv(GL_AMBIENT_AND_DIFFUSE, glm::value_ptr(lighting_.globalAmbientColor));
 
-		/* Setup our viewport. */
-		glViewport(0, 0, windowWidth_[0], windowHeight_[0]);
-		numWindows_ = 0;
+		break;
+	case DSCP4_RENDER_MODE_AERIAL_DISPLAY:
+		numWindows_ = SDL_GetNumVideoDisplays();
+
+		for (unsigned int i = 0; i < numWindows_; i++)
+		{
+			initWindow(windows_[i], glContexts_[i], i);
+
+			// Add ambient and diffuse lighting to every scene
+			glLightfv(GL_LIGHT0, GL_AMBIENT, glm::value_ptr(lighting_.ambientColor));
+			glLightfv(GL_LIGHT0, GL_DIFFUSE, glm::value_ptr(lighting_.diffuseColor));
+
+			glLightModelfv(GL_AMBIENT_AND_DIFFUSE, glm::value_ptr(lighting_.globalAmbientColor));
+		}
+
 		break;
 	case DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE:
-		//for (int i = 0; i < numWindows_; i++)
-		//{
-		//initWindow(windows_[i], glContexts_[i], i);
-
-
-
-		//bool isShader = initLightingShader(i);
-
-
-		//}
-
-		//bool resAreDifferent = false;
-		//for (int i = 1; i < numWindows_; i++)
-		//{
-		//	if (windowWidth_[i] != windowWidth_[i-1] || windowHeight_[i] != windowHeight_[i-1])
-		//		resAreDifferent = true;
-		//}
-
-		//if (resAreDifferent)
-		//	LOG4CXX_WARN(logger_, "Multiple displays with different resolutions. You're on your own...")
+		
 
 		//init shaders
 		break;
@@ -484,6 +494,18 @@ void DSCP4Render::renderLoop()
 	}
 
 	SDL_AddEventWatch(DSCP4Render::inputStateChanged, this);
+	// Sanity check, i'm pretty sure you don't want different resolutions
+	bool resAreDifferent = false;
+	for (unsigned int i = 1; i < numWindows_; i++)
+	{
+		if (windowWidth_[i] != windowWidth_[i - 1] || windowHeight_[i] != windowHeight_[i - 1])
+			resAreDifferent = true;
+	}
+
+	if (resAreDifferent)
+	{
+		LOG4CXX_WARN(logger_, "Multiple displays with different resolutions. You're on your own...")
+	}
 
 	isInit_ = true;
 
@@ -535,6 +557,21 @@ void DSCP4Render::renderLoop()
 				SDL_GL_SwapWindow(windows_[0]);
 			}
 				break;
+			case DSCP4_RENDER_MODE_AERIAL_DISPLAY:
+#ifdef DSCP4_ENABLE_TRACE_LOG
+			{
+				auto duration = measureTime<>(std::bind(&DSCP4Render::drawForAerialDisplay, this));
+				LOG4CXX_TRACE(logger_, "Generating " << numWindows_ << " views took " << duration << " ms (" << 1.f / duration * 1000 << " fps)")
+#else
+				drawForAerialDisplay();
+#endif
+				for (unsigned int i = 0; i < numWindows_; i++)
+				{
+					SDL_GL_MakeCurrent(windows_[i], glContexts_[i]);
+					SDL_GL_SwapWindow(windows_[i]);
+				}
+			}
+				break;
 			case DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE:
 				break;
 			default:
@@ -555,6 +592,8 @@ void DSCP4Render::renderLoop()
 
 	initLock.lock();
 
+	SDL_DelEventWatch(DSCP4Render::inputStateChanged, this);
+
 	std::unique_lock<std::mutex> meshLock(meshMutex_);
 	for (auto it = meshes_.begin(); it != meshes_.end(); it++)
 		glDeleteBuffers(3, &it->second.info.gl_vertex_buf_id);
@@ -566,7 +605,7 @@ void DSCP4Render::renderLoop()
 		lightingShader_ = nullptr;
 	}
 
-	for (int i = 0; i < numWindows_; i++)
+	for (unsigned int i = 0; i < numWindows_; i++)
 	{
 		SDL_GL_MakeCurrent(windows_[i], glContexts_[i]);
 		deinitWindow(windows_[i], glContexts_[i], i);
@@ -574,6 +613,8 @@ void DSCP4Render::renderLoop()
 
 	initLock.unlock();
 	isInitCV_.notify_all();
+
+	isInit_ = false;
 }
 
 void DSCP4Render::drawForViewing()
@@ -697,6 +738,70 @@ void DSCP4Render::drawForStereogram()
 	lightingChanged_ = false;
 }
 
+void DSCP4Render::drawForAerialDisplay()
+{
+	std::lock_guard<std::mutex> lgc(cameraMutex_);
+	std::lock_guard<std::mutex> lgl(lightingMutex_);
+	std::lock_guard<std::mutex> lgm(meshMutex_);
+
+	for (unsigned int i = 0; i < numWindows_; i++)
+	{
+		SDL_GL_MakeCurrent(windows_[i], glContexts_[i]);
+
+		glMatrixMode(GL_PROJECTION);
+
+		const float ratio = (float)windowWidth_[i] / (float)windowHeight_[i];
+		
+		projectionMatrix_ = glm::mat4();
+		projectionMatrix_ *= glm::perspective(algorithmOptions_.fov_y * DEG_TO_RAD, ratio, zNear_, zFar_);
+
+		glLoadMatrixf(glm::value_ptr(projectionMatrix_));
+
+		if (renderOptions_.shader_model != DSCP4_SHADER_MODEL_OFF)
+			glEnable(GL_LIGHTING);
+
+		glShadeModel(renderOptions_.shader_model == DSCP4_SHADER_MODEL_SMOOTH ? GL_SMOOTH : GL_FLAT);
+
+		/* Clear the color and depth buffers. */
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		/* We don't want to modify the projection matrix. */
+		glMatrixMode(GL_MODELVIEW);
+
+		viewMatrix_ = glm::mat4() * glm::lookAt(
+			camera_.eye,
+			camera_.center,
+			camera_.up
+			);
+
+		glLoadMatrixf(glm::value_ptr(viewMatrix_));
+
+		glLightfv(GL_LIGHT0, GL_POSITION, glm::value_ptr(lighting_.position));
+
+		// move the viewpoint for each iteration
+		// this is for generating the next view
+		//viewMatrix_ = glm::translate(viewMatrix_, glm::vec3(i*0.5f, 0.0f, 0.0f));
+
+		// Rotate the scene
+		viewMatrix_ = glm::rotate(viewMatrix_, rotateAngleX_ * DEG_TO_RAD, glm::vec3(1.0f, 0.0f, 0.0f));
+		viewMatrix_ = glm::rotate(viewMatrix_, (rotateAngleY_ + i*10.0f) * DEG_TO_RAD, glm::vec3(0.0f, 1.0f, 0.0f));
+
+		glLoadMatrixf(glm::value_ptr(viewMatrix_));
+
+		glEnable(GL_DEPTH_TEST);
+		glEnable(GL_LIGHT0);
+
+		drawAllMeshes();
+		//drawCube();
+
+		glDisable(GL_LIGHT0);
+		glDisable(GL_DEPTH_TEST);
+	}
+
+	cameraChanged_ = false;
+	meshChanged_ = false;
+	lightingChanged_ = false;
+}
 
 void DSCP4Render::deinit()
 {
@@ -708,7 +813,7 @@ void DSCP4Render::deinit()
 
 	if(renderThread_.joinable() && (std::this_thread::get_id() != renderThread_.get_id()))
 		renderThread_.join();
-
+	
 	if (lightingShader_)
 	{
 		delete[] lightingShader_;
@@ -738,6 +843,7 @@ void DSCP4Render::drawMesh(mesh_t& mesh)
 	if (mesh.info.gl_vertex_buf_id == -1)
 	{
 		glGenBuffers(3, &mesh.info.gl_vertex_buf_id);
+
 		glBindBuffer(GL_ARRAY_BUFFER, mesh.info.gl_vertex_buf_id);
 		glBufferData(GL_ARRAY_BUFFER, mesh.info.vertex_stride * mesh.info.num_vertices, mesh.vertices, GL_STATIC_DRAW);
 		if (mesh.normals)

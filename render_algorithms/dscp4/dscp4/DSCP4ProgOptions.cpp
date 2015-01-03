@@ -19,7 +19,7 @@ renderOptions_("Render options")
 		"the input 3D object file path")
 		("generate-normals,n",
 		boost::program_options::value<std::string>()->default_value(DSCP4_INPUT_DEFAULT_GEN_NORMALS),
-		"generate normals for 3D object file. valid values are \"off\" \"flat\" and \"smooth\"")
+		"generate normals for 3D object file. valid values are 'off' 'flat' and 'smooth'")
 		("triangulate-mesh,t",
 		boost::program_options::value<bool>()->default_value(DSCP4_INPUT_DEFAULT_TRIANGULATE_MESH),
 		"triangulates the mesh (if it is made of quads or something else");
@@ -33,7 +33,7 @@ renderOptions_("Render options")
 		"the shading model. valid options are 'off' to turn off all lighting, 'flat' and 'smooth'")
 		("render-mode,m",
 		boost::program_options::value<std::string>(),
-		"sets the render mode. valid options are 'viewing', 'stereogram', and 'holovideo'");
+		"sets the render mode. valid options are 'viewing', 'stereogram', 'aerial', and 'holovideo'");
 
 	allOptions_.add(generalOptions_).add(inputOptions_).add(renderOptions_);
 }

@@ -205,7 +205,7 @@ int main(int argc, const char* argv[])
 
 
 	try{
-		renderOptions.render_mode = options.getRenderMode() == "viewing" ? DSCP4_RENDER_MODE_MODEL_VIEWING : options.getRenderMode() == "stereogram" ? DSCP4_RENDER_MODE_STEREOGRAM_VIEWING : DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE;
+		renderOptions.render_mode = options.getRenderMode() == "viewing" ? DSCP4_RENDER_MODE_MODEL_VIEWING : options.getRenderMode() == "stereogram" ? DSCP4_RENDER_MODE_STEREOGRAM_VIEWING : options.getRenderMode() == "aerial" ? DSCP4_RENDER_MODE_AERIAL_DISPLAY : DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE;
 		renderOptions.shader_model = options.getShadeModel() == "off" ? DSCP4_SHADER_MODEL_OFF : options.getShadeModel() == "flat" ? DSCP4_SHADER_MODEL_FLAT : DSCP4_SHADER_MODEL_SMOOTH;
 		renderOptions.auto_scale_enabled = options.getAutoscale();
 

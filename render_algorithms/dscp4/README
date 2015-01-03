@@ -112,6 +112,8 @@
                             or can't install liblog4cxx, this can turn off all 
                             dependencies to log4cxx and turn off logging)
 
+ -DWITH_TRACE_LOG={YES|NO}  (Turns on performance logging. The act of logging
+							can impact performance, so this is off by default)
 
  These can be used like so:
 
