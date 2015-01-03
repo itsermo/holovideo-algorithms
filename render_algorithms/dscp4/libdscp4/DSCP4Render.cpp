@@ -558,12 +558,14 @@ void DSCP4Render::renderLoop()
 			}
 				break;
 			case DSCP4_RENDER_MODE_AERIAL_DISPLAY:
-#ifdef DSCP4_ENABLE_TRACE_LOG
 			{
+#ifdef DSCP4_ENABLE_TRACE_LOG
+
 				auto duration = measureTime<>(std::bind(&DSCP4Render::drawForAerialDisplay, this));
 				LOG4CXX_TRACE(logger_, "Generating " << numWindows_ << " views took " << duration << " ms (" << 1.f / duration * 1000 << " fps)")
 #else
 				drawForAerialDisplay();
+
 #endif
 				for (unsigned int i = 0; i < numWindows_; i++)
 				{
