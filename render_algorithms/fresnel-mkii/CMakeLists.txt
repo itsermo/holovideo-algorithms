@@ -13,6 +13,7 @@ include_directories(${OpenGL_INCLUDE_DIR})
 include_directories(${GLEW_INCLUDE_DIR})
 include_directories(${GLUT_INCLUDE_DIR})
 include_directories(${CUDA_TOOLKIT_INCLUDE})
+include_directories(${CUDA_TOOLKIT_ROOT_DIR}/samples/common/inc)
 
 # For compilation ...
 # Specify target & source files to compile it from
