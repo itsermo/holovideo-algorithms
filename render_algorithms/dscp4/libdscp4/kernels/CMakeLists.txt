@@ -15,7 +15,6 @@ if(WITH_CUDA)
 		-gencode=arch=compute_20,code=\"sm_20,compute_20\"
 		-gencode=arch=compute_30,code=\"sm_30,compute_30\"
 		-gencode=arch=compute_35,code=\"sm_35,compute_35\"
-		-gencode=arch=compute_37,code=\"sm_37,compute_37\"
 		-gencode=arch=compute_50,code=\"sm_50,compute_50\")
 
 	#set(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE ON)
