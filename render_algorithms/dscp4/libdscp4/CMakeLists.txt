@@ -1,5 +1,7 @@
 cmake_minimum_REQUIRED(VERSION 2.8)
 
+add_subdirectory(kernels)
+
 find_package(Boost 1.54 COMPONENTS "system" "filesystem" "iostreams" "program_options" "thread" REQUIRED)
 include_directories(${Boost_INCLUDE_DIRS})
 link_directories(${Boost_LIBRARY_DIRS})
@@ -50,7 +52,7 @@ set_target_properties(${DSCP4_LIB} PROPERTIES OUTPUT_NAME ${PROJECT_NAME} CLEAN_
 target_link_libraries(${DSCP4_LIB} ${Boost_LIBRARIES} ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} ${GLEW_LIBRARY} ${SDL2_LIBRARY} ${SDL2MAIN_LIBRARY})
 
 if(WITH_CUDA)
-	target_link_libraries(${DSCP4_LIB} ${CUDA_LIBRARIES})
+	target_link_libraries(${DSCP4_LIB} ${DSCP4_FRINGE_CUDA_LIB} ${CUDA_LIBRARIES})
 endif()
 
 if(WITH_LIBLOG4CXX)

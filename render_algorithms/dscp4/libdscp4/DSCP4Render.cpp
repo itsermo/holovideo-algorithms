@@ -3,6 +3,12 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#ifdef DSCP4_HAVE_CUDA
+#include <cuda.h>
+#include <cuda_gl_interop.h>
+#include "kernels/dscp4-fringe-cuda.h"
+#endif
+
 // This checks for a true condition, prints the error message, cleans up and returns false
 #define CHECK_SDL_RC(rc_condition, what)				\
 	if (rc_condition)									\
@@ -138,6 +144,13 @@ meshChanged_(false)
 		LOG4CXX_WARN(logger_, "No shader path location specified, using current working path: " << boost::filesystem::current_path().string())
 			renderOptions_.shaders_path = (char*)boost::filesystem::current_path().string().c_str();
 	}
+
+#ifdef DSCP4_HAVE_CUDA
+	int x = 6;
+	addOne(&x);
+	LOG4CXX_INFO(logger_, "CUDA -- This should say 7: " << x)
+#endif
+
 }
 
 DSCP4Render::~DSCP4Render()
