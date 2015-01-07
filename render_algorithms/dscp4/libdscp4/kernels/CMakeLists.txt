@@ -4,8 +4,13 @@ project(dscp4-fringe)
 
 if(WITH_CUDA)
 	set(DSCP4_FRINGE_CUDA_LIB "${PROJECT_NAME}-cuda" PARENT_SCOPE)
+
+	set(CUDA_HOST_COMPILATION_CPP OFF)
+	if(CMAKE_COMPILER_IS_GNUCC)
+		set(CUDA_NVCC_FLAGS -Xcompiler -fpic)
+	endif()
 	
-	set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-gencode arch=compute_12,code=sm_12)
+	set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS}; -gencode arch=compute_12,code=sm_12)
 
 	#set(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE ON)
 
