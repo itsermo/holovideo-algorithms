@@ -7,7 +7,7 @@ find_package(GLEW REQUIRED)
 find_package(CUDA QUIET REQUIRED)
 
 # Pass options to NVCC
-set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-O3 -gencode arch=compute_20,code=sm_20)
+set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-O3 -gencode arch=compute_12,code=sm_12)
 
 include_directories(${OpenGL_INCLUDE_DIR})
 include_directories(${GLEW_INCLUDE_DIR})
