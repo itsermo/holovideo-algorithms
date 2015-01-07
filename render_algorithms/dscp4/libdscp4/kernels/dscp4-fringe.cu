@@ -1,17 +1,61 @@
 #include "dscp4-fringe-cuda.h"
+#include <cuda.h>
 
-__global__ void addOne(int* x)
+const int N = 16;
+const int blocksize = 16;
+
+#include <stdio.h>
+
+__global__ void add1(int *x);
+
+__global__ void add2(int *x);
+
+__global__
+void hello(char *a, int *b)
 {
-	//*x = add1(*x);
-	*x = 7;
+	a[threadIdx.x] += b[threadIdx.x];
 }
 
-__device__ int add1(int x)
+
+void addOne(int* x)
 {
-	return x + 1;
+	char a[N] = "Hello \0\0\0\0\0\0";
+	int b[N] = { 15, 10, 6, 0, -11, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+
+	char *ad;
+	int *bd;
+	const int csize = N*sizeof(char);
+	const int isize = N*sizeof(int);
+
+	printf("%s", a);
+
+	cudaMalloc((void**)&ad, csize);
+	cudaMalloc((void**)&bd, isize);
+	cudaMemcpy(ad, a, csize, cudaMemcpyHostToDevice);
+	cudaMemcpy(bd, b, isize, cudaMemcpyHostToDevice);
+
+	dim3 dimBlock(blocksize, 1);
+	dim3 dimGrid(1, 1);
+	hello << <dimGrid, dimBlock >> >(ad, bd);
+	cudaMemcpy(a, ad, csize, cudaMemcpyDeviceToHost);
+	cudaFree(ad);
+	cudaFree(bd);
+
+	printf("%s\n", a);
+	//return EXIT_SUCCESS;
 }
 
-__device__ int add2(int x)
+void addTwo(int *x)
 {
-	return add1(add1(x));
+	//add2(x);
+}
+
+__global__ void add1(int *x)
+{
+	*x = *x + 1;
+}
+
+__global__ void add2(int *x)
+{
+	*x = *x + 2;
 }

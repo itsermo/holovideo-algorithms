@@ -45,10 +45,12 @@ int _kbhit(void);
 
 int main(int argc, const char* argv[])
 {
+
+	int logLevel = DSCP4_DEFAULT_VERBOSITY;
+
 #ifdef DSCP4_HAVE_LOG4CXX
 	auto logger = createLogger();
 	logger->setLevel(log4cxx::Level::getError());
-	int logLevel = DSCP4_DEFAULT_VERBOSITY;
 #endif
 
 	int key = 0;
