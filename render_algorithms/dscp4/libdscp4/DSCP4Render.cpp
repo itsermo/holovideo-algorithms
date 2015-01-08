@@ -6,7 +6,7 @@
 #ifdef DSCP4_HAVE_CUDA
 #include <cuda.h>
 #include <cuda_gl_interop.h>
-#include "kernels/dscp4-fringe-cuda.h"
+#include <kernels/dscp4-fringe-cuda.h>
 #endif
 
 // This checks for a true condition, prints the error message, cleans up and returns false
@@ -148,8 +148,8 @@ fringeTextures_(nullptr)
 	}
 
 #ifdef DSCP4_HAVE_CUDA
-	LOG4CXX_INFO(logger_, "CUDA -- This should 'Hello World!':")
-	dscp4_fringe_CudaHelloWorld();
+	LOG4CXX_INFO(logger_, "CUDA -- This should say 'Hello World!':")
+	dscp4_fringe_cuda_HelloWorld();
 #endif
 
 }
@@ -906,16 +906,16 @@ void DSCP4Render::drawForFringe()
 	// Copy RGBA to PBO
 	glBindBuffer(GL_ARRAY_BUFFER, stereogramPBOs_[0]);
 
-	GLfloat Vertices[] = { 0, 0, 0,
-							displayOptions_.head_res_x, 0, 0,
-							displayOptions_.head_res_x, displayOptions_.head_res_y*2, 0,
-							0, displayOptions_.head_res_y*2, 0
+	GLfloat Vertices[] = { 0.f, 0.f, 0.f,
+							static_cast<float>(displayOptions_.head_res_x), 0, 0,
+							static_cast<float>(displayOptions_.head_res_x), static_cast<float>(displayOptions_.head_res_y) * 2.f, 0.f,
+							0.f, static_cast<float>(displayOptions_.head_res_y)*2.f, 0.f
 	};
 
 	GLfloat TexCoord[] = { 0, 0,
-		1, 0,
-		1, 1,
-		0, 1,
+		1.f, 0.f,
+		1.f, 1.f,
+		0.f, 1.f,
 	};
 
 	const GLubyte indices[] = { 0, 1, 2, // first triangle (bottom left - top left - top right)

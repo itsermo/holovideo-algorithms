@@ -12,7 +12,7 @@ __global__ void hello(char *a, int *b)
 }
 
 
-void dscp4_fringe_CudaHelloWorld()
+void dscp4_fringe_cuda_HelloWorld()
 {
 	char a[N] = "Hello \0\0\0\0\0\0";
 	int b[N] = { 15, 10, 6, 0, -11, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
@@ -38,4 +38,26 @@ void dscp4_fringe_CudaHelloWorld()
 
 	printf("%s\n", a);
 	//return EXIT_SUCCESS;
-}
+};
+
+dscp4_fringe_cuda_context_t* dscp4_fringe_cuda_CreateContext(dscp4_fringe_context_t fringeContext)
+{
+	dscp4_fringe_cuda_context_t* context = (dscp4_fringe_cuda_context_t*)malloc(sizeof(dscp4_fringe_cuda_context_t));
+	context->fringe_context = fringeContext;
+
+	return context;
+};
+
+void dscp4_fringe_cuda_DestroyContext(dscp4_fringe_cuda_context_t** cudaContext)
+{
+	if (*cudaContext != NULL)
+	{
+		free(*cudaContext);
+		*cudaContext = NULL;
+	}
+};
+
+void dscp4_fringe_cuda_ComputeFringe()
+{
+
+};
