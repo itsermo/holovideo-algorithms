@@ -147,8 +147,8 @@ meshChanged_(false)
 
 #ifdef DSCP4_HAVE_CUDA
 	int x = 6;
+	LOG4CXX_INFO(logger_, "CUDA -- This should 'Hello World!':")
 	addOne(&x);
-	LOG4CXX_INFO(logger_, "CUDA -- This should say 7: " << x)
 #endif
 
 }

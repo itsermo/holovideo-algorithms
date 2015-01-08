@@ -10,7 +10,13 @@ if(WITH_CUDA)
 		set(CUDA_NVCC_FLAGS -Xcompiler -fpic)
 	endif()
 	
-	set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS}; -gencode arch=compute_12,code=sm_12)
+	set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};
+		-gencode=arch=compute_11,code=\"sm_11,compute_11\"
+		-gencode=arch=compute_20,code=\"sm_20,compute_20\"
+		-gencode=arch=compute_30,code=\"sm_30,compute_30\"
+		-gencode=arch=compute_35,code=\"sm_35,compute_35\"
+		-gencode=arch=compute_37,code=\"sm_37,compute_37\"
+		-gencode=arch=compute_50,code=\"sm_50,compute_50\")
 
 	#set(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE ON)
 
@@ -30,7 +36,7 @@ if(WITH_CUDA)
 	cuda_add_library(
 		${PROJECT_NAME}-cuda
 		${CUDA_FILES}
-		OPTIONS -DSTUFF="blah blah"
+		OPTIONS
 		RELEASE -O3 --use_fast_math -DNDEBUG
 		DEBUG -g -DDEBUG
 		)
