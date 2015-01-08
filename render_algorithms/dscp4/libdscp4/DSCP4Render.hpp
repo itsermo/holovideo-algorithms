@@ -43,7 +43,6 @@
 
 namespace dscp4
 {
-
 	struct Camera
 	{
 		glm::vec3 eye;
@@ -137,7 +136,7 @@ namespace dscp4
 		void drawForViewing();
 		void drawForStereogram(); // Generates and renders stereograms
 		void drawForAerialDisplay();
-		void drawForFringe(int which);     // Renders the fringe pattern from stereograms
+		void drawForFringe();     // Renders the fringe pattern from stereograms
 
 		void glCheckErrors();
 
@@ -199,6 +198,10 @@ namespace dscp4
 
 		Camera camera_;
 		Lighting lighting_;
+
+		GLuint *stereogramPBOs_;
+
+		GLuint *fringeTextures_;
 
 #ifdef DSCP4_HAVE_LOG4CXX
 		log4cxx::LoggerPtr logger_ = log4cxx::Logger::getLogger("edu.mit.media.obmg.holovideo.dscp4.lib.renderer");

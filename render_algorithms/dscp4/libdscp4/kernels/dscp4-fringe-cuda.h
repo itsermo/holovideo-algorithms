@@ -1,7 +1,9 @@
-#if !defined (DSCP4_FRINGE_H__)
+#ifndef DSCP4_FRINGE_H__
 #define DSCP4_FRINGE_H__
 
-void addOne(int *x);
-void addTwo(int *x);
+void dscp4_fringe_CudaInit();
+void dscp4_fringe_CudaDeinit();
+void dscp4_fringe_CudaHelloWorld();
+void dscp4_fringe_CudaComputeFringe();
 
 #endif

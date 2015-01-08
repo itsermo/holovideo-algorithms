@@ -93,7 +93,9 @@ camera_(),
 lighting_(),
 cameraChanged_(false),
 lightingChanged_(false),
-meshChanged_(false)
+meshChanged_(false),
+stereogramPBOs_(nullptr),
+fringeTextures_(nullptr)
 {
 
 #ifdef DSCP4_HAVE_LOG4CXX
@@ -146,9 +148,8 @@ meshChanged_(false)
 	}
 
 #ifdef DSCP4_HAVE_CUDA
-	int x = 6;
 	LOG4CXX_INFO(logger_, "CUDA -- This should 'Hello World!':")
-	addOne(&x);
+	dscp4_fringe_CudaHelloWorld();
 #endif
 
 }
@@ -223,7 +224,7 @@ bool DSCP4Render::initWindow(SDL_Window*& window, SDL_GLContext& glContext, int 
 		windowWidth_[thisWindowNum] = bounds.w;
 		windowHeight_[thisWindowNum] = bounds.h;
 		LOG4CXX_DEBUG(logger_, "Creating fullscreen SDL OpenGL Window " << thisWindowNum << ": " << bounds.w << "x" << bounds.h << " @ " << "{" << bounds.x << "," << bounds.y << "}")
-		window = SDL_CreateWindow(("dscp4-" + std::to_string(thisWindowNum)).c_str(), bounds.x, bounds.y, bounds.w, bounds.h, SDL_WINDOW_OPENGL | SDL_WINDOW_BORDERLESS);
+		window = SDL_CreateWindow(("dscp4-" + std::to_string(thisWindowNum)).c_str(), bounds.x, bounds.y, bounds.w, bounds.h, SDL_WINDOW_OPENGL);
 		SDL_ShowCursor(SDL_DISABLE);
 		break;
 	default:
@@ -254,8 +255,8 @@ bool DSCP4Render::initWindow(SDL_Window*& window, SDL_GLContext& glContext, int 
 	glViewport(0, 0, windowWidth_[thisWindowNum], windowHeight_[thisWindowNum]);
 
 	// Set a black background
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f); // Black Background
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	SDL_GL_SwapWindow(window);
 
@@ -443,7 +444,7 @@ void DSCP4Render::drawCube()
 void DSCP4Render::renderLoop()
 {
 	std::unique_lock<std::mutex> initLock(isInitMutex_);
-	
+
 #ifdef DSCP4_ENABLE_TRACE_LOG
 	long long duration = 0;
 #endif
@@ -498,9 +499,52 @@ void DSCP4Render::renderLoop()
 
 		break;
 	case DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE:
-		
+	{
+		numWindows_ = SDL_GetNumVideoDisplays();
+		for (unsigned int i = 0; i < numWindows_; i++)
+		{
+			initWindow(windows_[i], glContexts_[i], i);
+
+			// Add ambient and diffuse lighting to every scene
+			glLightfv(GL_LIGHT0, GL_AMBIENT, glm::value_ptr(lighting_.ambientColor));
+			glLightfv(GL_LIGHT0, GL_DIFFUSE, glm::value_ptr(lighting_.diffuseColor));
+
+			glLightModelfv(GL_AMBIENT_AND_DIFFUSE, glm::value_ptr(lighting_.globalAmbientColor));
+		}
+
+		stereogramPBOs_ = new GLuint[2];
+		fringeTextures_ = new GLuint[numWindows_];
+
+		SDL_GL_MakeCurrent(windows_[0], glContexts_[0]);
+		// Create a PBO to store RGBA and DEPTH buffer of stereogram views
+		// This will be passed to CUDA or OpenCL kernels for fringe computation
+		glGenBuffers(2, stereogramPBOs_);
+
+		// Create N-textures for outputting fringe data to the X displays
+		// Whatever holographic computation is done will be written
+		// To these textures and ultimately displayed on the holovideo display
+		glGenTextures(numWindows_, fringeTextures_);
+
+		char *blah = new char[displayOptions_.head_res_x * displayOptions_.head_res_y * 2 * 3];
+		for (size_t i = 0; i < displayOptions_.head_res_x * displayOptions_.head_res_y * 2 * 3; i++)
+		{
+			blah[i] = i % 255;
+		}
+
+		for (size_t i = 0; i < numWindows_; i++)
+		{
+			glBindTexture(GL_TEXTURE_2D, fringeTextures_[i]);
+
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, displayOptions_.head_res_x, displayOptions_.head_res_y * 2, 0, GL_RGB, GL_BYTE, blah);
+
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		}
+
+		delete[] blah;
 
 		//init shaders
+	}
 		break;
 	default:
 		break;
@@ -527,17 +571,17 @@ void DSCP4Render::renderLoop()
 
 	while (shouldRender_)
 	{
-			SDL_Event event = { 0 };
+		SDL_Event event = { 0 };
 
-			std::unique_lock<std::mutex> updateFrameLock(updateFrameMutex_);
-			if (!(meshChanged_ || cameraChanged_ || lightingChanged_ || spinOn_))
-			{
-				if (std::cv_status::timeout == updateFrameCV_.wait_for(updateFrameLock, std::chrono::milliseconds(1)))
-					goto poll;
-			}
+		std::unique_lock<std::mutex> updateFrameLock(updateFrameMutex_);
+		if (!(meshChanged_ || cameraChanged_ || lightingChanged_ || spinOn_))
+		{
+			if (std::cv_status::timeout == updateFrameCV_.wait_for(updateFrameLock, std::chrono::milliseconds(1)))
+				goto poll;
+		}
 
 #ifdef DSCP4_ENABLE_TRACE_LOG
-			duration = measureTime<>([&](){
+		duration = measureTime<>([&](){
 #endif
 
 			// Increments rotation if spinOn_ is true
@@ -572,12 +616,30 @@ void DSCP4Render::renderLoop()
 				break;
 			case DSCP4_RENDER_MODE_AERIAL_DISPLAY:
 			{
-#ifdef DSCP4_ENABLE_TRACE_LOG
+		#ifdef DSCP4_ENABLE_TRACE_LOG
 
 				auto duration = measureTime<>(std::bind(&DSCP4Render::drawForAerialDisplay, this));
 				LOG4CXX_TRACE(logger_, "Generating " << numWindows_ << " views took " << duration << " ms (" << 1.f / duration * 1000 << " fps)")
-#else
+		#else
 				drawForAerialDisplay();
+
+		#endif
+				for (unsigned int i = 0; i < numWindows_; i++)
+				{
+					SDL_GL_MakeCurrent(windows_[i], glContexts_[i]);
+					SDL_GL_SwapWindow(windows_[i]);
+				}
+			}
+				break;
+
+			case DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE:
+			{
+
+#ifdef DSCP4_ENABLE_TRACE_LOG
+				auto duration = measureTime<>(std::bind(&DSCP4Render::drawForFringe, this));
+				LOG4CXX_TRACE(logger_, "Computing hologram in total took " << duration << " ms (" << 1.f / duration * 1000 << " fps)")
+#else
+				drawForFringe();
 
 #endif
 				for (unsigned int i = 0; i < numWindows_; i++)
@@ -587,8 +649,6 @@ void DSCP4Render::renderLoop()
 				}
 			}
 				break;
-			case DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE:
-				break;
 			default:
 				break;
 			}
@@ -596,11 +656,11 @@ void DSCP4Render::renderLoop()
 #ifdef DSCP4_ENABLE_TRACE_LOG
 		});
 
-		LOG4CXX_TRACE(logger_, "Rendering the frame took " << duration << " ms (" << 1.f/duration * 1000 << " fps)");
+		LOG4CXX_TRACE(logger_, "Rendering the frame took " << duration << " ms (" << 1.f / duration * 1000 << " fps)");
 #endif
 
-		poll:
-			SDL_PollEvent(&event);
+	poll:
+		SDL_PollEvent(&event);
 
 
 	}
@@ -614,16 +674,28 @@ void DSCP4Render::renderLoop()
 		glDeleteBuffers(3, &it->second.info.gl_vertex_buf_id);
 	meshLock.unlock();
 
+	for (unsigned int i = 0; i < numWindows_; i++)
+	{
+		SDL_GL_MakeCurrent(windows_[i], glContexts_[i]);
+		deinitWindow(windows_[i], glContexts_[i], i);
+	}
+
 	if (lightingShader_)
 	{
 		delete[] lightingShader_;
 		lightingShader_ = nullptr;
 	}
 
-	for (unsigned int i = 0; i < numWindows_; i++)
+	if (stereogramPBOs_)
 	{
-		SDL_GL_MakeCurrent(windows_[i], glContexts_[i]);
-		deinitWindow(windows_[i], glContexts_[i], i);
+		delete[] stereogramPBOs_;
+		stereogramPBOs_ = nullptr;
+	}
+
+	if (fringeTextures_)
+	{
+		delete[] fringeTextures_;
+		fringeTextures_ = nullptr;
 	}
 
 	initLock.unlock();
@@ -746,6 +818,9 @@ void DSCP4Render::drawForStereogram()
 
 		glDisable(GL_LIGHT0);
 		glDisable(GL_DEPTH_TEST);
+
+		if (renderOptions_.shader_model != DSCP4_SHADER_MODEL_OFF)
+			glDisable(GL_LIGHTING);
 	}
 
 	cameraChanged_ = false;
@@ -818,6 +893,73 @@ void DSCP4Render::drawForAerialDisplay()
 	lightingChanged_ = false;
 }
 
+void DSCP4Render::drawForFringe()
+{
+	SDL_GL_MakeCurrent(windows_[0], glContexts_[0]);
+
+	drawForStereogram();
+
+	// Read the data from the back buffer, which hasn't been displayed yet
+	glReadBuffer(GL_BACK_LEFT);
+
+	glFinish();
+	// Copy RGBA to PBO
+	glBindBuffer(GL_ARRAY_BUFFER, stereogramPBOs_[0]);
+
+	GLfloat Vertices[] = { 0, 0, 0,
+							displayOptions_.head_res_x, 0, 0,
+							displayOptions_.head_res_x, displayOptions_.head_res_y*2, 0,
+							0, displayOptions_.head_res_y*2, 0
+	};
+
+	GLfloat TexCoord[] = { 0, 0,
+		1, 0,
+		1, 1,
+		0, 1,
+	};
+
+	const GLubyte indices[] = { 0, 1, 2, // first triangle (bottom left - top left - top right)
+		0, 2, 3 };
+
+	for (unsigned int i = 0; i < numWindows_; i++)
+	{
+		SDL_GL_MakeCurrent(windows_[i], glContexts_[numWindows_-1]);
+
+		glEnable(GL_TEXTURE_2D);
+
+		glViewport(0, 0, displayOptions_.head_res_x, displayOptions_.head_res_y*2);
+
+		glMatrixMode(GL_PROJECTION);
+		projectionMatrix_ = glm::ortho(0.f, static_cast<float>(displayOptions_.head_res_x), 0.f, static_cast<float>(displayOptions_.head_res_y));
+
+		glLoadMatrixf(glm::value_ptr(projectionMatrix_));
+
+		glMatrixMode(GL_MODELVIEW);
+		glLoadMatrixf(glm::value_ptr(glm::mat4()));
+
+		glClearColor(1.0f, 1.0f, 0.5f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		glDisable(GL_LIGHTING);
+
+		glBindTexture(GL_TEXTURE_2D, fringeTextures_[i]);
+
+		glEnableClientState(GL_VERTEX_ARRAY);
+		glVertexPointer(3, GL_FLOAT, 0, Vertices);
+
+		glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+		glTexCoordPointer(2, GL_FLOAT, 0, TexCoord);
+
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, indices);
+
+		glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+		glDisableClientState(GL_VERTEX_ARRAY);
+		glDisable(GL_TEXTURE_2D);
+	}
+
+
+}
+
 void DSCP4Render::deinit()
 {
 	LOG4CXX_INFO(logger_, "Deinitializing DSCP4...")
@@ -829,12 +971,6 @@ void DSCP4Render::deinit()
 	if(renderThread_.joinable() && (std::this_thread::get_id() != renderThread_.get_id()))
 		renderThread_.join();
 	
-	if (lightingShader_)
-	{
-		delete[] lightingShader_;
-		lightingShader_ = nullptr;
-	}
-
 	if (windows_)
 	{
 		delete[] windows_;

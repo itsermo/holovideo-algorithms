@@ -4,7 +4,7 @@ project(dscp4-fringe)
 
 if(WITH_CUDA)
 	set(DSCP4_FRINGE_CUDA_LIB "${PROJECT_NAME}-cuda" PARENT_SCOPE)
-
+	set(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE ON)
 	set(CUDA_HOST_COMPILATION_CPP OFF)
 	if(CMAKE_COMPILER_IS_GNUCC)
 		set(CUDA_NVCC_FLAGS -Xcompiler -fpic)
@@ -17,11 +17,7 @@ if(WITH_CUDA)
 		-gencode=arch=compute_35,code=\"sm_35,compute_35\"
 		-gencode=arch=compute_50,code=\"sm_50,compute_50\")
 
-	#set(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE ON)
-
 	set(BUILD_SHARED_LIBS OFF)
-
-	#set(CUDA_SEPARABLE_COMPILATION ON)
 
 	include_directories(${CUDA_TOOLKIT_INCLUDE})
 
