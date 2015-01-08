@@ -6,18 +6,13 @@ const int blocksize = 16;
 
 #include <stdio.h>
 
-__global__ void add1(int *x);
-
-__global__ void add2(int *x);
-
-__global__
-void hello(char *a, int *b)
+__global__ void hello(char *a, int *b)
 {
 	a[threadIdx.x] += b[threadIdx.x];
 }
 
 
-void addOne(int* x)
+void dscp4_fringe_CudaHelloWorld()
 {
 	char a[N] = "Hello \0\0\0\0\0\0";
 	int b[N] = { 15, 10, 6, 0, -11, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
@@ -43,19 +38,4 @@ void addOne(int* x)
 
 	printf("%s\n", a);
 	//return EXIT_SUCCESS;
-}
-
-void addTwo(int *x)
-{
-	//add2(x);
-}
-
-__global__ void add1(int *x)
-{
-	*x = *x + 1;
-}
-
-__global__ void add2(int *x)
-{
-	*x = *x + 2;
 }
