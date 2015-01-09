@@ -12,9 +12,27 @@ __global__ void hello(char *a, int *b)
 }
 
 
-void dscp4_fringe_cuda_HelloWorld()
+char * dscp4_fringe_cuda_HelloWorld()
 {
-	char a[N] = "Hello \0\0\0\0\0\0";
+	char *a = (char*)malloc(N);
+	a[0] = 'H';
+	a[1] = 'e';
+	a[2] = 'l';
+	a[3] = 'l';
+	a[4] = 'o';
+	a[5] = ' ';
+	a[6] = '\0';
+	a[7] = '\0';
+	a[8] = '\0';
+	a[9] = '\0';
+	a[10] = '\0';
+	a[11] = '\0';
+	//a[12] = '\0';
+	//a[13] = '\0';
+	//a[14] = '\0';
+	//a[15] = '\0';
+
+	//strcpy	"Hello \0\0\0\0\0\0";
 	int b[N] = { 15, 10, 6, 0, -11, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
 	char *ad;
@@ -22,7 +40,7 @@ void dscp4_fringe_cuda_HelloWorld()
 	const int csize = N*sizeof(char);
 	const int isize = N*sizeof(int);
 
-	printf("%s", a);
+	//printf("%s", a);
 
 	cudaMalloc((void**)&ad, csize);
 	cudaMalloc((void**)&bd, isize);
@@ -36,7 +54,8 @@ void dscp4_fringe_cuda_HelloWorld()
 	cudaFree(ad);
 	cudaFree(bd);
 
-	printf("%s\n", a);
+	return a;
+	//printf("%s\n", a);
 	//return EXIT_SUCCESS;
 };
 

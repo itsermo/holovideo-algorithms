@@ -3,12 +3,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#ifdef DSCP4_HAVE_CUDA
-#include <cuda.h>
-#include <cuda_gl_interop.h>
-#include <kernels/dscp4-fringe-cuda.h>
-#endif
-
 // This checks for a true condition, prints the error message, cleans up and returns false
 #define CHECK_SDL_RC(rc_condition, what)				\
 	if (rc_condition)									\
@@ -148,8 +142,8 @@ fringeTextures_(nullptr)
 	}
 
 #ifdef DSCP4_HAVE_CUDA
-	LOG4CXX_INFO(logger_, "CUDA -- This should say 'Hello World!':")
-	dscp4_fringe_cuda_HelloWorld();
+	char * helloWorldCudaStr = dscp4_fringe_cuda_HelloWorld();
+	LOG4CXX_INFO(logger_, "CUDA--If CUDA is working, this should say 'World!', not 'Hello ': " << helloWorldCudaStr)
 #endif
 
 }
@@ -166,13 +160,35 @@ bool DSCP4Render::init()
 	LOG4CXX_INFO(logger_, "Initializing SDL with video subsystem")
 	CHECK_SDL_RC(SDL_Init(SDL_INIT_VIDEO) < 0, "Could not initialize SDL")
 
-	// If we can get the number of Windows from Xinerama
-	// we can create a pixel buffer object for each Window
-	// for displaying the final fringe pattern textures
-	if (numWindows_ == 0)
-		numWindows_ = SDL_GetNumVideoDisplays();
 
-	LOG4CXX_INFO(logger_, "Number of displays: " << numWindows_)
+	switch (renderOptions_.render_mode)
+	{
+	case DSCP4_RENDER_MODE_MODEL_VIEWING:
+		numWindows_ = 1;
+		break;
+	case DSCP4_RENDER_MODE_STEREOGRAM_VIEWING:
+		numWindows_ = 1;
+		break;
+	case DSCP4_RENDER_MODE_AERIAL_DISPLAY:
+		numWindows_ = SDL_GetNumVideoDisplays();
+		break;
+	case DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE:
+		numWindows_ = SDL_GetNumVideoDisplays();
+		if (numWindows_ != displayOptions_.num_heads / 2)
+		{
+			LOG4CXX_ERROR(logger_, "The X11 setup is not correct, you do not have 2 heads per GPU window")
+			
+			//for debugging, open up multiple windows
+			LOG4CXX_WARN(logger_, "Opening up the right amount of windows for debugging algorithm")
+			numWindows_ = displayOptions_.num_heads / 2;
+		}
+		break;
+	default:
+		numWindows_ = SDL_GetNumVideoDisplays();
+		break;
+	}
+
+	LOG4CXX_INFO(logger_, "Number of windows: " << numWindows_)
 
 	SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
@@ -472,7 +488,6 @@ void DSCP4Render::renderLoop()
 	{
 	case DSCP4_RENDER_MODE_MODEL_VIEWING:
 	case DSCP4_RENDER_MODE_STEREOGRAM_VIEWING:
-		numWindows_ = 1;
 
 		initWindow(windows_[0], glContexts_[0], 0);
 
@@ -484,7 +499,6 @@ void DSCP4Render::renderLoop()
 
 		break;
 	case DSCP4_RENDER_MODE_AERIAL_DISPLAY:
-		numWindows_ = SDL_GetNumVideoDisplays();
 
 		for (unsigned int i = 0; i < numWindows_; i++)
 		{
@@ -500,7 +514,6 @@ void DSCP4Render::renderLoop()
 		break;
 	case DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE:
 	{
-		numWindows_ = SDL_GetNumVideoDisplays();
 		for (unsigned int i = 0; i < numWindows_; i++)
 		{
 			initWindow(windows_[i], glContexts_[i], i);
@@ -516,9 +529,33 @@ void DSCP4Render::renderLoop()
 		fringeTextures_ = new GLuint[numWindows_];
 
 		SDL_GL_MakeCurrent(windows_[0], glContexts_[0]);
+		
+		// begin generation of stereogram view buffers (these will go into cuda/opencl kernels)
+		size_t rgba_size = algorithmOptions_.num_views_x * algorithmOptions_.num_views_y * algorithmOptions_.num_wafels_per_scanline * algorithmOptions_.num_scanlines * sizeof(GLbyte)* 4;
+		size_t depth_size = algorithmOptions_.num_views_x * algorithmOptions_.num_views_y * algorithmOptions_.num_wafels_per_scanline * algorithmOptions_.num_scanlines * sizeof(GLuint);
+
+		GLbyte * stereogram_rgba_data = new GLbyte[rgba_size];
+		GLuint * stereogram_depth_data = new GLuint[depth_size / sizeof(GLuint)];
+
 		// Create a PBO to store RGBA and DEPTH buffer of stereogram views
 		// This will be passed to CUDA or OpenCL kernels for fringe computation
 		glGenBuffers(2, stereogramPBOs_);
+		
+		glBindBuffer(GL_ARRAY_BUFFER, stereogramPBOs_[0]);
+		glBufferData(GL_ARRAY_BUFFER, rgba_size, stereogram_rgba_data, GL_DYNAMIC_DRAW);
+
+		glBindBuffer(GL_ARRAY_BUFFER, stereogramPBOs_[1]);
+		glBufferData(GL_ARRAY_BUFFER, depth_size, stereogram_depth_data, GL_DYNAMIC_DRAW);
+
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+#ifdef DSCP4_HAVE_CUDA
+		//register buffers with cuda here
+#endif
+
+		delete[] stereogram_depth_data;
+		delete[] stereogram_rgba_data;
+		//end generation of stereogram view buffers
 
 		// Create N-textures for outputting fringe data to the X displays
 		// Whatever holographic computation is done will be written
@@ -537,8 +574,10 @@ void DSCP4Render::renderLoop()
 
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, displayOptions_.head_res_x, displayOptions_.head_res_y * 2, 0, GL_RGB, GL_BYTE, blah);
 
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		}
 
 		delete[] blah;

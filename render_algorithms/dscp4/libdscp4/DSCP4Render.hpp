@@ -23,6 +23,13 @@
 #include <GL/glew.h>
 #include <GL/gl.h>
 #include <GL/glu.h>
+
+#ifdef DSCP4_HAVE_CUDA
+#include <cuda.h>
+#include <cuda_gl_interop.h>
+#include <kernels/dscp4-fringe-cuda.h>
+#endif
+
 #include <SDL2/SDL.h>
 
 #include <string>
@@ -40,6 +47,7 @@
 
 #define DSCP4_RENDER_DEFAULT_ZNEAR 0.01f
 #define DSCP4_RENDER_DEFAULT_ZFAR 5.0f
+
 
 namespace dscp4
 {
@@ -189,8 +197,13 @@ namespace dscp4
 		std::atomic<bool> spinOn_;
 
 		render_options_t renderOptions_;
+
 		algorithm_options_t algorithmOptions_;
 		display_options_t displayOptions_;
+
+#ifdef DSCP4_HAVE_CUDA
+		dscp4_fringe_cuda_context_t* cudaContext_;
+#endif
 
 		glm::mat4 projectionMatrix_;
 		glm::mat4 viewMatrix_;
