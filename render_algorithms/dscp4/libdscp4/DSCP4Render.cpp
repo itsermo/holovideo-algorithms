@@ -3,6 +3,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include <cuda_runtime_api.h>
+
 // This checks for a true condition, prints the error message, cleans up and returns false
 #define CHECK_SDL_RC(rc_condition, what)				\
 	if (rc_condition)									\
@@ -138,10 +140,10 @@ DSCP4Render::DSCP4Render(render_options_t renderOptions,
 			renderOptions_.shaders_path = (char*)boost::filesystem::current_path().string().c_str();
 	}
 
-#ifdef DSCP4_HAVE_CUDA
-	char * helloWorldCudaStr = dscp4_fringe_cuda_HelloWorld();
-	LOG4CXX_INFO(logger_, "CUDA--If CUDA is working, this should say 'World!', not 'Hello ': " << helloWorldCudaStr)
-#endif
+//#ifdef DSCP4_HAVE_CUDA
+//	char * helloWorldCudaStr = dscp4_fringe_cuda_HelloWorld();
+//	LOG4CXX_INFO(logger_, "CUDA--If CUDA is working, this should say 'World!', not 'Hello ': " << helloWorldCudaStr)
+//#endif
 
 }
 
@@ -188,8 +190,8 @@ bool DSCP4Render::init()
 	LOG4CXX_INFO(logger_, "Number of windows: " << numWindows_)
 
 	SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
 
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
@@ -555,8 +557,8 @@ void DSCP4Render::renderLoop()
 		// To these textures and ultimately displayed on the holovideo display
 		glGenTextures(numWindows_, fringeContext_.fringe_gl_buf_out);
 
-		char *blah = new char[fringeContext_.display_options.head_res_x * fringeContext_.display_options.head_res_y * 2 * 3];
-		for (size_t i = 0; i < fringeContext_.display_options.head_res_x * fringeContext_.display_options.head_res_y * 2 * 3; i++)
+		char *blah = new char[fringeContext_.display_options.head_res_x * fringeContext_.display_options.head_res_y * 2 * 4];
+		for (size_t i = 0; i < fringeContext_.display_options.head_res_x * fringeContext_.display_options.head_res_y * 2 * 4; i++)
 		{
 			blah[i] = i % 255;
 		}
@@ -565,7 +567,7 @@ void DSCP4Render::renderLoop()
 		{
 			glBindTexture(GL_TEXTURE_2D, fringeContext_.fringe_gl_buf_out[i]);
 
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, fringeContext_.display_options.head_res_x, fringeContext_.display_options.head_res_y * 2, 0, GL_RGB, GL_BYTE, blah);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8UI_EXT, fringeContext_.display_options.head_res_x, fringeContext_.display_options.head_res_y * 2, 0, GL_RGBA_INTEGER_EXT, GL_UNSIGNED_BYTE, blah);
 
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -575,10 +577,12 @@ void DSCP4Render::renderLoop()
 
 		delete[] blah;
 
+		glBindTexture(GL_TEXTURE_2D, 0);
+
 #ifdef DSCP4_HAVE_CUDA
 		cudaContext_ = dscp4_fringe_cuda_CreateContext(&fringeContext_);
 #endif
-
+		
 		//init shaders
 	}
 		break;
@@ -950,6 +954,10 @@ void DSCP4Render::drawForFringe()
 
 	const GLubyte indices[] = { 0, 1, 2, // first triangle (bottom left - top left - top right)
 		0, 2, 3 };
+
+#ifdef DSCP4_HAVE_CUDA
+	dscp4_fringe_cuda_ComputeFringe(cudaContext_);
+#endif
 
 	for (unsigned int i = 0; i < numWindows_; i++)
 	{

@@ -14,6 +14,7 @@ extern "C" {
 		struct cudaGraphicsResource * stereogram_rgba_cuda_resource;
 		struct cudaGraphicsResource * stereogram_depth_cuda_resource;
 		struct cudaGraphicsResource ** fringe_cuda_resources;
+		struct cudaDeviceProp * gpu_properties;
 		int num_gpus;
 	} dscp4_fringe_cuda_context_t;
 
@@ -23,7 +24,7 @@ extern "C" {
 
 	char * dscp4_fringe_cuda_HelloWorld();
 
-	void dscp4_fringe_cuda_ComputeFringe();
+	void dscp4_fringe_cuda_ComputeFringe(dscp4_fringe_cuda_context_t* cudaContext);
 
 #ifdef __cplusplus
 };
