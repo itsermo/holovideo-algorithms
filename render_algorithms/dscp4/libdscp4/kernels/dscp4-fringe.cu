@@ -1,5 +1,13 @@
 #include "dscp4-fringe-cuda.h"
+
 #include <cuda.h>
+
+#ifdef WIN32
+#include <Windows.h>
+#endif
+
+#include <cuda_gl_interop.h>
+#include <cuda_device_runtime_api.h>
 
 const int N = 16;
 const int blocksize = 16;
@@ -59,12 +67,24 @@ char * dscp4_fringe_cuda_HelloWorld()
 	//return EXIT_SUCCESS;
 };
 
-dscp4_fringe_cuda_context_t* dscp4_fringe_cuda_CreateContext(dscp4_fringe_context_t fringeContext)
+dscp4_fringe_cuda_context_t* dscp4_fringe_cuda_CreateContext(dscp4_fringe_context_t* fringeContext)
 {
-	dscp4_fringe_cuda_context_t* context = (dscp4_fringe_cuda_context_t*)malloc(sizeof(dscp4_fringe_cuda_context_t));
-	context->fringe_context = fringeContext;
+	dscp4_fringe_cuda_context_t* cudaContext = (dscp4_fringe_cuda_context_t*)malloc(sizeof(dscp4_fringe_cuda_context_t));
+	cudaContext->fringe_context = fringeContext;
 
-	return context;
+	cudaGetDeviceCount(&cudaContext->num_gpus);
+
+	cudaGraphicsGLRegisterBuffer(&cudaContext->stereogram_rgba_cuda_resource, cudaContext->fringe_context->stereogram_gl_rgba_buf_in, cudaGraphicsRegisterFlagsReadOnly);
+	cudaGraphicsGLRegisterBuffer(&cudaContext->stereogram_depth_cuda_resource, cudaContext->fringe_context->stereogram_gl_depth_buf_in, cudaGraphicsRegisterFlagsReadOnly);
+
+	cudaContext->fringe_cuda_resources = (struct cudaGraphicsResource**)malloc(sizeof(void*)* cudaContext->fringe_context->display_options.num_heads / 2);
+
+	for (unsigned int i = 0; i < cudaContext->fringe_context->display_options.num_heads / 2; i++)
+	{
+		cudaGraphicsGLRegisterBuffer(&cudaContext->fringe_cuda_resources[i], cudaContext->fringe_context->fringe_gl_buf_out[i], cudaGraphicsRegisterFlagsWriteDiscard);
+	}
+
+	return cudaContext;
 };
 
 void dscp4_fringe_cuda_DestroyContext(dscp4_fringe_cuda_context_t** cudaContext)

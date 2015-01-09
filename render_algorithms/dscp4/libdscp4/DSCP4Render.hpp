@@ -198,8 +198,7 @@ namespace dscp4
 
 		render_options_t renderOptions_;
 
-		algorithm_options_t algorithmOptions_;
-		display_options_t displayOptions_;
+		dscp4_fringe_context_t fringeContext_;
 
 #ifdef DSCP4_HAVE_CUDA
 		dscp4_fringe_cuda_context_t* cudaContext_;
@@ -211,10 +210,6 @@ namespace dscp4
 
 		Camera camera_;
 		Lighting lighting_;
-
-		GLuint *stereogramPBOs_;
-
-		GLuint *fringeTextures_;
 
 #ifdef DSCP4_HAVE_LOG4CXX
 		log4cxx::LoggerPtr logger_ = log4cxx::Logger::getLogger("edu.mit.media.obmg.holovideo.dscp4.lib.renderer");

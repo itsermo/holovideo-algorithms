@@ -140,9 +140,9 @@ extern "C"{
 	{
 		algorithm_options_t algorithm_options;
 		display_options_t display_options;
-		void * stereogram_rgba_in;
-		void * stereogram_depth_in;
-		void ** fringe_data_out;
+		unsigned int stereogram_gl_rgba_buf_in;
+		unsigned int stereogram_gl_depth_buf_in;
+		unsigned int * fringe_gl_buf_out;
 	} dscp4_fringe_context_t;
 };
 

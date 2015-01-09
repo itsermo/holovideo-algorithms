@@ -41,18 +41,18 @@ DSCP4Render::DSCP4Render() :
 						DSCP4_DEFAULT_RENDER_LIGHT_POS_Z,
 						DSCP4_DEFAULT_RENDER_AUTOSCALE_ENABLED },
 					algorithm_options_t {
-							DSCP4_DEFAULT_ALGORITHM_NUM_VIEWS_X,
-							DSCP4_DEFAULT_ALGORITHM_NUM_VIEWS_Y,
-							DSCP4_DEFAULT_ALGORITHM_NUM_WAFELS,
-							DSCP4_DEFAULT_ALGORITHM_NUM_SCANLINES,
-							DSCP4_DEFAULT_ALGORITHM_FOV_X,
-							DSCP4_DEFAULT_ALGORITHM_FOV_Y },
+						DSCP4_DEFAULT_ALGORITHM_NUM_VIEWS_X,
+						DSCP4_DEFAULT_ALGORITHM_NUM_VIEWS_Y,
+						DSCP4_DEFAULT_ALGORITHM_NUM_WAFELS,
+						DSCP4_DEFAULT_ALGORITHM_NUM_SCANLINES,
+						DSCP4_DEFAULT_ALGORITHM_FOV_X,
+						DSCP4_DEFAULT_ALGORITHM_FOV_Y },
 					display_options_t {
-								DSCP4_DEFAULT_DISPLAY_NAME,
-								DSCP4_DEFAULT_DISPLAY_NUM_HEADS,
-								DSCP4_DEFAULT_DISPLAY_HEAD_RES_X,
-								DSCP4_DEFAULT_DISPLAY_HEAD_RES_Y},
-								DSCP4_DEFAULT_LOG_VERBOSITY)
+						DSCP4_DEFAULT_DISPLAY_NAME,
+						DSCP4_DEFAULT_DISPLAY_NUM_HEADS,
+						DSCP4_DEFAULT_DISPLAY_HEAD_RES_X,
+						DSCP4_DEFAULT_DISPLAY_HEAD_RES_Y},
+						DSCP4_DEFAULT_LOG_VERBOSITY)
 {
 	
 }
@@ -62,34 +62,31 @@ DSCP4Render::DSCP4Render(render_options_t renderOptions,
 	display_options_t displayOptions,
 	unsigned int verbosity
 	) :
-windows_(nullptr),
-glContexts_(nullptr),
-shouldRender_(false),
-isInit_(false),
-windowWidth_(nullptr),
-windowHeight_(nullptr),
-numWindows_(0),
-rotateAngleX_(0),
-rotateAngleY_(0),
-rotateIncrement_(1.0f),
-spinOn_(false),
-zNear_(DSCP4_RENDER_DEFAULT_ZNEAR),
-zFar_(DSCP4_RENDER_DEFAULT_ZFAR),
-renderOptions_(renderOptions),
-algorithmOptions_(algorithmOptions),
-displayOptions_(displayOptions),
-isFullScreen_(false),
-lightingShader_(nullptr),
-projectionMatrix_(),
-viewMatrix_(),
-modelMatrix_(),
-camera_(),
-lighting_(),
-cameraChanged_(false),
-lightingChanged_(false),
-meshChanged_(false),
-stereogramPBOs_(nullptr),
-fringeTextures_(nullptr)
+	windows_(nullptr),
+	glContexts_(nullptr),
+	shouldRender_(false),
+	isInit_(false),
+	windowWidth_(nullptr),
+	windowHeight_(nullptr),
+	numWindows_(0),
+	rotateAngleX_(0),
+	rotateAngleY_(0),
+	rotateIncrement_(1.0f),
+	spinOn_(false),
+	zNear_(DSCP4_RENDER_DEFAULT_ZNEAR),
+	zFar_(DSCP4_RENDER_DEFAULT_ZFAR),
+	renderOptions_(renderOptions),
+	isFullScreen_(false),
+	lightingShader_(nullptr),
+	projectionMatrix_(),
+	viewMatrix_(),
+	modelMatrix_(),
+	camera_(),
+	lighting_(),
+	cameraChanged_(false),
+	lightingChanged_(false),
+	meshChanged_(false),
+	fringeContext_({ algorithmOptions, displayOptions, 0, 0, nullptr })
 {
 
 #ifdef DSCP4_HAVE_LOG4CXX
@@ -174,13 +171,13 @@ bool DSCP4Render::init()
 		break;
 	case DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE:
 		numWindows_ = SDL_GetNumVideoDisplays();
-		if (numWindows_ != displayOptions_.num_heads / 2)
+		if (numWindows_ != fringeContext_.display_options.num_heads / 2)
 		{
 			LOG4CXX_ERROR(logger_, "The X11 setup is not correct, you do not have 2 heads per GPU window")
 			
 			//for debugging, open up multiple windows
 			LOG4CXX_WARN(logger_, "Opening up the right amount of windows for debugging algorithm")
-			numWindows_ = displayOptions_.num_heads / 2;
+			numWindows_ = fringeContext_.display_options.num_heads / 2;
 		}
 		break;
 	default:
@@ -224,14 +221,14 @@ bool DSCP4Render::initWindow(SDL_Window*& window, SDL_GLContext& glContext, int 
 	switch (renderOptions_.render_mode)
 	{
 	case DSCP4_RENDER_MODE_MODEL_VIEWING:
-		windowWidth_[thisWindowNum] = algorithmOptions_.num_wafels_per_scanline;
-		windowHeight_[thisWindowNum] = algorithmOptions_.num_scanlines;
+		windowWidth_[thisWindowNum] = fringeContext_.algorithm_options.num_wafels_per_scanline;
+		windowHeight_[thisWindowNum] = fringeContext_.algorithm_options.num_scanlines;
 		LOG4CXX_DEBUG(logger_, "Creating SDL OpenGL Window " << thisWindowNum << ": " << windowWidth_[thisWindowNum] << "x" << windowHeight_[thisWindowNum] << " @ " << "{" << bounds.x + 80 << "," << bounds.y + 80 << "}")
 		window = SDL_CreateWindow(("dscp4-" + std::to_string(thisWindowNum)).c_str(), bounds.x + 80, bounds.y + 80, windowWidth_[thisWindowNum], windowHeight_[thisWindowNum], SDL_WINDOW_OPENGL);
 		break;
 	case DSCP4_RENDER_MODE_STEREOGRAM_VIEWING:
-		windowWidth_[thisWindowNum] = algorithmOptions_.num_wafels_per_scanline*2;
-		windowHeight_[thisWindowNum] = algorithmOptions_.num_scanlines*2;
+		windowWidth_[thisWindowNum] = fringeContext_.algorithm_options.num_wafels_per_scanline*2;
+		windowHeight_[thisWindowNum] = fringeContext_.algorithm_options.num_scanlines*2;
 		LOG4CXX_DEBUG(logger_, "Creating SDL OpenGL Window " << thisWindowNum << ": " << windowWidth_[thisWindowNum] << "x" << windowHeight_[thisWindowNum] << " @ " << "{" << bounds.x + 80 << "," << bounds.y + 80 << "}")
 		window = SDL_CreateWindow(("dscp4-" + std::to_string(thisWindowNum)).c_str(), bounds.x + 80, bounds.y + 80, windowWidth_[thisWindowNum], windowHeight_[thisWindowNum], SDL_WINDOW_OPENGL);
 		break;
@@ -525,33 +522,29 @@ void DSCP4Render::renderLoop()
 			glLightModelfv(GL_AMBIENT_AND_DIFFUSE, glm::value_ptr(lighting_.globalAmbientColor));
 		}
 
-		stereogramPBOs_ = new GLuint[2];
-		fringeTextures_ = new GLuint[numWindows_];
+		fringeContext_.fringe_gl_buf_out = new GLuint[numWindows_];
 
 		SDL_GL_MakeCurrent(windows_[0], glContexts_[0]);
 		
 		// begin generation of stereogram view buffers (these will go into cuda/opencl kernels)
-		size_t rgba_size = algorithmOptions_.num_views_x * algorithmOptions_.num_views_y * algorithmOptions_.num_wafels_per_scanline * algorithmOptions_.num_scanlines * sizeof(GLbyte)* 4;
-		size_t depth_size = algorithmOptions_.num_views_x * algorithmOptions_.num_views_y * algorithmOptions_.num_wafels_per_scanline * algorithmOptions_.num_scanlines * sizeof(GLuint);
+		size_t rgba_size = fringeContext_.algorithm_options.num_views_x * fringeContext_.algorithm_options.num_views_y * fringeContext_.algorithm_options.num_wafels_per_scanline *  fringeContext_.algorithm_options.num_scanlines * sizeof(GLbyte)* 4;
+		size_t depth_size = fringeContext_.algorithm_options.num_views_x * fringeContext_.algorithm_options.num_views_y * fringeContext_.algorithm_options.num_wafels_per_scanline *  fringeContext_.algorithm_options.num_scanlines * sizeof(GLuint);
 
 		GLbyte * stereogram_rgba_data = new GLbyte[rgba_size];
 		GLuint * stereogram_depth_data = new GLuint[depth_size / sizeof(GLuint)];
 
 		// Create a PBO to store RGBA and DEPTH buffer of stereogram views
 		// This will be passed to CUDA or OpenCL kernels for fringe computation
-		glGenBuffers(2, stereogramPBOs_);
+		glGenBuffers(1, &fringeContext_.stereogram_gl_rgba_buf_in);
+		glGenBuffers(1, &fringeContext_.stereogram_gl_depth_buf_in);
 		
-		glBindBuffer(GL_ARRAY_BUFFER, stereogramPBOs_[0]);
+		glBindBuffer(GL_ARRAY_BUFFER, fringeContext_.stereogram_gl_rgba_buf_in);
 		glBufferData(GL_ARRAY_BUFFER, rgba_size, stereogram_rgba_data, GL_DYNAMIC_DRAW);
 
-		glBindBuffer(GL_ARRAY_BUFFER, stereogramPBOs_[1]);
+		glBindBuffer(GL_ARRAY_BUFFER, fringeContext_.stereogram_gl_depth_buf_in);
 		glBufferData(GL_ARRAY_BUFFER, depth_size, stereogram_depth_data, GL_DYNAMIC_DRAW);
 
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-#ifdef DSCP4_HAVE_CUDA
-		//register buffers with cuda here
-#endif
 
 		delete[] stereogram_depth_data;
 		delete[] stereogram_rgba_data;
@@ -560,19 +553,19 @@ void DSCP4Render::renderLoop()
 		// Create N-textures for outputting fringe data to the X displays
 		// Whatever holographic computation is done will be written
 		// To these textures and ultimately displayed on the holovideo display
-		glGenTextures(numWindows_, fringeTextures_);
+		glGenTextures(numWindows_, fringeContext_.fringe_gl_buf_out);
 
-		char *blah = new char[displayOptions_.head_res_x * displayOptions_.head_res_y * 2 * 3];
-		for (size_t i = 0; i < displayOptions_.head_res_x * displayOptions_.head_res_y * 2 * 3; i++)
+		char *blah = new char[fringeContext_.display_options.head_res_x * fringeContext_.display_options.head_res_y * 2 * 3];
+		for (size_t i = 0; i < fringeContext_.display_options.head_res_x * fringeContext_.display_options.head_res_y * 2 * 3; i++)
 		{
 			blah[i] = i % 255;
 		}
 
 		for (size_t i = 0; i < numWindows_; i++)
 		{
-			glBindTexture(GL_TEXTURE_2D, fringeTextures_[i]);
+			glBindTexture(GL_TEXTURE_2D, fringeContext_.fringe_gl_buf_out[i]);
 
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, displayOptions_.head_res_x, displayOptions_.head_res_y * 2, 0, GL_RGB, GL_BYTE, blah);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, fringeContext_.display_options.head_res_x, fringeContext_.display_options.head_res_y * 2, 0, GL_RGB, GL_BYTE, blah);
 
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -581,6 +574,10 @@ void DSCP4Render::renderLoop()
 		}
 
 		delete[] blah;
+
+#ifdef DSCP4_HAVE_CUDA
+		cudaContext_ = dscp4_fringe_cuda_CreateContext(&fringeContext_);
+#endif
 
 		//init shaders
 	}
@@ -646,7 +643,7 @@ void DSCP4Render::renderLoop()
 			{
 #ifdef DSCP4_ENABLE_TRACE_LOG
 				auto duration = measureTime<>(std::bind(&DSCP4Render::drawForStereogram, this));
-				LOG4CXX_TRACE(logger_, "Generating " << algorithmOptions_.num_views_x << " views took " << duration << " ms (" << 1.f / duration * 1000 << " fps)")
+				LOG4CXX_TRACE(logger_, "Generating " << fringeContext_.algorithm_options.num_views_x << " views took " << duration << " ms (" << 1.f / duration * 1000 << " fps)")
 #else
 				drawForStereogram();
 #endif
@@ -725,16 +722,10 @@ void DSCP4Render::renderLoop()
 		lightingShader_ = nullptr;
 	}
 
-	if (stereogramPBOs_)
+	if (fringeContext_.fringe_gl_buf_out)
 	{
-		delete[] stereogramPBOs_;
-		stereogramPBOs_ = nullptr;
-	}
-
-	if (fringeTextures_)
-	{
-		delete[] fringeTextures_;
-		fringeTextures_ = nullptr;
+		delete[] fringeContext_.fringe_gl_buf_out;
+		fringeContext_.fringe_gl_buf_out = nullptr;
 	}
 
 	initLock.unlock();
@@ -751,7 +742,7 @@ void DSCP4Render::drawForViewing()
 		glMatrixMode(GL_PROJECTION);
 
 		projectionMatrix_ = glm::mat4();
-		projectionMatrix_ *= glm::perspective(algorithmOptions_.fov_y * DEG_TO_RAD, ratio, zNear_, zFar_);
+		projectionMatrix_ *= glm::perspective(fringeContext_.algorithm_options.fov_y * DEG_TO_RAD, ratio, zNear_, zFar_);
 
 
 		glLoadMatrixf(glm::value_ptr(projectionMatrix_));
@@ -801,8 +792,8 @@ void DSCP4Render::drawForViewing()
 
 void DSCP4Render::drawForStereogram()
 {
-	const int tileX = algorithmOptions_.num_wafels_per_scanline / 2;
-	const int tileY = algorithmOptions_.num_scanlines / 2;
+	const int tileX = fringeContext_.algorithm_options.num_wafels_per_scanline / 2;
+	const int tileY = fringeContext_.algorithm_options.num_scanlines / 2;
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -810,14 +801,14 @@ void DSCP4Render::drawForStereogram()
 	std::lock_guard<std::mutex> lgl(lightingMutex_);
 	std::lock_guard<std::mutex> lgm(meshMutex_);
 
-	for (unsigned int i = 0; i < algorithmOptions_.num_views_x; i++)
+	for (unsigned int i = 0; i < fringeContext_.algorithm_options.num_views_x; i++)
 	{
-		glViewport(tileX*(i%4), tileY*(i/4), algorithmOptions_.num_wafels_per_scanline / 2, algorithmOptions_.num_scanlines / 2);
+		glViewport(tileX*(i%4), tileY*(i/4), fringeContext_.algorithm_options.num_wafels_per_scanline / 2, fringeContext_.algorithm_options.num_scanlines / 2);
 		
 		glMatrixMode(GL_PROJECTION);
 
 		const float ratio = (float)windowWidth_[0] / (float)windowHeight_[0];
-		const float q = (i - algorithmOptions_.num_views_x * 0.5f) / static_cast<float>(algorithmOptions_.num_views_x) * 30.f * DEG_TO_RAD;
+		const float q = (i - fringeContext_.algorithm_options.num_views_x * 0.5f) / static_cast<float>(fringeContext_.algorithm_options.num_views_x) * 30.f * DEG_TO_RAD;
 
 		projectionMatrix_ = buildOrthoXPerspYProjMat(-ratio, ratio, -1.0f, 1.0f, zNear_, zFar_, q);
 
@@ -882,7 +873,7 @@ void DSCP4Render::drawForAerialDisplay()
 		const float ratio = (float)windowWidth_[i] / (float)windowHeight_[i];
 		
 		projectionMatrix_ = glm::mat4();
-		projectionMatrix_ *= glm::perspective(algorithmOptions_.fov_y * DEG_TO_RAD, ratio, zNear_, zFar_);
+		projectionMatrix_ *= glm::perspective(fringeContext_.algorithm_options.fov_y * DEG_TO_RAD, ratio, zNear_, zFar_);
 
 		glLoadMatrixf(glm::value_ptr(projectionMatrix_));
 
@@ -943,12 +934,12 @@ void DSCP4Render::drawForFringe()
 
 	glFinish();
 	// Copy RGBA to PBO
-	glBindBuffer(GL_ARRAY_BUFFER, stereogramPBOs_[0]);
+	//glBindBuffer(GL_ARRAY_BUFFER, stereogramPBOs_[0]);
 
 	GLfloat Vertices[] = { 0.f, 0.f, 0.f,
-							static_cast<float>(displayOptions_.head_res_x), 0, 0,
-							static_cast<float>(displayOptions_.head_res_x), static_cast<float>(displayOptions_.head_res_y) * 2.f, 0.f,
-							0.f, static_cast<float>(displayOptions_.head_res_y)*2.f, 0.f
+							static_cast<float>(fringeContext_.display_options.head_res_x), 0, 0,
+							static_cast<float>(fringeContext_.display_options.head_res_x), static_cast<float>(fringeContext_.display_options.head_res_y) * 2.f, 0.f,
+							0.f, static_cast<float>(fringeContext_.display_options.head_res_y)*2.f, 0.f
 	};
 
 	GLfloat TexCoord[] = { 0, 0,
@@ -966,10 +957,10 @@ void DSCP4Render::drawForFringe()
 
 		glEnable(GL_TEXTURE_2D);
 
-		glViewport(0, 0, displayOptions_.head_res_x, displayOptions_.head_res_y*2);
+		glViewport(0, 0, fringeContext_.display_options.head_res_x, fringeContext_.display_options.head_res_y*2);
 
 		glMatrixMode(GL_PROJECTION);
-		projectionMatrix_ = glm::ortho(0.f, static_cast<float>(displayOptions_.head_res_x), 0.f, static_cast<float>(displayOptions_.head_res_y));
+		projectionMatrix_ = glm::ortho(0.f, static_cast<float>(fringeContext_.display_options.head_res_x), 0.f, static_cast<float>(fringeContext_.display_options.head_res_y));
 
 		glLoadMatrixf(glm::value_ptr(projectionMatrix_));
 
@@ -981,7 +972,7 @@ void DSCP4Render::drawForFringe()
 
 		glDisable(GL_LIGHTING);
 
-		glBindTexture(GL_TEXTURE_2D, fringeTextures_[i]);
+		glBindTexture(GL_TEXTURE_2D, fringeContext_.fringe_gl_buf_out[i]);
 
 		glEnableClientState(GL_VERTEX_ARRAY);
 		glVertexPointer(3, GL_FLOAT, 0, Vertices);
