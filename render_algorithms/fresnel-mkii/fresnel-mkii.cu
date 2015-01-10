@@ -361,7 +361,7 @@ void copyKernelResultToTexture();
 void displayImage(GLuint texture);
 
 #ifdef USE_TEXSUBIMAGE2D
-////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////cuGL/////////////////////
 //! Create PBO
 ////////////////////////////////////////////////////////////////////////////////
 void
@@ -444,7 +444,7 @@ void createTextureDst(GLuint *tex_cudaResult, unsigned int size_x, unsigned int 
     glGenTextures(1, tex_cudaResult);
     glBindTexture(GL_TEXTURE_2D, *tex_cudaResult);
 
-    // set basic parameters
+    // set basic parameters0
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, OUTPUT_TEXTURE_MIN_FILTER);

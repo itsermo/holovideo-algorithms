@@ -135,6 +135,15 @@ extern "C"{
 		const char * name;
 		unsigned int num_heads, head_res_x, head_res_y;
 	} display_options_t;
+
+	typedef struct
+	{
+		algorithm_options_t algorithm_options;
+		display_options_t display_options;
+		unsigned int stereogram_gl_rgba_buf_in;
+		unsigned int stereogram_gl_depth_buf_in;
+		unsigned int * fringe_gl_buf_out;
+	} dscp4_fringe_context_t;
 };
 
 #endif
