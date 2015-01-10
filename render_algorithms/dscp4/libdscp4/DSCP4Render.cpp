@@ -190,8 +190,8 @@ bool DSCP4Render::init()
 	LOG4CXX_INFO(logger_, "Number of windows: " << numWindows_)
 
 	SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
 
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
@@ -567,7 +567,7 @@ void DSCP4Render::renderLoop()
 		{
 			glBindTexture(GL_TEXTURE_2D, fringeContext_.fringe_gl_buf_out[i]);
 
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8UI_EXT, fringeContext_.display_options.head_res_x, fringeContext_.display_options.head_res_y * 2, 0, GL_RGBA_INTEGER_EXT, GL_UNSIGNED_BYTE, blah);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, fringeContext_.display_options.head_res_x, fringeContext_.display_options.head_res_y * 2, 0, GL_RGBA, GL_UNSIGNED_BYTE, blah);
 
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -934,11 +934,29 @@ void DSCP4Render::drawForFringe()
 	drawForStereogram();
 
 	// Read the data from the back buffer, which hasn't been displayed yet
-	glReadBuffer(GL_BACK_LEFT);
-
+	//SDL_GL_SwapWindow(windows_[0]);
 	glFinish();
-	// Copy RGBA to PBO
-	//glBindBuffer(GL_ARRAY_BUFFER, stereogramPBOs_[0]);
+
+	GLenum error = glGetError();
+	auto errorStr = glewGetErrorString(error);
+
+	glReadBuffer(GL_BACK);
+
+
+	// Copy stereogram n-views RGBA to PBO
+	glBindBuffer(GL_PIXEL_PACK_BUFFER, fringeContext_.stereogram_gl_rgba_buf_in);
+
+	glReadPixels(0, 0, 4 * fringeContext_.algorithm_options.num_wafels_per_scanline, 4 * fringeContext_.algorithm_options.num_scanlines, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+
+	error = glGetError();
+
+	// Copy stereogram n-views depth to PBO
+	glBindBuffer(GL_PIXEL_PACK_BUFFER, fringeContext_.stereogram_gl_depth_buf_in);
+	glReadPixels(0, 0, 4 * fringeContext_.algorithm_options.num_wafels_per_scanline, 4 * fringeContext_.algorithm_options.num_scanlines, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+
+	error = glGetError();
+
+	glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
 
 	GLfloat Vertices[] = { 0.f, 0.f, 0.f,
 							static_cast<float>(fringeContext_.display_options.head_res_x), 0, 0,
@@ -981,6 +999,12 @@ void DSCP4Render::drawForFringe()
 		glDisable(GL_LIGHTING);
 
 		glBindTexture(GL_TEXTURE_2D, fringeContext_.fringe_gl_buf_out[i]);
+		glBindBuffer(GL_PIXEL_UNPACK_BUFFER, fringeContext_.stereogram_gl_depth_buf_in);
+
+		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 4 * fringeContext_.algorithm_options.num_wafels_per_scanline, 4 * fringeContext_.algorithm_options.num_scanlines, GL_RGBA, GL_UNSIGNED_BYTE,0);
+
+		//glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+		//glBindTexture(GL_TEXTURE_2D, 0);
 
 		glEnableClientState(GL_VERTEX_ARRAY);
 		glVertexPointer(3, GL_FLOAT, 0, Vertices);

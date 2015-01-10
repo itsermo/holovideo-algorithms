@@ -79,6 +79,12 @@ dscp4_fringe_cuda_context_t* dscp4_fringe_cuda_CreateContext(dscp4_fringe_contex
 
 	error = cudaGetDeviceCount(&cudaContext->num_gpus);
 	
+	if (error != cudaSuccess)
+	{
+		free(cudaContext);
+		return NULL;
+	}
+
 	cudaContext->gpu_properties = (struct cudaDeviceProp*)malloc(sizeof(struct cudaDeviceProp)*cudaContext->num_gpus);
 
 	for (int i = 0; i < cudaContext->num_gpus; i++)
@@ -127,25 +133,45 @@ void dscp4_fringe_cuda_ComputeFringe(dscp4_fringe_cuda_context_t* cudaContext)
 {
 	cudaArray *output;
 
-	char * rgbaPtr;
+	unsigned int * rgbaPtr;
 	unsigned int * depthPtr;
+	size_t rgbaSize;
+	size_t depthSize;
 
 	cudaError_t error = cudaSuccess;
 
 	error = cudaGraphicsMapResources(1, &cudaContext->stereogram_rgba_cuda_resource, 0);
 	error = cudaGraphicsMapResources(1, &cudaContext->stereogram_depth_cuda_resource, 0);
 
+	cudaGraphicsResourceGetMappedPointer((void**)&rgbaPtr, &rgbaSize, cudaContext->stereogram_rgba_cuda_resource);
+	cudaGraphicsResourceGetMappedPointer((void**)&depthPtr, &depthSize, cudaContext->stereogram_depth_cuda_resource);
 
 
-	for (int i = 0; i < cudaContext->fringe_context->display_options.num_heads / 2; i++)
-	{
 
-		error = cudaGraphicsMapResources(1, (cudaGraphicsResource_t*)(&cudaContext->fringe_cuda_resources[i]), 0);
+	//for (int i = 0; i < cudaContext->fringe_context->display_options.num_heads / 2; i++)
+	//{
 
-		error = cudaGraphicsSubResourceGetMappedArray(&output, cudaContext->fringe_cuda_resources[i], 0, 0);
+	//	error = cudaGraphicsMapResources(1, (cudaGraphicsResource_t*)(&cudaContext->fringe_cuda_resources[i]), 0);
 
-		//write texture outputs here
+	//	error = cudaGraphicsSubResourceGetMappedArray(&output, cudaContext->fringe_cuda_resources[i], 0, 0);
 
-		error = cudaGraphicsUnmapResources(1, (cudaGraphicsResource_t*)(&cudaContext->fringe_cuda_resources[i]), 0);
-	}
+
+	//}
+
+	// run kernel here
+
+	dim3 dimBlock(blocksize, 1);
+	dim3 dimGrid(1, 1);
+	//computeFringe << <dimGrid, 16 >> >(output, rgbaPtr, depthPtr);
+
+	//write texture outputs here
+
+	//for (int i = 0; i < cudaContext->fringe_context->display_options.num_heads / 2; i++)
+	//{
+	//	error = cudaGraphicsUnmapResources(1, (cudaGraphicsResource_t*)(&cudaContext->fringe_cuda_resources[i]), 0);
+	//}
+
+	error = cudaGraphicsUnmapResources(1, &cudaContext->stereogram_rgba_cuda_resource, 0);
+	error = cudaGraphicsUnmapResources(1, &cudaContext->stereogram_depth_cuda_resource, 0);
+	
 };
