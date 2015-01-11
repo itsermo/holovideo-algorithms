@@ -25,8 +25,6 @@
 #include <GL/glu.h>
 
 #ifdef DSCP4_HAVE_CUDA
-#include <cuda.h>
-#include <cuda_gl_interop.h>
 #include <kernels/dscp4-fringe-cuda.h>
 #endif
 
@@ -139,6 +137,9 @@ namespace dscp4
 
 		bool initLightingShader(int which);
 		void deinitLightingShader(int which);
+
+		void initFringeBuffers();
+		void deinitFringeBuffers();
 
 		void renderLoop();			// The general rendering loop
 		void drawForViewing();
