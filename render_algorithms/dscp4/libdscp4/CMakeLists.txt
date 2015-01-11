@@ -2,7 +2,7 @@ cmake_minimum_REQUIRED(VERSION 2.8)
 
 add_subdirectory(kernels)
 
-find_package(Boost 1.54 COMPONENTS "system" "filesystem" "iostreams" "program_options" "thread" REQUIRED)
+find_package(Boost 1.54 COMPONENTS "system" "filesystem" REQUIRED)
 include_directories(${Boost_INCLUDE_DIRS})
 link_directories(${Boost_LIBRARY_DIRS})
 if(BOOST_DISABLE_AUTOLINK)
