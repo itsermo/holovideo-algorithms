@@ -21,7 +21,7 @@ __global__ void hello(char *a, int *b)
 
 __global__ void computeFringe(void * fringeDataOut, void * rgbaIn, void * depthIn)
 {
-
+	((char*)rgbaIn)[threadIdx.y * 693 * 4 + threadIdx.x] = 255 - ((char*)rgbaIn)[threadIdx.y * 693 * 4 + threadIdx.x];
 }
 
 char * dscp4_fringe_cuda_HelloWorld()
@@ -98,12 +98,12 @@ dscp4_fringe_cuda_context_t* dscp4_fringe_cuda_CreateContext(dscp4_fringe_contex
 
 	//error = cudaGraphicsGLRegisterImage(&cudaContext->fringe_cuda_resources, cudaContext->fringe_context->fringe_gl_buf_out[0], GL_TEXTURE_2D, cudaGraphicsMapFlagsWriteDiscard);
 
-	cudaContext->fringe_cuda_resources = (struct cudaGraphicsResource**)malloc(sizeof(void*)*cudaContext->fringe_context->display_options.num_heads / 2);
+	//cudaContext->fringe_cuda_resources = (struct cudaGraphicsResource**)malloc(sizeof(void*)*cudaContext->fringe_context->display_options.num_heads / 2);
 
-	for (unsigned int i = 0; i < cudaContext->fringe_context->display_options.num_heads / 2; i++)
-	{
-		error = cudaGraphicsGLRegisterImage(&cudaContext->fringe_cuda_resources[i], cudaContext->fringe_context->fringe_gl_buf_out[i], GL_TEXTURE_2D, cudaGraphicsMapFlagsWriteDiscard);
-	}
+	//for (unsigned int i = 0; i < cudaContext->fringe_context->display_options.num_heads / 2; i++)
+	//{
+	//	error = cudaGraphicsGLRegisterImage(&cudaContext->fringe_cuda_resources[i], cudaContext->fringe_context->fringe_gl_buf_out[i], GL_TEXTURE_2D, cudaGraphicsMapFlagsWriteDiscard);
+	//}
 
 	return cudaContext;
 };
@@ -162,7 +162,7 @@ void dscp4_fringe_cuda_ComputeFringe(dscp4_fringe_cuda_context_t* cudaContext)
 
 	dim3 dimBlock(blocksize, 1);
 	dim3 dimGrid(1, 1);
-	//computeFringe << <dimGrid, 16 >> >(output, rgbaPtr, depthPtr);
+	computeFringe << <dimGrid, 1024 >> >(NULL, rgbaPtr, depthPtr);
 
 	//write texture outputs here
 
