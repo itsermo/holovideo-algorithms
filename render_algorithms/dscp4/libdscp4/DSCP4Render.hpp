@@ -141,13 +141,32 @@ namespace dscp4
 		void initFringeBuffers();
 		void deinitFringeBuffers();
 
-		void renderLoop();			// The general rendering loop
+		// The general rendering loop, this function is run for all render modes
+		// sets up the renderer and calls the appropriate draw() function
+		// which corresponds to the selected rendermode
+		void renderLoop();			
+		
+		// Generates a single view of the model with aspect ratio from algorithm options
 		void drawForViewing();
-		void drawForStereogram(); // Generates and renders stereograms
-		void drawForAerialDisplay();
-		void drawForFringe();     // Renders the fringe pattern from stereograms
 
-		void glCheckErrors();
+		// Generates and renders stereograms to a single FBO
+		void drawForStereogram(); 
+		
+		// Generates stereograms and displays each view in each window
+		void drawForAerialDisplay();
+		
+		// Generates stereograms, computes hologram, and then calls drawFringeTextures()
+		void drawForFringe();     
+
+		// Copies the the fringe pattern FBO
+		// to each texture (texture per window)
+		// (this is the final step, after compute hologram)
+		void drawFringeTextures();
+
+		// Copies the stereogram data to a PBO
+		// This is done after generating views, meant for passing
+		// to CUDA/OpenCL kernel for processing
+		void copyStereogramToPBOs();
 
 		void drawPointCloud();
 		void drawAllMeshes();
