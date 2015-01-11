@@ -21,7 +21,10 @@ __global__ void hello(char *a, int *b)
 
 __global__ void computeFringe(void * fringeDataOut, void * rgbaIn, void * depthIn)
 {
-	((char*)fringeDataOut)[threadIdx.x * threadIdx.y] = 255 - ((char*)rgbaIn)[threadIdx.y * 693 * 4 + threadIdx.x];
+	unsigned int i = (blockIdx.x * blockDim.x) + threadIdx.x;
+	unsigned int j = (blockIdx.y * blockDim.y) + threadIdx.y;
+	((int*)fringeDataOut)[i] = 0;
+	((int*)fringeDataOut)[j] = 0;
 }
 
 char * dscp4_fringe_cuda_HelloWorld()
@@ -168,10 +171,10 @@ void dscp4_fringe_cuda_ComputeFringe(dscp4_fringe_cuda_context_t* cudaContext)
 	//error = cudaMemset(output[0], 255, outputSizes[0]);
 
 	// run kernel here
-
-	dim3 dimBlock(blocksize, 1);
-	dim3 dimGrid(512, 512);
-	computeFringe << <dimGrid, 512 >> >(output[0], rgbaPtr, depthPtr);
+	dim3 threadsPerBlock(8, 8);
+	dim3 numBlocks(cudaContext->fringe_context->algorithm_options.num_wafels_per_scanline * 4 / threadsPerBlock.x,
+		cudaContext->fringe_context->algorithm_options.num_scanlines * 4 / threadsPerBlock.y);
+	computeFringe <<<numBlocks, threadsPerBlock >>>(output[0], rgbaPtr, depthPtr);
 
 
 	//write texture outputs here

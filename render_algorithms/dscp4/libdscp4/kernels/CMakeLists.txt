@@ -34,6 +34,6 @@ if(WITH_CUDA)
 		${CUDA_FILES}
 		OPTIONS
 		RELEASE -O3 --use_fast_math -DNDEBUG
-		DEBUG -g -DDEBUG
+		DEBUG -g -G -DDEBUG
 		)
 endif()
