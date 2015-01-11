@@ -627,14 +627,7 @@ void DSCP4Render::renderLoop()
 
 			case DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE:
 			{
-
-#ifdef DSCP4_ENABLE_TRACE_LOG
-				auto duration = measureTime<>(std::bind(&DSCP4Render::drawForFringe, this));
-				LOG4CXX_TRACE(logger_, "Computing hologram in total took " << duration << " ms (" << 1.f / duration * 1000 << " fps)")
-#else
 				drawForFringe();
-
-#endif
 				for (unsigned int i = 0; i < numWindows_; i++)
 				{
 					SDL_GL_MakeCurrent(windows_[i], glContexts_[i]);
@@ -654,8 +647,6 @@ void DSCP4Render::renderLoop()
 
 	poll:
 		SDL_PollEvent(&event);
-
-
 	}
 
 	initLock.lock();
@@ -765,7 +756,7 @@ void DSCP4Render::drawForStereogram()
 		fringeContext_.algorithm_options.num_scanlines;
 
 	// The grid dimension
-	const int tileDim = static_cast<unsigned int>(sqrt<unsigned int>(fringeContext_.algorithm_options.num_views_x));
+	const int tileDim = static_cast<unsigned int>(sqrt(fringeContext_.algorithm_options.num_views_x));
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -894,109 +885,41 @@ void DSCP4Render::drawForAerialDisplay()
 
 void DSCP4Render::drawForFringe()
 {
-	const int stereogramWidth = fringeContext_.algorithm_options.num_wafels_per_scanline * static_cast<unsigned int>(sqrt<unsigned int>(fringeContext_.algorithm_options.num_views_x));
-	const int stereogramHeight = fringeContext_.algorithm_options.num_scanlines * static_cast<unsigned int>(sqrt<unsigned int>(fringeContext_.algorithm_options.num_views_x));
-
 	SDL_GL_MakeCurrent(windows_[0], glContexts_[0]);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, fringeContext_.stereogram_gl_fbo);
+
+#ifdef DSCP4_ENABLE_TRACE_LOG
+	auto duration = measureTime<>(std::bind(&DSCP4Render::drawForStereogram, this));
+	LOG4CXX_TRACE(logger_, "Rendering " << fringeContext_.algorithm_options.num_views_x << " views in total took " << duration << " ms (" << 1.f / duration * 1000 << " fps)")
+#else
 	drawForStereogram();
+#endif
 
-	GLenum error = glGetError();
-	auto errorStr = glewGetErrorString(error);
-
-	// Copy stereogram n-views RGBA to PBO
-	glBindBuffer(GL_PIXEL_PACK_BUFFER, fringeContext_.stereogram_gl_rgba_buf_in);
-
-	glReadPixels(0, 0,
-		stereogramWidth,
-		stereogramHeight,
-		GL_RGBA, GL_UNSIGNED_BYTE, 0);
-
-	//error = glGetError();
-
-	//glReadBuffer(GL_DEPTH_ATTACHMENT);
-
-	// Copy stereogram n-views depth to PBO
-	glBindBuffer(GL_PIXEL_PACK_BUFFER, fringeContext_.stereogram_gl_depth_buf_in);
-	glReadPixels(0, 0,
-		stereogramWidth,
-		stereogramHeight,
-		GL_DEPTH_COMPONENT, GL_FLOAT, 0);
-
-	glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-	GLfloat Vertices[] = { 0.f, 0.f, 0.f,
-							static_cast<float>(fringeContext_.display_options.head_res_x), 0, 0,
-							static_cast<float>(fringeContext_.display_options.head_res_x),
-							static_cast<float>(fringeContext_.display_options.head_res_y) * 2.f, 0.f,
-							0.f, static_cast<float>(fringeContext_.display_options.head_res_y)*2.f, 0.f
-	};
-
-	GLfloat TexCoord[] = { 0, 0,
-		1.f, 0.f,
-		1.f, 1.f,
-		0.f, 1.f,
-	};
-
-	const GLubyte indices[] = { 0, 1, 2, // first triangle (bottom left - top left - top right)
-		0, 2, 3 };
+#ifdef DSCP4_ENABLE_TRACE_LOG
+	duration = measureTime<>(std::bind(&DSCP4Render::copyStereogramToPBOs, this));
+	LOG4CXX_TRACE(logger_, "Copying stereogram " << fringeContext_.algorithm_options.num_views_x << " views to PBOs took " << duration << " ms (" << 1.f / duration * 1000 << " fps)")
+#else
+	copyStereogramToPBOs();
+#endif
 
 #ifdef DSCP4_HAVE_CUDA
+
+#ifdef DSCP4_ENABLE_TRACE_LOG
+	duration = measureTime<>(std::bind(&dscp4_fringe_cuda_ComputeFringe, cudaContext_));
+	LOG4CXX_TRACE(logger_, "Compute hologram fringe pattern took " << duration << " ms (" << 1.f / duration * 1000 << " fps)")
+#else
 	dscp4_fringe_cuda_ComputeFringe(cudaContext_);
 #endif
 
-	for (unsigned int i = 0; i < numWindows_; i++)
-	{
-		SDL_GL_MakeCurrent(windows_[i], glContexts_[numWindows_-1]);
+#endif
 
-		glEnable(GL_TEXTURE_2D);
-
-		glViewport(0, 0, windowWidth_[i], windowHeight_[i]);
-
-		glMatrixMode(GL_PROJECTION);
-		projectionMatrix_ = glm::ortho(
-			0.f,
-			static_cast<float>(fringeContext_.display_options.head_res_x),
-			0.f,
-			static_cast<float>(fringeContext_.display_options.head_res_y)
-			);
-
-		glLoadMatrixf(glm::value_ptr(projectionMatrix_));
-
-		glMatrixMode(GL_MODELVIEW);
-		glLoadMatrixf(glm::value_ptr(glm::mat4()));
-
-		glClearColor(1.0f, 1.0f, 0.5f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		glDisable(GL_LIGHTING);
-
-		glBindTexture(GL_TEXTURE_2D, fringeContext_.fringe_gl_tex_out[i]);
-
-
-		glBindBuffer(GL_PIXEL_UNPACK_BUFFER, fringeContext_.fringe_gl_buf_out[i]);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, fringeContext_.display_options.head_res_x, fringeContext_.display_options.head_res_y * 2, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
-
-		//glBindBuffer(GL_PIXEL_UNPACK_BUFFER, fringeContext_.stereogram_gl_rgba_buf_in);
-
-		//glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 4*fringeContext_.algorithm_options.num_wafels_per_scanline, 4*fringeContext_.algorithm_options.num_scanlines, GL_RGBA, GL_UNSIGNED_BYTE,0);
-
-		glEnableClientState(GL_VERTEX_ARRAY);
-		glVertexPointer(3, GL_FLOAT, 0, Vertices);
-
-		glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-		glTexCoordPointer(2, GL_FLOAT, 0, TexCoord);
-
-		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, indices);
-
-		glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-		glDisableClientState(GL_VERTEX_ARRAY);
-
-		glBindTexture(GL_TEXTURE_2D, 0);
-		glDisable(GL_TEXTURE_2D);
-	}
+#ifdef DSCP4_ENABLE_TRACE_LOG
+	duration = measureTime<>(std::bind(&DSCP4Render::drawFringeTextures, this));
+	LOG4CXX_TRACE(logger_, "Drawing " << numWindows_ << " fringe textures took " << duration << " ms (" << 1.f / duration * 1000 << " fps)")
+#else
+	drawFringeTextures();
+#endif
 
 
 }
@@ -1408,8 +1331,8 @@ int DSCP4Render::inputStateChanged(void* userdata, SDL_Event* event)
 
 void DSCP4Render::initFringeBuffers()
 {
-	const int stereogramWidth = fringeContext_.algorithm_options.num_wafels_per_scanline * static_cast<unsigned int>(sqrt<unsigned int>(fringeContext_.algorithm_options.num_views_x));
-	const int stereogramHeight = fringeContext_.algorithm_options.num_scanlines * static_cast<unsigned int>(sqrt<unsigned int>(fringeContext_.algorithm_options.num_views_x));
+	const int stereogramWidth = fringeContext_.algorithm_options.num_wafels_per_scanline * static_cast<unsigned int>(sqrt(fringeContext_.algorithm_options.num_views_x));
+	const int stereogramHeight = fringeContext_.algorithm_options.num_scanlines * static_cast<unsigned int>(sqrt(fringeContext_.algorithm_options.num_views_x));
 
 	fringeContext_.fringe_gl_tex_out = new GLuint[numWindows_];
 	fringeContext_.fringe_gl_buf_out = new GLuint[numWindows_];
@@ -1519,4 +1442,110 @@ void DSCP4Render::deinitFringeBuffers()
 
 	delete[] fringeContext_.fringe_gl_buf_out;
 	delete[] fringeContext_.fringe_gl_tex_out;
+}
+
+void DSCP4Render::copyStereogramToPBOs()
+{
+	const int stereogramWidth = fringeContext_.algorithm_options.num_wafels_per_scanline * static_cast<unsigned int>(sqrt(fringeContext_.algorithm_options.num_views_x));
+	const int stereogramHeight = fringeContext_.algorithm_options.num_scanlines * static_cast<unsigned int>(sqrt(fringeContext_.algorithm_options.num_views_x));
+
+	//copy RGBA from stereogram views
+	glBindBuffer(GL_PIXEL_PACK_BUFFER, fringeContext_.stereogram_gl_rgba_buf_in);
+	glReadPixels(0, 0,
+		stereogramWidth,
+		stereogramHeight,
+		GL_RGBA, GL_UNSIGNED_BYTE, 0);
+
+	//copy DEPTH from stereogram views
+	glBindBuffer(GL_PIXEL_PACK_BUFFER, fringeContext_.stereogram_gl_depth_buf_in);
+	glReadPixels(0, 0,
+		stereogramWidth,
+		stereogramHeight,
+		GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+
+	glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void DSCP4Render::drawFringeTextures()
+{
+	GLfloat Vertices[] = { 0.f, 0.f, 0.f,
+		static_cast<float>(fringeContext_.display_options.head_res_x), 0, 0,
+		static_cast<float>(fringeContext_.display_options.head_res_x),
+		static_cast<float>(fringeContext_.display_options.head_res_y) * 2.f, 0.f,
+		0.f, static_cast<float>(fringeContext_.display_options.head_res_y)*2.f, 0.f
+	};
+
+	GLfloat TexCoord[] = { 0, 0,
+		1.f, 0.f,
+		1.f, 1.f,
+		0.f, 1.f,
+	};
+
+	const GLubyte indices[] = { 0, 1, 2, // first triangle (bottom left - top left - top right)
+		0, 2, 3 };
+
+	for (unsigned int i = 0; i < numWindows_; i++)
+	{
+		SDL_GL_MakeCurrent(windows_[i], glContexts_[numWindows_ - 1]);
+
+		glEnable(GL_TEXTURE_2D);
+
+		glViewport(0, 0, windowWidth_[i], windowHeight_[i]);
+
+		glMatrixMode(GL_PROJECTION);
+		projectionMatrix_ = glm::ortho(
+			0.f,
+			static_cast<float>(fringeContext_.display_options.head_res_x),
+			0.f,
+			static_cast<float>(fringeContext_.display_options.head_res_y)
+			);
+
+		glLoadMatrixf(glm::value_ptr(projectionMatrix_));
+
+		glMatrixMode(GL_MODELVIEW);
+		glLoadMatrixf(glm::value_ptr(glm::mat4()));
+
+		glClearColor(1.0f, 1.0f, 0.5f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		glDisable(GL_LIGHTING);
+
+		glBindTexture(GL_TEXTURE_2D, fringeContext_.fringe_gl_tex_out[i]);
+
+		glBindBuffer(GL_PIXEL_UNPACK_BUFFER, fringeContext_.fringe_gl_buf_out[i]);
+
+#ifdef DSCP4_ENABLE_TRACE_LOG
+		auto duration = measureTime<>([&](){
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
+				fringeContext_.display_options.head_res_x,
+				fringeContext_.display_options.head_res_y * 2,
+				0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+		});
+		LOG4CXX_TRACE(logger_, "Copying hologram fringe result " << i << " to texture took " << duration << " ms (" << 1.f / duration * 1000 << " fps)")
+#else
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
+			fringeContext_.display_options.head_res_x,
+			fringeContext_.display_options.head_res_y * 2,
+			0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+#endif
+
+		//glBindBuffer(GL_PIXEL_UNPACK_BUFFER, fringeContext_.stereogram_gl_rgba_buf_in);
+
+		//glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 4*fringeContext_.algorithm_options.num_wafels_per_scanline, 4*fringeContext_.algorithm_options.num_scanlines, GL_RGBA, GL_UNSIGNED_BYTE,0);
+
+		glEnableClientState(GL_VERTEX_ARRAY);
+		glVertexPointer(3, GL_FLOAT, 0, Vertices);
+
+		glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+		glTexCoordPointer(2, GL_FLOAT, 0, TexCoord);
+
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, indices);
+
+		glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+		glDisableClientState(GL_VERTEX_ARRAY);
+
+		glBindTexture(GL_TEXTURE_2D, 0);
+		glDisable(GL_TEXTURE_2D);
+	}
 }
