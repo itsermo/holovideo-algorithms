@@ -21,6 +21,7 @@
 #define DSCP4_PATH_PREFIX "dscp4"
 #define DSCP4_DEFAULT_VERBOSITY 3
 #define DSCP4_INPUT_DEFAULT_OBJECT_FILENAME "bun_zipper_res4.ply"
+#define DSCP4_ALGORITHM_KERNEL_FILENAME "dscp4-fringe.cl"
 #define DSCP4_INPUT_DEFAULT_GEN_NORMALS "flat"
 #define DSCP4_INPUT_DEFAULT_TRIANGULATE_MESH true
 #define DSCP4_RENDER_DEFAULT_AUTOSCALE true
@@ -78,6 +79,10 @@ public:
 	unsigned int getNumScanlines() { return pt_.get<unsigned int>("algorithm.num_scanlines"); }
 	float getFovX() { return pt_.get<float>("algorithm.fov_x"); }
 	float getFovY() { return pt_.get<float>("algorithm.fov_y"); }
+
+#ifdef DSCP4_HAVE_OPENCL
+	std::string getOpenCLKernelFileName() { return vm_["opencl-kernel"].as<std::string>(); }
+#endif
 
 	//Display options
 	std::string getDisplayName() { return pt_.get<std::string>("display.display_name"); }
