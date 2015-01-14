@@ -282,6 +282,9 @@ int main(int argc, const char* argv[])
 		algorithmOptions.num_scanlines = options.getNumScanlines();
 		algorithmOptions.fov_x = options.getFovX();
 		algorithmOptions.fov_y = options.getFovY();
+
+		algorithmOptions.compute_method = options.getComputeMethod() == "opencl" ? DSCP4_COMPUTE_METHOD_OPENCL : DSCP4_COMPUTE_METHOD_CUDA;
+
 	}
 	catch (std::exception& e)
 	{
@@ -289,11 +292,14 @@ int main(int argc, const char* argv[])
 		return -1;
 	}
 
+	std::string computeMethodStr = algorithmOptions.compute_method == DSCP4_COMPUTE_METHOD_CUDA ? "CUDA" : "OpenCL";
+
 	LOG4CXX_INFO(logger, "Algorithm options parsed")
-	LOG4CXX_INFO(logger, "Number of stereogram views in X: " << algorithmOptions.num_views_x)
-	LOG4CXX_INFO(logger, "Number of stereogram views in Y: " << algorithmOptions.num_views_y)
-	LOG4CXX_INFO(logger, "Number of wafels per scanline: " << algorithmOptions.num_wafels_per_scanline)
-	LOG4CXX_INFO(logger, "Number of scanlines: " << algorithmOptions.num_scanlines)
+		LOG4CXX_INFO(logger, "Number of stereogram views in X: " << algorithmOptions.num_views_x)
+		LOG4CXX_INFO(logger, "Number of stereogram views in Y: " << algorithmOptions.num_views_y)
+		LOG4CXX_INFO(logger, "Number of wafels per scanline: " << algorithmOptions.num_wafels_per_scanline)
+		LOG4CXX_INFO(logger, "Number of scanlines: " << algorithmOptions.num_scanlines)
+		LOG4CXX_INFO(logger, "Compute method: " << computeMethodStr)
 
 	try{
 		displayName = options.getDisplayName();

@@ -78,13 +78,13 @@ public:
 	unsigned int getNumScanlines() { return pt_.get<unsigned int>("algorithm.num_scanlines"); }
 	float getFovX() { return pt_.get<float>("algorithm.fov_x"); }
 	float getFovY() { return pt_.get<float>("algorithm.fov_y"); }
+	std::string getComputeMethod() { return traverseOption<std::string>("compute-method", "algorithm.compute_method"); }
 
 	//Display options
 	std::string getDisplayName() { return pt_.get<std::string>("display.display_name"); }
 	unsigned int getNumHeads() { return pt_.get<unsigned int>("display.num_heads"); }
 	unsigned int getHeadResX() { return pt_.get<unsigned int>("display.head_x"); }
 	unsigned int getHeadResY(){ return pt_.get<unsigned int>("display.head_y"); }
-
 
 private:
 	// looks for option on the cmd line first, if no cmd line options,
@@ -108,6 +108,7 @@ private:
 	boost::program_options::options_description generalOptions_;
 	boost::program_options::options_description inputOptions_;
 	boost::program_options::options_description renderOptions_;
+	boost::program_options::options_description algorithmOptions_;
 
 #ifdef DSCP4_HAVE_LOG4CXX
 	log4cxx::LoggerPtr logger_ = log4cxx::Logger::getLogger("edu.mit.media.obmg.holovideo.dscp4");

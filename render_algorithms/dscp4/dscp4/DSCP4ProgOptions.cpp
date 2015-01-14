@@ -5,7 +5,8 @@
 DSCP4ProgramOptions::DSCP4ProgramOptions() :
 generalOptions_("General options"),
 inputOptions_("Input options"),
-renderOptions_("Render options")
+renderOptions_("Render options"),
+algorithmOptions_("Algorithm options")
 {	
 	generalOptions_.add_options()
 #ifdef DSCP4_HAVE_LOG4CXX
@@ -24,6 +25,11 @@ renderOptions_("Render options")
 		boost::program_options::value<bool>()->default_value(DSCP4_INPUT_DEFAULT_TRIANGULATE_MESH),
 		"triangulates the mesh (if it is made of quads or something else");
 
+	algorithmOptions_.add_options()
+		("compute-method,c",
+		boost::program_options::value<std::string>(),
+		"chooses the hologram computation method. valid options are 'cuda' and 'opencl'");
+
 	renderOptions_.add_options()
 		("autoscale,a",
 		boost::program_options::value<bool>()->default_value(DSCP4_RENDER_DEFAULT_AUTOSCALE),
@@ -35,7 +41,9 @@ renderOptions_("Render options")
 		boost::program_options::value<std::string>(),
 		"sets the render mode. valid options are 'viewing', 'stereogram', 'aerial', and 'holovideo'");
 
-	allOptions_.add(generalOptions_).add(inputOptions_).add(renderOptions_);
+
+
+	allOptions_.add(generalOptions_).add(inputOptions_).add(algorithmOptions_).add(renderOptions_);
 }
 
 DSCP4ProgramOptions::~DSCP4ProgramOptions()
