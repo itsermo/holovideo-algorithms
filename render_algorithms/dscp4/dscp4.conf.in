@@ -80,6 +80,9 @@ num_scanlines = 468
 fov_x = 30.0
 fov_y = 30.0
 
+;chooses which compute method, "cuda" or "opencl"
+compute_method = cuda
+
 [display]
 ;friendly name of the display
 display_name=MIT Mark IV

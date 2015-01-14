@@ -33,6 +33,7 @@
 #define DSCP4_DEFAULT_DISPLAY_HEAD_RES_X			3552
 #define DSCP4_DEFAULT_DISPLAY_HEAD_RES_Y			2476
 #define DSCP4_DEFAULT_LOG_VERBOSITY					3
+#define DSCP4_DEFAULT_COMPUTE_METHOD				DSCP4_COMPUTE_METHOD_CUDA
 
 extern "C"{
 
@@ -56,6 +57,11 @@ extern "C"{
 		DSCP4_SHADER_MODEL_FLAT = 1,
 		DSCP4_SHADER_MODEL_SMOOTH = 2
 	} shader_model_t;
+
+	typedef enum {
+		DSCP4_COMPUTE_METHOD_CUDA = 0,
+		DSCP4_COMPUTE_METHOD_OPENCL = 1
+	} compute_method_t;
 
 	typedef struct
 	{
@@ -128,6 +134,7 @@ extern "C"{
 	{
 		unsigned int num_views_x, num_views_y, num_wafels_per_scanline, num_scanlines;
 		float fov_x, fov_y;
+		compute_method_t compute_method;
 	} algorithm_options_t;
 
 	typedef struct

@@ -46,7 +46,8 @@ DSCP4Render::DSCP4Render() :
 						DSCP4_DEFAULT_ALGORITHM_NUM_WAFELS,
 						DSCP4_DEFAULT_ALGORITHM_NUM_SCANLINES,
 						DSCP4_DEFAULT_ALGORITHM_FOV_X,
-						DSCP4_DEFAULT_ALGORITHM_FOV_Y },
+						DSCP4_DEFAULT_ALGORITHM_FOV_Y,
+						DSCP4_DEFAULT_COMPUTE_METHOD },
 					display_options_t {
 						DSCP4_DEFAULT_DISPLAY_NAME,
 						DSCP4_DEFAULT_DISPLAY_NUM_HEADS,
@@ -531,9 +532,7 @@ void DSCP4Render::renderLoop()
 
 		initFringeBuffers();
 
-#ifdef DSCP4_HAVE_CUDA
-		cudaContext_ = dscp4_fringe_cuda_CreateContext(&fringeContext_);
-#endif
+		initComputeMethod();
 		
 	}
 		break;
@@ -660,9 +659,7 @@ void DSCP4Render::renderLoop()
 
 	SDL_GL_MakeCurrent(windows_[0], glContexts_[0]);
 
-#ifdef DSCP4_HAVE_CUDA
-	dscp4_fringe_cuda_DestroyContext(&cudaContext_);
-#endif
+	deinitComputeMethod();
 
 	deinitFringeBuffers();
 
@@ -906,10 +903,10 @@ void DSCP4Render::drawForFringe()
 #ifdef DSCP4_HAVE_CUDA
 
 #ifdef DSCP4_ENABLE_TRACE_LOG
-	duration = measureTime<>(std::bind(&dscp4_fringe_cuda_ComputeFringe, cudaContext_));
+	duration = measureTime<>(std::bind(&DSCP4Render::computeHologram, this));
 	LOG4CXX_TRACE(logger_, "Compute hologram fringe pattern took " << duration << " ms (" << 1.f / duration * 1000 << " fps)")
 #else
-	dscp4_fringe_cuda_ComputeFringe(cudaContext_);
+	computeHologram();
 #endif
 
 #endif
@@ -1385,10 +1382,6 @@ void DSCP4Render::initFringeBuffers()
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	//end generation of stereogram view buffers
 
-
-
-
-
 	// Create N-textures for outputting fringe data to the X displays
 	// Whatever holographic computation is done will be written
 	// To these textures and ultimately displayed on the holovideo display
@@ -1547,5 +1540,63 @@ void DSCP4Render::drawFringeTextures()
 
 		glBindTexture(GL_TEXTURE_2D, 0);
 		glDisable(GL_TEXTURE_2D);
+	}
+}
+
+void DSCP4Render::initComputeMethod()
+{
+
+	switch (fringeContext_.algorithm_options.compute_method)
+	{
+	case DSCP4_COMPUTE_METHOD_CUDA:
+#ifdef DSCP4_HAVE_CUDA
+		LOG4CXX_DEBUG(logger_, "CUDA -- Initializing CUDA context")
+		computeContext_ = (dscp4_fringe_cuda_context_t**)dscp4_fringe_cuda_CreateContext(&fringeContext_);
+#else
+		LOG4CXX_FATAL(logger_, "CUDA selected as compute method, but this binary was not compiled with CUDA")
+#endif
+		break;
+	case DSCP4_COMPUTE_METHOD_OPENCL:
+
+		break;
+	default:
+		break;
+	}
+
+
+}
+
+void DSCP4Render::deinitComputeMethod()
+{
+	switch (fringeContext_.algorithm_options.compute_method)
+	{
+	case DSCP4_COMPUTE_METHOD_CUDA:
+#ifdef DSCP4_HAVE_CUDA
+		LOG4CXX_DEBUG(logger_, "CUDA -- Deinitializing CUDA context")
+		dscp4_fringe_cuda_DestroyContext((dscp4_fringe_cuda_context_t**)&computeContext_);
+#endif
+		break;
+	case DSCP4_COMPUTE_METHOD_OPENCL:
+
+		break;
+	default:
+		break;
+	}
+}
+
+void DSCP4Render::computeHologram()
+{
+	switch (fringeContext_.algorithm_options.compute_method)
+	{
+	case DSCP4_COMPUTE_METHOD_CUDA:
+#ifdef DSCP4_HAVE_CUDA
+		dscp4_fringe_cuda_ComputeFringe((dscp4_fringe_cuda_context_t*)computeContext_);
+#endif
+		break;
+	case DSCP4_COMPUTE_METHOD_OPENCL:
+
+		break;
+	default:
+		break;
 	}
 }
