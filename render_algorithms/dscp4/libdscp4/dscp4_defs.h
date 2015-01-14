@@ -140,6 +140,7 @@ extern "C"{
 	{
 		algorithm_options_t algorithm_options;
 		display_options_t display_options;
+		const char * kernel_file_path;
 		unsigned int stereogram_gl_fbo;
 		unsigned int stereogram_gl_fbo_color;
 		unsigned int stereogram_gl_fbo_depth;

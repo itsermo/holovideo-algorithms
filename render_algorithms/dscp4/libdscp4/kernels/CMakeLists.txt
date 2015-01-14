@@ -1,9 +1,9 @@
 cmake_minimum_REQUIRED(VERSION 2.8)
 
-project(dscp4-fringe)
-
 if(WITH_CUDA)
-	set(DSCP4_FRINGE_CUDA_LIB "${PROJECT_NAME}-cuda" PARENT_SCOPE)
+	project(dscp4-fringe-cuda)
+
+	set(DSCP4_FRINGE_CUDA_LIB "${PROJECT_NAME}" PARENT_SCOPE)
 	set(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE ON)
 	set(CUDA_HOST_COMPILATION_CPP OFF)
 	if(CMAKE_COMPILER_IS_GNUCC)
@@ -30,10 +30,30 @@ if(WITH_CUDA)
 	# For compilation ...
 	# Specify target & source files to compile it from
 	cuda_add_library(
-		${PROJECT_NAME}-cuda
+		${PROJECT_NAME}
 		${CUDA_FILES}
 		OPTIONS
 		RELEASE -O3 --use_fast_math -DNDEBUG
 		DEBUG -g -G -DDEBUG
 		)
+endif()
+
+if(WITH_OPENCL)
+	project(dscp4-fringe-opencl)
+	
+	set(BUILD_SHARED_LIBS OFF)
+	
+	
+	file(GLOB OPENCL_FILES
+		"*opencl.h"
+		"*opencl.c"
+		"*.cl"
+	)
+	
+	add_library(${PROJECT_NAME} STATIC ${OPENCL_FILES})
+	
+	target_include_directories(${PROJECT_NAME} PUBLIC ${OPENCL_INCLUDE_DIRS} ${OpenGL_INCLUDE_DIR})
+
+	target_link_libraries(${PROJECT_NAME} ${OPENCL_LIBRARIES} ${OPENGL_gl_LIBRARY})
+	
 endif()

@@ -1,5 +1,5 @@
-#ifndef DSCP4_FRINGE_CUDA_H__
-#define DSCP4_FRINGE_CUDA_H__
+#ifndef DSCP4_FRINGE_H__
+#define DSCP4_FRINGE_H__
 
 #include <stdbool.h>
 #include "../dscp4_defs.h"
