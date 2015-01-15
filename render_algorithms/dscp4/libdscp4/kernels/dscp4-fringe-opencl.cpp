@@ -128,9 +128,9 @@ extern "C" {
 		context->cl_context = clCreateContext(properties, 1, &device_id, NULL, NULL, &ret);
 		context->command_queue = clCreateCommandQueue((cl_context)context->cl_context, device_id, 0, &ret);
 
-		context->stereogram_rgba_opencl_resource = clCreateFromGLRenderbuffer((cl_context)context->cl_context, CL_MEM_READ_ONLY, fringeContext->stereogram_gl_fbo, &ret);
-		context->stereogram_depth_opencl_resource = clCreateFromGLBuffer((cl_context)context->cl_context, CL_MEM_READ_ONLY,
-			fringeContext->stereogram_gl_depth_buf_in, &ret);
+		context->stereogram_rgba_opencl_resource = clCreateFromGLRenderbuffer((cl_context)context->cl_context, CL_MEM_READ_ONLY, fringeContext->stereogram_gl_fbo_color, &ret);
+		context->stereogram_depth_opencl_resource = clCreateFromGLRenderbuffer((cl_context)context->cl_context, CL_MEM_READ_ONLY,
+			fringeContext->stereogram_gl_fbo_depth, &ret);
 
 		context->fringe_opencl_resources = (void**)malloc(sizeof(void*)*num_output_buffers);
 
@@ -183,6 +183,8 @@ extern "C" {
 	void dscp4_fringe_opencl_ComputeFringe(dscp4_fringe_opencl_context_t* openclContext)
 	{
 		const unsigned int num_output_buffers = openclContext->fringe_context->display_options.num_heads / openclContext->fringe_context->display_options.num_heads_per_gpu;
+		const unsigned int stereogram_width = static_cast<unsigned int>(sqrt(openclContext->fringe_context->algorithm_options.num_views_x)) * openclContext->fringe_context->algorithm_options.num_wafels_per_scanline;
+		const unsigned int stereogram_height = static_cast<unsigned int>(sqrt(openclContext->fringe_context->algorithm_options.num_views_x)) * openclContext->fringe_context->algorithm_options.num_scanlines;
 
 		cl_int ret = 0;
 
@@ -192,18 +194,24 @@ extern "C" {
 		{
 
 			ret = clSetKernelArg((cl_kernel)openclContext->kernel, 0, sizeof(cl_mem), &(openclContext->fringe_opencl_resources[i]));
-			ret = clSetKernelArg((cl_kernel)openclContext->kernel, 1, sizeof(cl_uint), &i);
+			ret = clSetKernelArg((cl_kernel)openclContext->kernel, 1, sizeof(cl_mem), &(openclContext->stereogram_rgba_opencl_resource));
+			ret = clSetKernelArg((cl_kernel)openclContext->kernel, 2, sizeof(cl_mem), &(openclContext->stereogram_depth_opencl_resource));
+			ret = clSetKernelArg((cl_kernel)openclContext->kernel, 3, sizeof(cl_uint), &i);
 
-			size_t tex_globalWorkSize[2] = { openclContext->fringe_context->display_options.head_res_x, openclContext->fringe_context->display_options.head_res_y * 2 };
+			size_t tex_globalWorkSize[2] = { 2784, stereogram_height };
 			size_t tex_localWorkSize[2] = { 32, 4 };
 
 			glFinish();
+			ret = clEnqueueAcquireGLObjects((cl_command_queue)openclContext->command_queue, 1, (const cl_mem*)&openclContext->stereogram_rgba_opencl_resource, 0, NULL, NULL);
+			ret = clEnqueueAcquireGLObjects((cl_command_queue)openclContext->command_queue, 1, (const cl_mem*)&openclContext->stereogram_depth_opencl_resource, 0, NULL, NULL);
 			ret = clEnqueueAcquireGLObjects((cl_command_queue)openclContext->command_queue, 1, (const cl_mem*)&openclContext->fringe_opencl_resources[i], 0, NULL, &event[i*num_output_buffers]);
 
 			ret = clEnqueueNDRangeKernel((cl_command_queue)openclContext->command_queue, (cl_kernel)openclContext->kernel, 2, NULL,
 				tex_globalWorkSize, tex_localWorkSize, 1, &event[i*num_output_buffers], &event[i*num_output_buffers+1]);
 
+			ret = clEnqueueReleaseGLObjects((cl_command_queue)openclContext->command_queue, 1, (const cl_mem*)&openclContext->stereogram_rgba_opencl_resource, 0, NULL, NULL);
 			ret = clEnqueueReleaseGLObjects((cl_command_queue)openclContext->command_queue, 1, (const cl_mem*)&openclContext->fringe_opencl_resources[i], 1, &event[i*num_output_buffers+1], &event[i*num_output_buffers+2]);
+			ret = clEnqueueReleaseGLObjects((cl_command_queue)openclContext->command_queue, 1, (const cl_mem*)&openclContext->stereogram_depth_opencl_resource, 0, NULL, NULL);
 		}
 
 		for (unsigned int i = 0; i < num_output_buffers; i++)
@@ -212,8 +220,6 @@ extern "C" {
 		}
 
 		delete[] event;
-
-
 	}
 
 #ifdef __cplusplus

@@ -1,4 +1,9 @@
-__kernel void turn_red(__write_only image2d_t bmp, uint buffer_num)
+__constant sampler_t sampler =
+CLK_NORMALIZED_COORDS_FALSE
+| CLK_ADDRESS_CLAMP_TO_EDGE
+| CLK_FILTER_NEAREST;
+
+__kernel void turn_red(__write_only image2d_t fringe, __read_only image2d_t color, __read_only image2d_t depth, uint which_buffer)
 {
 	int x = get_global_id(0);
 	int y = get_global_id(1);
@@ -6,14 +11,17 @@ __kernel void turn_red(__write_only image2d_t bmp, uint buffer_num)
 	//Attention to RGBA order
 	float4 val;
 
-	if(buffer_num == 0)
+	if(which_buffer == 0)
 		val = (float4)(1.0f, 0.0f, 0.0f, 1.0f);
-	else if(buffer_num == 1)
+	else if(which_buffer == 1)
 		val = (float4)(0.0f, 1.0f, 0.0f, 1.0f);
 	else
 		val = (float4)(0.0f, 0.0f, 1.0f, 1.0f);
+	
+	//val = read_imagef(color, sampler, coords);
+	val = read_imagef(depth, sampler, coords);
 
-	write_imagef(bmp, coords, val);
+	write_imagef(fringe, coords, val);
 }
 
 __kernel void compute_fringe(__global const int *A, __global const int *B, __global int *C) {

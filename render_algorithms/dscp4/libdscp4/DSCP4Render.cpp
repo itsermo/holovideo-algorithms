@@ -896,12 +896,15 @@ void DSCP4Render::drawForFringe()
 	drawForStereogram();
 #endif
 
-//#ifdef DSCP4_ENABLE_TRACE_LOG
-//	duration = measureTime<>(std::bind(&DSCP4Render::copyStereogramToPBOs, this));
-//	LOG4CXX_TRACE(logger_, "Copying stereogram " << fringeContext_.algorithm_options.num_views_x << " views to PBOs took " << duration << " ms (" << 1.f / duration * 1000 << " fps)")
-//#else
-//	copyStereogramToPBOs();
-//#endif
+	if (fringeContext_.algorithm_options.compute_method == DSCP4_COMPUTE_METHOD_CUDA)
+	{
+#ifdef DSCP4_ENABLE_TRACE_LOG
+		duration = measureTime<>(std::bind(&DSCP4Render::copyStereogramToPBOs, this));
+		LOG4CXX_TRACE(logger_, "Copying stereogram " << fringeContext_.algorithm_options.num_views_x << " views to PBOs took " << duration << " ms (" << 1.f / duration * 1000 << " fps)")
+#else
+		copyStereogramToPBOs();
+#endif
+	}
 
 #ifdef DSCP4_ENABLE_TRACE_LOG
 	duration = measureTime<>(std::bind(&DSCP4Render::computeHologram, this));
@@ -1346,26 +1349,13 @@ void DSCP4Render::initFringeBuffers()
 	glRenderbufferStorageEXT(GL_RENDERBUFFER, GL_RGBA8, stereogramWidth, stereogramHeight);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER,
 		GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, fringeContext_.stereogram_gl_fbo_color);
-	//glBindTexture(GL_TEXTURE_2D, fringeContext_.stereogram_gl_fbo_color);
-	//glTexImage2D(GL_TEXTURE_2D,
-	//	0,
-	//	GL_RGBA,
-	//	stereogramWidth,
-	//	stereogramHeight,
-	//	0,
-	//	GL_RGBA,
-	//	GL_UNSIGNED_BYTE,
-	//	NULL);
-
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	//glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fringeContext_.stereogram_gl_fbo_color, 0);
 
 	glBindRenderbuffer(GL_RENDERBUFFER, fringeContext_.stereogram_gl_fbo_depth);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT,
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32F,
 		stereogramWidth,
 		stereogramHeight);
 	glFramebufferRenderbuffer(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, fringeContext_.stereogram_gl_fbo_depth);
+
 
 	// begin generation of stereogram view buffers (these will go into cuda/opencl kernels)
 	size_t rgba_size = stereogramWidth * stereogramHeight * sizeof(GLbyte)* 4;
