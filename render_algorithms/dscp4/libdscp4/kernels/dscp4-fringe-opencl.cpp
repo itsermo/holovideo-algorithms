@@ -190,6 +190,8 @@ extern "C" {
 
 		cl_event *event = new cl_event[num_output_buffers * 3];
 
+		glFinish();
+
 		for (unsigned int i = 0; i < num_output_buffers; i++)
 		{
 
@@ -201,7 +203,6 @@ extern "C" {
 			size_t tex_globalWorkSize[2] = { 2784, stereogram_height };
 			size_t tex_localWorkSize[2] = { 32, 4 };
 
-			glFinish();
 			ret = clEnqueueAcquireGLObjects((cl_command_queue)openclContext->command_queue, 1, (const cl_mem*)&openclContext->stereogram_rgba_opencl_resource, 0, NULL, NULL);
 			ret = clEnqueueAcquireGLObjects((cl_command_queue)openclContext->command_queue, 1, (const cl_mem*)&openclContext->stereogram_depth_opencl_resource, 0, NULL, NULL);
 			ret = clEnqueueAcquireGLObjects((cl_command_queue)openclContext->command_queue, 1, (const cl_mem*)&openclContext->fringe_opencl_resources[i], 0, NULL, &event[i*num_output_buffers]);

@@ -896,15 +896,15 @@ void DSCP4Render::drawForFringe()
 	drawForStereogram();
 #endif
 
-	if (fringeContext_.algorithm_options.compute_method == DSCP4_COMPUTE_METHOD_CUDA)
-	{
+	//if (fringeContext_.algorithm_options.compute_method == DSCP4_COMPUTE_METHOD_CUDA)
+	//{
 #ifdef DSCP4_ENABLE_TRACE_LOG
 		duration = measureTime<>(std::bind(&DSCP4Render::copyStereogramToPBOs, this));
 		LOG4CXX_TRACE(logger_, "Copying stereogram " << fringeContext_.algorithm_options.num_views_x << " views to PBOs took " << duration << " ms (" << 1.f / duration * 1000 << " fps)")
 #else
 		copyStereogramToPBOs();
 #endif
-	}
+	//}
 
 #ifdef DSCP4_ENABLE_TRACE_LOG
 	duration = measureTime<>(std::bind(&DSCP4Render::computeHologram, this));
@@ -1346,7 +1346,7 @@ void DSCP4Render::initFringeBuffers()
 
 	glBindFramebuffer(GL_FRAMEBUFFER, fringeContext_.stereogram_gl_fbo);
 	glBindRenderbuffer(GL_RENDERBUFFER, fringeContext_.stereogram_gl_fbo_color);
-	glRenderbufferStorageEXT(GL_RENDERBUFFER, GL_RGBA8, stereogramWidth, stereogramHeight);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, stereogramWidth, stereogramHeight);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER,
 		GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, fringeContext_.stereogram_gl_fbo_color);
 
