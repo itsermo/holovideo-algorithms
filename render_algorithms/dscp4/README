@@ -14,17 +14,18 @@
   * Cross-platform Make (CMake) v2.8.2+
   * GNU Make or equivalent.
   * GCC-4.8.2+ C++11 capable compiler.
-  * Boost C++ Libraries v1.54+ [HEADERS and LIBRARIES]
+  * Boost C++ Libraries v1.54+ [HEADERS and LIBRARIES] (system, filesystem, program_options)
   * OpenGL 3.1+ (for GLSL support, must have GPU that has OpenGL 3.1+ support)
   * GLEW 1.11.0+ (OpenGL Extension Wrangler, required for running GLSL shaders)
   * GLM 0.9.6.1+ (header-only library for common OpenGL math functions,
 	such as matrix multiplication)
   * SDL 2.0.1+ (takes care of window management, OpenGL render contexts)
-  * CUDA 6.5 (all fringe computation is done in CUDA)
+  * CUDA 6.5 (fringe computation is done in CUDA)
+  * OpenCL 1.1 (fringe computation done with OpenCL)
   * Log4Cxx v0.10.0+ (optional, for logging errors and info)
   * ASSIMP 3.1.1+ (for importing 3D object files, like .ply files)
   
- DSCP4 is a CMAKE package, that is composed of two C++ projects:
+ DSCP4 is a CMAKE package, that is composed of two C++11 projects:
  
   * libdscp4 - the render library that implements DSCP and computes fringe
                patterns. libdscp4 is built as a shared library with C-linkage.
@@ -45,7 +46,7 @@
 		
  CMAKE is a cross-platform make tool that allows one to generate make projects
  for specific compilers.  For example, we can use CMAKE to generate a
- Visual Studio, Eclipse, or standard GNU Make project which then can be
+ Visual Studio, Eclipse, Xcode or standard GNU Make project which then can be
  compiled, debugged or installed from the respective OS and toolchain.
 
  This readme will show you how to generate a GNU Make project, that can be

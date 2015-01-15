@@ -28,6 +28,10 @@
 #include <kernels/dscp4-fringe-cuda.h>
 #endif
 
+#ifdef DSCP4_HAVE_OPENCL
+#include <kernels/dscp4-fringe-opencl.h>
+#endif
+
 #include <SDL2/SDL.h>
 
 #include <string>
@@ -168,6 +172,13 @@ namespace dscp4
 		// to CUDA/OpenCL kernel for processing
 		void copyStereogramToPBOs();
 
+		// Will init/deinit OpenCL/CUDA
+		void initComputeMethod();
+		void deinitComputeMethod();
+		
+		// Uses CUDA/OpenCL to compute the hologram
+		void computeHologram();
+
 		void drawPointCloud();
 		void drawAllMeshes();
 		void drawMesh(mesh_t& mesh);
@@ -219,10 +230,7 @@ namespace dscp4
 		render_options_t renderOptions_;
 
 		dscp4_fringe_context_t fringeContext_;
-
-#ifdef DSCP4_HAVE_CUDA
-		dscp4_fringe_cuda_context_t* cudaContext_;
-#endif
+		void * computeContext_;
 
 		glm::mat4 projectionMatrix_;
 		glm::mat4 viewMatrix_;

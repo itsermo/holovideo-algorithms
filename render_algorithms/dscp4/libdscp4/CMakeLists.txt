@@ -30,6 +30,10 @@ if(WITH_CUDA)
 	include_directories(${CUDA_TOOLKIT_INCLUDE})
 endif()
 
+if(WITH_OPENCL)
+	add_definitions(-DDSCP4_HAVE_OPENCL)
+endif()
+
 file(GLOB DSCP4_LIB_SRC
 	"*.h"
 	"*.hpp"
@@ -52,7 +56,11 @@ set_target_properties(${DSCP4_LIB} PROPERTIES OUTPUT_NAME ${PROJECT_NAME} CLEAN_
 target_link_libraries(${DSCP4_LIB} ${Boost_LIBRARIES} ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} ${GLEW_LIBRARY} ${SDL2_LIBRARY} ${SDL2MAIN_LIBRARY})
 
 if(WITH_CUDA)
-	target_link_libraries(${DSCP4_LIB} ${DSCP4_FRINGE_CUDA_LIB} ${CUDA_LIBRARIES})
+	target_link_libraries(${DSCP4_LIB} ${DSCP4_FRINGE_CUDA_LIB})
+endif()
+
+if(WITH_OPENCL)
+	target_link_libraries(${DSCP4_LIB} ${DSCP4_FRINGE_OPENCL_LIB})
 endif()
 
 if(WITH_LIBLOG4CXX)

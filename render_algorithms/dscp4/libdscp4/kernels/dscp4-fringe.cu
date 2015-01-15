@@ -143,6 +143,16 @@ void dscp4_fringe_cuda_DestroyContext(dscp4_fringe_cuda_context_t** cudaContext)
 
 void dscp4_fringe_cuda_ComputeFringe(dscp4_fringe_cuda_context_t* cudaContext)
 {
+	// The total number of wafels in one frame
+	const int NUM_WAFELS = cudaContext->fringe_context->algorithm_options.num_wafels_per_scanline *
+		cudaContext->fringe_context->algorithm_options.num_scanlines;
+	
+	// The size (in bytes) per wafel
+	const size_t WAFEL_SIZE = cudaContext->fringe_context->display_options.head_res_x *
+		cudaContext->fringe_context->display_options.head_res_y *
+		cudaContext->fringe_context->display_options.num_heads * sizeof(char) * 3 /
+		NUM_WAFELS;
+
 	void **output;
 	size_t * outputSizes;
 
@@ -171,7 +181,9 @@ void dscp4_fringe_cuda_ComputeFringe(dscp4_fringe_cuda_context_t* cudaContext)
 	//error = cudaMemset(output[0], 255, outputSizes[0]);
 
 	// run kernel here
-	dim3 threadsPerBlock(8, 8);
+	dim3 threadsPerBlock(
+		cudaContext->fringe_context->algorithm_options.num_wafels_per_scanline,
+		cudaContext->fringe_context->algorithm_options.num_scanlines);
 	dim3 numBlocks(cudaContext->fringe_context->algorithm_options.num_wafels_per_scanline * 4 / threadsPerBlock.x,
 		cudaContext->fringe_context->algorithm_options.num_scanlines * 4 / threadsPerBlock.y);
 	computeFringe <<<numBlocks, threadsPerBlock >>>(output[0], rgbaPtr, depthPtr);
@@ -189,5 +201,4 @@ void dscp4_fringe_cuda_ComputeFringe(dscp4_fringe_cuda_context_t* cudaContext)
 
 	free(output);
 	free(outputSizes);
-
 };
