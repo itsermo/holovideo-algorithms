@@ -145,10 +145,7 @@ extern "C" {
 
 		context->kernel = clCreateKernel((cl_program)context->program, "turn_red", &ret);
 
-		ret = clSetKernelArg((cl_kernel)context->kernel, 0, sizeof(cl_mem), &(context->fringe_opencl_resources[0]));
-
 		return context;
-
 	}
 
 	void dscp4_fringe_opencl_DestroyContext(dscp4_fringe_opencl_context_t** openclContext)
@@ -174,8 +171,6 @@ extern "C" {
 		ret = clReleaseMemObject((cl_mem)(*openclContext)->stereogram_rgba_opencl_resource);
 		ret = clReleaseMemObject((cl_mem)(*openclContext)->stereogram_depth_opencl_resource);
 
-
-
 		ret = clReleaseCommandQueue((cl_command_queue)(*openclContext)->command_queue);
 
 		ret = clReleaseContext((cl_context)(*openclContext)->cl_context);
@@ -186,26 +181,39 @@ extern "C" {
 
 	void dscp4_fringe_opencl_ComputeFringe(dscp4_fringe_opencl_context_t* openclContext)
 	{
+		const unsigned int num_output_buffers = openclContext->fringe_context->display_options.num_heads / openclContext->fringe_context->display_options.num_heads_per_gpu;
 
-		cl_event event[3];
+		cl_int ret = 0;
 
+		cl_event *event = new cl_event[num_output_buffers * 3];
 
-		size_t tex_globalWorkSize[2] = { openclContext->fringe_context->display_options.head_res_x, openclContext->fringe_context->display_options.head_res_y * 2 };
-		size_t tex_localWorkSize[2] = { 32, 4 };
+		for (unsigned int i = 0; i < num_output_buffers; i++)
+		{
 
-		glFinish();
-		cl_int ret = clEnqueueAcquireGLObjects((cl_command_queue)openclContext->command_queue, 1, (const cl_mem*)&openclContext->fringe_opencl_resources[0], 0, NULL, &event[0]);
-		size_t global_item_size = 3552 * 1700; // Process the entire lists
-		size_t local_item_size = 64; // Divide work items into groups of 64
-		ret = clEnqueueNDRangeKernel((cl_command_queue)openclContext->command_queue, (cl_kernel)openclContext->kernel, 2, NULL,
-			tex_globalWorkSize, tex_localWorkSize, 1, &event[0], &event[1]);
+			ret = clSetKernelArg((cl_kernel)openclContext->kernel, 0, sizeof(cl_mem), &(openclContext->fringe_opencl_resources[i]));
+			ret = clSetKernelArg((cl_kernel)openclContext->kernel, 1, sizeof(cl_uint), &i);
 
-		ret = clEnqueueReleaseGLObjects((cl_command_queue)openclContext->command_queue, 1, (const cl_mem*)&openclContext->fringe_opencl_resources[0], 1, &event[1], &event[2]);
+			size_t tex_globalWorkSize[2] = { openclContext->fringe_context->display_options.head_res_x, openclContext->fringe_context->display_options.head_res_y * 2 };
+			size_t tex_localWorkSize[2] = { 32, 4 };
 
-		ret = clWaitForEvents(1, &event[2]);
+			glFinish();
+			ret = clEnqueueAcquireGLObjects((cl_command_queue)openclContext->command_queue, 1, (const cl_mem*)&openclContext->fringe_opencl_resources[i], 0, NULL, &event[i*num_output_buffers]);
+			size_t global_item_size = 3552 * 1700; // Process the entire lists
+			size_t local_item_size = 64; // Divide work items into groups of 64
+			ret = clEnqueueNDRangeKernel((cl_command_queue)openclContext->command_queue, (cl_kernel)openclContext->kernel, 2, NULL,
+				tex_globalWorkSize, tex_localWorkSize, 1, &event[i*num_output_buffers], &event[i*num_output_buffers+1]);
 
+			ret = clEnqueueReleaseGLObjects((cl_command_queue)openclContext->command_queue, 1, (const cl_mem*)&openclContext->fringe_opencl_resources[i], 1, &event[i*num_output_buffers+1], &event[i*num_output_buffers+2]);
 
-		int x = 1230;
+		}
+
+		for (unsigned int i = 0; i < num_output_buffers; i++)
+		{
+			ret = clWaitForEvents(1, &event[i* num_output_buffers + 2]);
+		}
+
+		delete[] event;
+
 
 	}
 

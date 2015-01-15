@@ -1,10 +1,17 @@
-__kernel void turn_red(__write_only image2d_t bmp)
+__kernel void turn_red(__write_only image2d_t bmp, uint buffer_num)
 {
 	int x = get_global_id(0);
 	int y = get_global_id(1);
 	int2 coords = (int2)(x, y);
 	//Attention to RGBA order
-	float4 val = (float4)(1.0f, 0.0f, 0.0f, 1.0f);
+	float4 val;
+
+	if(buffer_num == 0)
+		val = (float4)(1.0f, 0.0f, 0.0f, 1.0f);
+	else if(buffer_num == 1)
+		val = (float4)(0.0f, 1.0f, 0.0f, 1.0f);
+	else
+		val = (float4)(0.0f, 0.0f, 1.0f, 1.0f);
 
 	write_imagef(bmp, coords, val);
 }
