@@ -112,7 +112,7 @@ extern "C" {
 		cl_context_properties properties[] = {
 			CL_GL_CONTEXT_KHR, (cl_context_properties)glXGetCurrentContext(),
 			CL_WGL_HDC_KHR, (cl_context_properties)glXGetCurrentDisplay(),
-			CL_CONTEXT_PLATFORM, (cl_context_properties)(mPlatforms[0])(),
+			CL_CONTEXT_PLATFORM, (cl_context_properties)platform_id,
 			0
 		};
 #elif defined(__APPLE__)
@@ -198,13 +198,11 @@ extern "C" {
 
 			glFinish();
 			ret = clEnqueueAcquireGLObjects((cl_command_queue)openclContext->command_queue, 1, (const cl_mem*)&openclContext->fringe_opencl_resources[i], 0, NULL, &event[i*num_output_buffers]);
-			size_t global_item_size = 3552 * 1700; // Process the entire lists
-			size_t local_item_size = 64; // Divide work items into groups of 64
+
 			ret = clEnqueueNDRangeKernel((cl_command_queue)openclContext->command_queue, (cl_kernel)openclContext->kernel, 2, NULL,
 				tex_globalWorkSize, tex_localWorkSize, 1, &event[i*num_output_buffers], &event[i*num_output_buffers+1]);
 
 			ret = clEnqueueReleaseGLObjects((cl_command_queue)openclContext->command_queue, 1, (const cl_mem*)&openclContext->fringe_opencl_resources[i], 1, &event[i*num_output_buffers+1], &event[i*num_output_buffers+2]);
-
 		}
 
 		for (unsigned int i = 0; i < num_output_buffers; i++)
