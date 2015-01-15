@@ -111,7 +111,7 @@ extern "C" {
 #elif defined(__linux__)
 		cl_context_properties properties[] = {
 			CL_GL_CONTEXT_KHR, (cl_context_properties)glXGetCurrentContext(),
-			CL_WGL_HDC_KHR, (cl_context_properties)glXGetCurrentDisplay(),
+			CL_GLX_DISPLAY_KHR, (cl_context_properties)glXGetCurrentDisplay(),
 			CL_CONTEXT_PLATFORM, (cl_context_properties)platform_id,
 			0
 		};
@@ -124,8 +124,9 @@ extern "C" {
 		};
 #endif
 
-		context->cl_context = clCreateContext(properties, context->num_gpus, &device_id, NULL, NULL, &ret);
-		context->command_queue = clCreateCommandQueue((cl_context)context->cl_context, device_id, NULL, &ret);
+
+		context->cl_context = clCreateContext(properties, 1, &device_id, NULL, NULL, &ret);
+		context->command_queue = clCreateCommandQueue((cl_context)context->cl_context, device_id, 0, &ret);
 
 		context->stereogram_rgba_opencl_resource = clCreateFromGLRenderbuffer((cl_context)context->cl_context, CL_MEM_READ_ONLY, fringeContext->stereogram_gl_fbo, &ret);
 		context->stereogram_depth_opencl_resource = clCreateFromGLBuffer((cl_context)context->cl_context, CL_MEM_READ_ONLY,

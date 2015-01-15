@@ -896,12 +896,12 @@ void DSCP4Render::drawForFringe()
 	drawForStereogram();
 #endif
 
-#ifdef DSCP4_ENABLE_TRACE_LOG
-	duration = measureTime<>(std::bind(&DSCP4Render::copyStereogramToPBOs, this));
-	LOG4CXX_TRACE(logger_, "Copying stereogram " << fringeContext_.algorithm_options.num_views_x << " views to PBOs took " << duration << " ms (" << 1.f / duration * 1000 << " fps)")
-#else
-	copyStereogramToPBOs();
-#endif
+//#ifdef DSCP4_ENABLE_TRACE_LOG
+//	duration = measureTime<>(std::bind(&DSCP4Render::copyStereogramToPBOs, this));
+//	LOG4CXX_TRACE(logger_, "Copying stereogram " << fringeContext_.algorithm_options.num_views_x << " views to PBOs took " << duration << " ms (" << 1.f / duration * 1000 << " fps)")
+//#else
+//	copyStereogramToPBOs();
+//#endif
 
 #ifdef DSCP4_ENABLE_TRACE_LOG
 	duration = measureTime<>(std::bind(&DSCP4Render::computeHologram, this));
