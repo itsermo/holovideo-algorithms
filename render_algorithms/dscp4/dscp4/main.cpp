@@ -71,6 +71,10 @@ int main(int argc, const char* argv[])
 	std::string kernelsPath;
 	std::string shaderFileNamePrefix;
 
+#ifdef DSCP4_HAVE_OPENCL
+	std::string kernelFileName;
+#endif
+
 	float translateX = 0, translateY = 0, translateZ = 0;
 	float scaleX = 0, scaleY = 0, scaleZ = 0;
 	float rotateAngleX = 0, rotateAngleY = 0;
@@ -283,7 +287,40 @@ int main(int argc, const char* argv[])
 		algorithmOptions.fov_x = options.getFovX();
 		algorithmOptions.fov_y = options.getFovY();
 
-		algorithmOptions.compute_method = options.getComputeMethod() == "opencl" ? DSCP4_COMPUTE_METHOD_OPENCL : DSCP4_COMPUTE_METHOD_CUDA;
+
+		if (options.getComputeMethod() == "opencl")
+		{
+			algorithmOptions.compute_method = DSCP4_COMPUTE_METHOD_OPENCL;
+		}
+		else if (options.getComputeMethod() == "cuda")
+		{
+			algorithmOptions.compute_method = DSCP4_COMPUTE_METHOD_CUDA;
+		}
+		else
+		{
+			algorithmOptions.compute_method = DSCP4_COMPUTE_METHOD_NONE;
+		}
+
+#ifdef DSCP4_HAVE_OPENCL
+		boost::filesystem::path openclKernelFilePath = boost::filesystem::current_path() / options.getOpenCLKernelFileName();
+		if (!boost::filesystem::exists(openclKernelFilePath))
+		{
+			openclKernelFilePath = options.getKernelsPath() / options.getOpenCLKernelFileName();
+			if (!boost::filesystem::exists(openclKernelFilePath))
+			{
+				if (renderOptions.render_mode == DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE && algorithmOptions.compute_method == DSCP4_COMPUTE_METHOD_OPENCL)
+					throw std::exception("Could not find OpenCL kernel file in current path or kernels path");
+				else
+				{
+					LOG4CXX_WARN(logger, "OpenCL kernel could not be found in working path or kernels path")
+				}
+
+			}
+		}
+
+		kernelFileName = openclKernelFilePath.string();
+		algorithmOptions.opencl_kernel_filename = kernelFileName.c_str();
+#endif
 
 	}
 	catch (std::exception& e)
@@ -305,6 +342,7 @@ int main(int argc, const char* argv[])
 		displayName = options.getDisplayName();
 		displayOptions.name = displayName.c_str();
 		displayOptions.num_heads = options.getNumHeads();
+		displayOptions.num_heads_per_gpu = options.getNumHeadsPerGPU();
 		displayOptions.head_res_x = options.getHeadResX();
 		displayOptions.head_res_y = options.getHeadResY();
 	}

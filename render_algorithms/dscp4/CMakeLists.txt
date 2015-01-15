@@ -45,6 +45,10 @@ option(WITH_LIBLOG4CXX "Uses Log4Cxx library for logging status and error messag
 option(WITH_TRACE_LOG "Enables trace log to resolve code performance and behavior, such as showing FPS calculations in the log. Requires liblog4cxx" OFF)
 option(WITH_OPENCL "Enables OpenCL compute building" ${OPENCL_FOUND})
 
+if(NOT WITH_CUDA AND NOT WITH_OPENCL)
+	message(WARNING "You haven't enabled support for OpenCL or CUDA, use the -DWITH_CUDA=YES and/or -DWITH_OPENCL=YES, otherwise you will not be able to compute holograms.")
+endif()
+	
 if(LIBLOG4CXX_FOUND)
 	option(LIBLOG4CXX_USING_STATICLIB "Defines LOG4CXX_STATIC for use with static LOG4CXX libraries" ${WIN32})
 endif()
@@ -99,6 +103,14 @@ endif()
 if(WIN32)
 	get_WIN32_WINNT(winver)
 	add_definitions(-D_WIN32_WINNT=${winver})
+endif()
+
+if(WITH_CUDA)
+	set(DEFAULT_COMPUTE_METHOD "cuda")
+elseif(WITH_OPENCL)
+	set(DEFAULT_COMPUTE_METHOD "opencl")
+else()
+	set(DEFAULT_COMPUTE_METHOD "none")
 endif()
 
 configure_file(dscp4.conf.in dscp4.conf)

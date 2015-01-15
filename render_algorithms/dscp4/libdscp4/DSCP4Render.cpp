@@ -51,6 +51,7 @@ DSCP4Render::DSCP4Render() :
 					display_options_t {
 						DSCP4_DEFAULT_DISPLAY_NAME,
 						DSCP4_DEFAULT_DISPLAY_NUM_HEADS,
+						DSCP4_DEFAULT_DISPLAY_NUM_HEADS_PER_GPU,
 						DSCP4_DEFAULT_DISPLAY_HEAD_RES_X,
 						DSCP4_DEFAULT_DISPLAY_HEAD_RES_Y},
 						DSCP4_DEFAULT_LOG_VERBOSITY)
@@ -87,7 +88,7 @@ DSCP4Render::DSCP4Render(render_options_t renderOptions,
 	cameraChanged_(false),
 	lightingChanged_(false),
 	meshChanged_(false),
-	fringeContext_({ algorithmOptions, displayOptions, 0, 0, 0, 0, 0, nullptr, nullptr })
+	fringeContext_({ algorithmOptions, displayOptions, nullptr, 0, 0, 0, 0, 0, nullptr, nullptr })
 {
 
 #ifdef DSCP4_HAVE_LOG4CXX
@@ -659,9 +660,11 @@ void DSCP4Render::renderLoop()
 
 	SDL_GL_MakeCurrent(windows_[0], glContexts_[0]);
 
-	deinitComputeMethod();
-
-	deinitFringeBuffers();
+	if (renderOptions_.render_mode == DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE)
+	{
+		deinitComputeMethod();
+		deinitFringeBuffers();
+	}
 
 	for (unsigned int i = 0; i < numWindows_; i++)
 	{
@@ -900,15 +903,11 @@ void DSCP4Render::drawForFringe()
 	copyStereogramToPBOs();
 #endif
 
-#ifdef DSCP4_HAVE_CUDA
-
 #ifdef DSCP4_ENABLE_TRACE_LOG
 	duration = measureTime<>(std::bind(&DSCP4Render::computeHologram, this));
 	LOG4CXX_TRACE(logger_, "Compute hologram fringe pattern took " << duration << " ms (" << 1.f / duration * 1000 << " fps)")
 #else
 	computeHologram();
-#endif
-
 #endif
 
 #ifdef DSCP4_ENABLE_TRACE_LOG
@@ -1338,25 +1337,29 @@ void DSCP4Render::initFringeBuffers()
 	// we try to render stereograms to the normal frame-buffer, they
 	// will be clipped by window size being smaller than N views
 	glGenFramebuffers(1, &fringeContext_.stereogram_gl_fbo);
-	glGenTextures(1, &fringeContext_.stereogram_gl_fbo_color);
+	//glGenTextures(1, &fringeContext_.stereogram_gl_fbo_color);
+	glGenRenderbuffers(1, &fringeContext_.stereogram_gl_fbo_color);
 	glGenRenderbuffers(1, &fringeContext_.stereogram_gl_fbo_depth);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, fringeContext_.stereogram_gl_fbo);
+	glBindRenderbuffer(GL_RENDERBUFFER, fringeContext_.stereogram_gl_fbo_color);
+	glRenderbufferStorageEXT(GL_RENDERBUFFER, GL_RGBA8, stereogramWidth, stereogramHeight);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER,
+		GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, fringeContext_.stereogram_gl_fbo_color);
+	//glBindTexture(GL_TEXTURE_2D, fringeContext_.stereogram_gl_fbo_color);
+	//glTexImage2D(GL_TEXTURE_2D,
+	//	0,
+	//	GL_RGBA,
+	//	stereogramWidth,
+	//	stereogramHeight,
+	//	0,
+	//	GL_RGBA,
+	//	GL_UNSIGNED_BYTE,
+	//	NULL);
 
-	glBindTexture(GL_TEXTURE_2D, fringeContext_.stereogram_gl_fbo_color);
-	glTexImage2D(GL_TEXTURE_2D,
-		0,
-		GL_RGBA,
-		stereogramWidth,
-		stereogramHeight,
-		0,
-		GL_RGBA,
-		GL_UNSIGNED_BYTE,
-		NULL);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fringeContext_.stereogram_gl_fbo_color, 0);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	//glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fringeContext_.stereogram_gl_fbo_color, 0);
 
 	glBindRenderbuffer(GL_RENDERBUFFER, fringeContext_.stereogram_gl_fbo_depth);
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT,
@@ -1406,10 +1409,10 @@ void DSCP4Render::initFringeBuffers()
 	{
 		glBindTexture(GL_TEXTURE_2D, fringeContext_.fringe_gl_tex_out[i]);
 
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8,
 			fringeContext_.display_options.head_res_x,
 			fringeContext_.display_options.head_res_y * 2,
-			0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+			0, GL_RGBA, GL_UNSIGNED_BYTE, blah);
 
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -1430,7 +1433,7 @@ void DSCP4Render::deinitFringeBuffers()
 	glDeleteBuffers(numWindows_, fringeContext_.fringe_gl_buf_out);
 	glDeleteTextures(numWindows_, fringeContext_.fringe_gl_tex_out);
 	glDeleteFramebuffers(1, &fringeContext_.stereogram_gl_fbo);
-	glDeleteTextures(1, &fringeContext_.stereogram_gl_fbo_color);
+	glDeleteRenderbuffers(1, &fringeContext_.stereogram_gl_fbo_color);
 	glDeleteRenderbuffers(1, &fringeContext_.stereogram_gl_fbo_depth);
 
 	delete[] fringeContext_.fringe_gl_buf_out;
@@ -1506,22 +1509,22 @@ void DSCP4Render::drawFringeTextures()
 
 		glBindTexture(GL_TEXTURE_2D, fringeContext_.fringe_gl_tex_out[i]);
 
-		glBindBuffer(GL_PIXEL_UNPACK_BUFFER, fringeContext_.fringe_gl_buf_out[i]);
-
-#ifdef DSCP4_ENABLE_TRACE_LOG
-		auto duration = measureTime<>([&](){
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
-				fringeContext_.display_options.head_res_x,
-				fringeContext_.display_options.head_res_y * 2,
-				0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
-		});
-		LOG4CXX_TRACE(logger_, "Copying hologram fringe result " << i << " to texture took " << duration << " ms (" << 1.f / duration * 1000 << " fps)")
-#else
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
-			fringeContext_.display_options.head_res_x,
-			fringeContext_.display_options.head_res_y * 2,
-			0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
-#endif
+//		glBindBuffer(GL_PIXEL_UNPACK_BUFFER, fringeContext_.fringe_gl_buf_out[i]);
+//
+//#ifdef DSCP4_ENABLE_TRACE_LOG
+//		auto duration = measureTime<>([&](){
+//			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
+//				fringeContext_.display_options.head_res_x,
+//				fringeContext_.display_options.head_res_y * 2,
+//				0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+//		});
+//		LOG4CXX_TRACE(logger_, "Copying hologram fringe result " << i << " to texture took " << duration << " ms (" << 1.f / duration * 1000 << " fps)")
+//#else
+//		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
+//			fringeContext_.display_options.head_res_x,
+//			fringeContext_.display_options.head_res_y * 2,
+//			0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+//#endif
 
 		//glBindBuffer(GL_PIXEL_UNPACK_BUFFER, fringeContext_.stereogram_gl_rgba_buf_in);
 
@@ -1551,18 +1554,24 @@ void DSCP4Render::initComputeMethod()
 	case DSCP4_COMPUTE_METHOD_CUDA:
 #ifdef DSCP4_HAVE_CUDA
 		LOG4CXX_DEBUG(logger_, "CUDA -- Initializing CUDA context")
-		computeContext_ = (dscp4_fringe_cuda_context_t**)dscp4_fringe_cuda_CreateContext(&fringeContext_);
+		computeContext_ = (dscp4_fringe_cuda_context_t*)dscp4_fringe_cuda_CreateContext(&fringeContext_);
 #else
 		LOG4CXX_FATAL(logger_, "CUDA selected as compute method, but this binary was not compiled with CUDA")
 #endif
 		break;
 	case DSCP4_COMPUTE_METHOD_OPENCL:
-
+#ifdef DSCP4_HAVE_OPENCL
+		LOG4CXX_DEBUG(logger_, "OpenCL -- Initializing OpenCL Context")
+		SDL_GL_MakeCurrent(windows_[0], glContexts_[numWindows_ - 1]);
+		computeContext_ = (dscp4_fringe_opencl_context_t*)dscp4_fringe_opencl_CreateContext(&fringeContext_, (int*)glContexts_[0]);
+#else
+		LOG4CXX_FATAL(logger_, "OpenCL selected as compute method, but this binary was not compiled with OpenCL")
+#endif
 		break;
 	default:
+		LOG4CXX_ERROR(logger_, "No compute method selected, no hologram will be computed")
 		break;
 	}
-
 
 }
 
@@ -1577,7 +1586,10 @@ void DSCP4Render::deinitComputeMethod()
 #endif
 		break;
 	case DSCP4_COMPUTE_METHOD_OPENCL:
-
+#ifdef DSCP4_HAVE_OPENCL
+		LOG4CXX_DEBUG(logger_, "OpenCL -- Deinitializing CUDA context")
+		dscp4_fringe_opencl_DestroyContext((dscp4_fringe_opencl_context_t**)&computeContext_);
+#endif
 		break;
 	default:
 		break;
@@ -1594,7 +1606,9 @@ void DSCP4Render::computeHologram()
 #endif
 		break;
 	case DSCP4_COMPUTE_METHOD_OPENCL:
-
+#ifdef DSCP4_HAVE_OPENCL
+		dscp4_fringe_opencl_ComputeFringe((dscp4_fringe_opencl_context_t*)computeContext_);
+#endif
 		break;
 	default:
 		break;

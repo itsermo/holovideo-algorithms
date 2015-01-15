@@ -33,6 +33,14 @@ if(WITH_LIBLOG4CXX)
 	target_link_libraries(${DSCP4_BIN} LINK_PUBLIC ${LIBLOG4CXX_LIBRARIES})
 endif()
 
+if(WITH_CUDA)
+	add_definitions(-DDSCP4_HAVE_CUDA)
+endif()
+
+if(WITH_OPENCL)
+	add_definitions(-DDSCP4_HAVE_OPENCL)
+endif()
+
 file(GLOB MODEL_FILES
 	"models/*.*"
 )

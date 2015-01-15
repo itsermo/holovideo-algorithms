@@ -28,6 +28,10 @@
 #include <kernels/dscp4-fringe-cuda.h>
 #endif
 
+#ifdef DSCP4_HAVE_OPENCL
+#include <kernels/dscp4-fringe-opencl.h>
+#endif
+
 #include <SDL2/SDL.h>
 
 #include <string>

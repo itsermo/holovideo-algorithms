@@ -81,17 +81,20 @@ fov_x = 30.0
 fov_y = 30.0
 
 ;chooses which compute method, "cuda" or "opencl"
-compute_method = cuda
+compute_method = ${DEFAULT_COMPUTE_METHOD}
 
 [display]
 ;friendly name of the display
-display_name=MIT Mark IV
+display_name = MIT Mark IV
 
 ;the number of physical VGA/DisplayPort outputs
-num_heads=6
+num_heads = 6
+
+;the number of heads per GPU
+num_heads_per_gpu = 2
 
 ;the horizontal modeline resolution per VGA/DisplayPort output, in pixels
-head_x=3552
+head_x = 3552
 
 ;the vertical modeline resolution per VGA/DisplayPort output, in pixels
-head_y=2476
+head_y = 2476

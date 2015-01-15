@@ -30,12 +30,19 @@
 #define DSCP4_DEFAULT_ALGORITHM_FOV_Y 				30.f
 #define DSCP4_DEFAULT_DISPLAY_NAME					"MIT Mark IV"
 #define DSCP4_DEFAULT_DISPLAY_NUM_HEADS				6
+#define DSCP4_DEFAULT_DISPLAY_NUM_HEADS_PER_GPU		2
 #define DSCP4_DEFAULT_DISPLAY_HEAD_RES_X			3552
 #define DSCP4_DEFAULT_DISPLAY_HEAD_RES_Y			2476
 #define DSCP4_DEFAULT_LOG_VERBOSITY					3
 #define DSCP4_DEFAULT_COMPUTE_METHOD				DSCP4_COMPUTE_METHOD_CUDA
 
+#ifndef __cplusplus
+#include <stdbool.h>
+#endif
+
+#ifdef __cplusplus
 extern "C"{
+#endif
 
 	typedef void* dscp4_context_t;
 
@@ -59,6 +66,7 @@ extern "C"{
 	} shader_model_t;
 
 	typedef enum {
+		DSCP4_COMPUTE_METHOD_NONE = -1,
 		DSCP4_COMPUTE_METHOD_CUDA = 0,
 		DSCP4_COMPUTE_METHOD_OPENCL = 1
 	} compute_method_t;
@@ -135,12 +143,13 @@ extern "C"{
 		unsigned int num_views_x, num_views_y, num_wafels_per_scanline, num_scanlines;
 		float fov_x, fov_y;
 		compute_method_t compute_method;
+		const char * opencl_kernel_filename;
 	} algorithm_options_t;
 
 	typedef struct
 	{
 		const char * name;
-		unsigned int num_heads, head_res_x, head_res_y;
+		unsigned int num_heads, num_heads_per_gpu, head_res_x, head_res_y;
 	} display_options_t;
 
 	typedef struct
@@ -156,6 +165,9 @@ extern "C"{
 		unsigned int * fringe_gl_buf_out;
 		unsigned int * fringe_gl_tex_out;
 	} dscp4_fringe_context_t;
+
+#ifdef __cplusplus
 };
+#endif
 
 #endif

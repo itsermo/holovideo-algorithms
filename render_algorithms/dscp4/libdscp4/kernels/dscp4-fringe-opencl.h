@@ -21,7 +21,7 @@ extern "C" {
 		void * command_queue;
 	} dscp4_fringe_opencl_context_t;
 
-	dscp4_fringe_opencl_context_t* dscp4_fringe_opencl_CreateContext(dscp4_fringe_context_t *fringeContext);
+	dscp4_fringe_opencl_context_t* dscp4_fringe_opencl_CreateContext(dscp4_fringe_context_t *fringeContext, int *glContext);
 
 	void dscp4_fringe_opencl_DestroyContext(dscp4_fringe_opencl_context_t** openclContext);
 

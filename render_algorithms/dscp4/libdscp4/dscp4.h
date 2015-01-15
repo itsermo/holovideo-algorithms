@@ -1,4 +1,5 @@
-#pragma once
+#ifndef DSCP4_H
+#define DSCP4_H
 
 #ifdef WIN32
 #ifdef DSCP4_STATIC
@@ -12,7 +13,9 @@
 
 #include "dscp4_defs.h"
 
+#ifdef __cplusplus
 extern "C" {
+#endif
 
 	DSCP4_API dscp4_context_t dscp4_CreateContext(
 		render_options_t render_options,
@@ -49,4 +52,9 @@ extern "C" {
 	DSCP4_API void dscp4_TranslateObject(dscp4_context_t renderContext, const char *id, float x, float y, float z);
 	DSCP4_API void dscp4_ScaleObject(dscp4_context_t renderContext, const char* id, float x, float y, float z);
 	DSCP4_API void dscp4_RotateObject(dscp4_context_t renderContext, const char* id, float angle, float x, float y, float z);
-}
+
+#ifdef __cplusplus
+};
+#endif
+
+#endif

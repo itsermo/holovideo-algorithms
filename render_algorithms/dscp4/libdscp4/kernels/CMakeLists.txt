@@ -36,17 +36,19 @@ if(WITH_CUDA)
 		RELEASE -O3 --use_fast_math -DNDEBUG
 		DEBUG -g -G -DDEBUG
 		)
+		
+	#target_link_libraries(${PROJECT_NAME} ${CUDA_LIBRARIES})
 endif()
 
 if(WITH_OPENCL)
 	project(dscp4-fringe-opencl)
-	
+	set(DSCP4_FRINGE_OPENCL_LIB "${PROJECT_NAME}" PARENT_SCOPE)
 	set(BUILD_SHARED_LIBS OFF)
 	
 	
 	file(GLOB OPENCL_FILES
 		"*opencl.h"
-		"*opencl.c"
+		"*opencl.cpp"
 		"*.cl"
 	)
 	
