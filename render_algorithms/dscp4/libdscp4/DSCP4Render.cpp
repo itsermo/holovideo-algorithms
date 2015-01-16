@@ -88,7 +88,7 @@ DSCP4Render::DSCP4Render(render_options_t renderOptions,
 	cameraChanged_(false),
 	lightingChanged_(false),
 	meshChanged_(false),
-	fringeContext_({ algorithmOptions, displayOptions, nullptr, 0, 0, 0, 0, 0, nullptr, nullptr })
+	fringeContext_({ algorithmOptions, displayOptions, nullptr, 0, 0, 0, 0, 0, 0, nullptr, nullptr })
 {
 
 #ifdef DSCP4_HAVE_LOG4CXX
@@ -890,6 +890,11 @@ void DSCP4Render::drawForFringe()
 	glBindFramebuffer(GL_FRAMEBUFFER, fringeContext_.stereogram_gl_fbo);
 	glDrawBuffer(GL_COLOR_ATTACHMENT0);
 
+	// Intel GPU bug, 0.0f has residual colors from previous frame
+	glClearColor(0.000001f, 0.f, 0.f, 1.0f);
+	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+
+
 #ifdef DSCP4_ENABLE_TRACE_LOG
 	auto duration = measureTime<>(std::bind(&DSCP4Render::drawForStereogram, this));
 	LOG4CXX_TRACE(logger_, "Rendering " << fringeContext_.algorithm_options.num_views_x << " views in total took " << duration << " ms (" << 1.f / duration * 1000 << " fps)")
@@ -1376,6 +1381,26 @@ void DSCP4Render::initFringeBuffers()
 	glTexImage2D(
 		GL_TEXTURE_2D,
 		0,
+		GL_RGBA8,
+		stereogramWidth,
+		stereogramHeight,
+		0,
+		GL_RGBA,
+		GL_FLOAT,
+		0
+		);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	glGenTextures(1, &fringeContext_.stereogram_gl_fbo_depth_r32f);
+	glBindTexture(GL_TEXTURE_2D, fringeContext_.stereogram_gl_fbo_depth_r32f);
+	glTexImage2D(
+		GL_TEXTURE_2D,
+		0,
 		GL_R32F,
 		stereogramWidth,
 		stereogramHeight,
@@ -1401,9 +1426,27 @@ void DSCP4Render::initFringeBuffers()
 		fringeContext_.stereogram_gl_fbo_depth,
 		0
 		);
+	glBindFramebuffer(GL_FRAMEBUFFER, fringeContext_.stereogram_gl_fbo);
+	glFramebufferTexture2D(
+		GL_FRAMEBUFFER,
+		GL_COLOR_ATTACHMENT1,
+		GL_TEXTURE_2D,
+		fringeContext_.stereogram_gl_fbo_depth_r32f,
+		0
+		);
+	glBindFramebuffer(GL_FRAMEBUFFER, fringeContext_.stereogram_gl_fbo);
 	glFramebufferTexture2D(
 		GL_FRAMEBUFFER,
 		GL_COLOR_ATTACHMENT0,
+		GL_TEXTURE_2D,
+		fringeContext_.stereogram_gl_fbo_color,
+		0
+		);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	glFramebufferTexture2D(
+		GL_FRAMEBUFFER,
+		GL_COLOR_ATTACHMENT1,
 		GL_TEXTURE_2D,
 		fringeContext_.stereogram_gl_fbo_color,
 		0
@@ -1567,7 +1610,7 @@ void DSCP4Render::drawFringeTextures()
 		glMatrixMode(GL_MODELVIEW);
 		glLoadMatrixf(glm::value_ptr(glm::mat4()));
 
-		glClearColor(1.0f, 1.0f, 0.5f, 1.0f);
+		glClearColor(1.f, 1.f, .5f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		glDisable(GL_LIGHTING);

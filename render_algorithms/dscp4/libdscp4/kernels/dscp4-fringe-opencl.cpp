@@ -149,7 +149,7 @@ extern "C" {
 		CHECK_OPENCL_RC(ret, "Could not create OpenCL stereogram RGBA memory resource from OpenGL")
 
 			context->stereogram_depth_opencl_resource = clCreateFromGLTexture2D((cl_context)context->cl_context, CL_MEM_READ_ONLY, GL_TEXTURE_2D, 0,
-			fringeContext->stereogram_gl_fbo_depth, &ret);
+			fringeContext->stereogram_gl_fbo_depth_r32f, &ret);
 		CHECK_OPENCL_RC(ret, "Could not create OpenCL stereogram DEPTH memory resource from OpenGL")
 
 		context->fringe_opencl_resources = (void**)malloc(sizeof(void*)*num_output_buffers);

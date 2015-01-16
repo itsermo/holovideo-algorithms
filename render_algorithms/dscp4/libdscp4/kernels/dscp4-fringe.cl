@@ -18,10 +18,10 @@ __kernel void turn_red(__write_only image2d_t fringe, __read_only image2d_t colo
 	else
 		val = (float4)(0.0f, 0.0f, 1.0f, 1.0f);
 	
-	//val = read_imagef(color, sampler, coords);
-	float4 d = read_imagef(depth, sampler, coords);
+	val = read_imagef(color, sampler, coords);
+	//val = read_imagef(depth, sampler, coords);
 
-	val[0] = 1.f - d[0];
+	//val[0] = 1.f - d[0];
 
 	write_imagef(fringe, coords, val);
 }
