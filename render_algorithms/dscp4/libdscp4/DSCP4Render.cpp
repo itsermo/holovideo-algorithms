@@ -770,7 +770,7 @@ void DSCP4Render::drawForStereogram()
 		
 		glMatrixMode(GL_PROJECTION);
 
-		const float ratio = (float)windowWidth_[0] / (float)windowHeight_[0];
+		const float ratio = static_cast<float>(tileX) / static_cast<float>(tileY);
 		const float q = (i - fringeContext_.algorithm_options.num_views_x * 0.5f) / static_cast<float>(fringeContext_.algorithm_options.num_views_x) * fringeContext_.algorithm_options.fov_y * DEG_TO_RAD;
 
 		projectionMatrix_ = buildOrthoXPerspYProjMat(-ratio, ratio, -1.0f, 1.0f, zNear_, zFar_, q);
