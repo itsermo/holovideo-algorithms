@@ -182,7 +182,12 @@ void dscp4_fringe_cuda_ComputeFringe(dscp4_fringe_cuda_context_t* cudaContext)
 		error = cudaGraphicsResourceGetMappedPointer(&output[i], &outputSizes[i], cudaContext->fringe_cuda_resources[i]);
 	}
 
-	error = cudaMemset(rgbaPtr, 255, 640*480*10);
+	for (int i = 0; i < STEREOGRAM_HEIGHT; i++)
+	{
+		error = cudaMemset((char*)output[0] + i*3552*4, 255, STEREOGRAM_WIDTH * 4);
+		error = cudaMemset((char*)output[1] + i*3552*4, 127, STEREOGRAM_WIDTH * 4);
+		error = cudaMemset((char*)output[2] + i*3552*4, 30, STEREOGRAM_WIDTH * 4);
+	}
 
 	// run kernel here
 	dim3 threadsPerBlock(16, 16);
