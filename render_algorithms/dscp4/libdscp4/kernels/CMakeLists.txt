@@ -57,9 +57,15 @@ if(WITH_OPENCL)
   		SET_TARGET_PROPERTIES(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "-fPIC")
 	endif()
 	
-	
 	target_include_directories(${PROJECT_NAME} PUBLIC ${OPENCL_INCLUDE_DIRS} ${OpenGL_INCLUDE_DIR})
 
-	target_link_libraries(${PROJECT_NAME} ${OPENCL_LIBRARIES} ${OPENGL_gl_LIBRARY})
+	target_link_libraries(${PROJECT_NAME} LINK_PUBLIC ${OPENCL_LIBRARIES} ${OPENGL_gl_LIBRARY})
+	
+	if(WITH_LIBLOG4CXX)
+		add_definitions(-DDSCP4_HAVE_LOG4CXX)
+		target_include_directories(${PROJECT_NAME} PUBLIC ${LIBLOG4CXX_INCLUDE_DIRS})
+		target_link_libraries(${PROJECT_NAME} LINK_PUBLIC ${LIBLOG4CXX_LIBRARIES})
+	endif()
+
 	
 endif()
