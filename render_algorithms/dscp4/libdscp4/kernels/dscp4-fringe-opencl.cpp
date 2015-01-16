@@ -145,10 +145,10 @@ extern "C" {
 		context->command_queue = clCreateCommandQueue((cl_context)context->cl_context, deviceID, 0, &ret);
 		CHECK_OPENCL_RC(ret, "Could not create OpenCL command queue")
 
-		context->stereogram_rgba_opencl_resource = clCreateFromGLRenderbuffer((cl_context)context->cl_context, CL_MEM_READ_ONLY, fringeContext->stereogram_gl_fbo_color, &ret);
+			context->stereogram_rgba_opencl_resource = clCreateFromGLTexture2D((cl_context)context->cl_context, CL_MEM_READ_ONLY, GL_TEXTURE_2D, 0, fringeContext->stereogram_gl_fbo_color, &ret);
 		CHECK_OPENCL_RC(ret, "Could not create OpenCL stereogram RGBA memory resource from OpenGL")
 
-		context->stereogram_depth_opencl_resource = clCreateFromGLRenderbuffer((cl_context)context->cl_context, CL_MEM_READ_ONLY,
+			context->stereogram_depth_opencl_resource = clCreateFromGLTexture2D((cl_context)context->cl_context, CL_MEM_READ_ONLY, GL_TEXTURE_2D, 0,
 			fringeContext->stereogram_gl_fbo_depth, &ret);
 		CHECK_OPENCL_RC(ret, "Could not create OpenCL stereogram DEPTH memory resource from OpenGL")
 
