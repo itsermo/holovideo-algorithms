@@ -903,20 +903,17 @@ void DSCP4Render::drawForFringe()
 #endif
 
 	glReadBuffer(GL_COLOR_ATTACHMENT0);
-	if (fringeContext_.algorithm_options.compute_method == DSCP4_COMPUTE_METHOD_CUDA)
-	{
+
 #ifdef DSCP4_ENABLE_TRACE_LOG
 		duration = measureTime<>(std::bind(&DSCP4Render::copyStereogramToPBOs, this));
 		LOG4CXX_TRACE(logger_, "Copying stereogram " << fringeContext_.algorithm_options.num_views_x << " views to PBOs took " << duration << " ms (" << 1.f / duration * 1000 << " fps)")
 #else
 		copyStereogramToPBOs();
 #endif
-	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glReadBuffer(GL_BACK);
 	glDrawBuffer(GL_BACK);
-
 
 #ifdef DSCP4_ENABLE_TRACE_LOG
 	duration = measureTime<>(std::bind(&DSCP4Render::computeHologram, this));
@@ -1468,26 +1465,27 @@ void DSCP4Render::initFringeBuffers()
 	//glFramebufferRenderbuffer(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, fringeContext_.stereogram_gl_fbo_depth);
 
 
+	// begin generation of stereogram view buffers (these will go into CUDA kernels)
+	size_t rgba_size = stereogramWidth * stereogramHeight * sizeof(GLbyte)* 4;
+	size_t depth_size = stereogramWidth * stereogramHeight * sizeof(GLuint);
+
+	// Create a PBO to store depth data.  Every frame rendered,
+	// depth buffer is copied into this PBO, which is sent to OpenCL kernel
+	glGenBuffers(1, &fringeContext_.stereogram_gl_depth_buf_in);
+	glBindBuffer(GL_ARRAY_BUFFER, fringeContext_.stereogram_gl_depth_buf_in);
+	glBufferData(GL_ARRAY_BUFFER, depth_size, NULL, GL_DYNAMIC_DRAW);
+
 	if (fringeContext_.algorithm_options.compute_method == DSCP4_COMPUTE_METHOD_CUDA)
 	{
-		// begin generation of stereogram view buffers (these will go into CUDA kernels)
-		size_t rgba_size = stereogramWidth * stereogramHeight * sizeof(GLbyte)* 4;
-		size_t depth_size = stereogramWidth * stereogramHeight * sizeof(GLuint);
-
-		// Create a PBO to store RGBA and DEPTH buffer of stereogram views
-		// This will be passed to CUDA or OpenCL kernels for fringe computation
+		// Create a PBO to store RGBA
 		glGenBuffers(1, &fringeContext_.stereogram_gl_rgba_buf_in);
-		glGenBuffers(1, &fringeContext_.stereogram_gl_depth_buf_in);
 
 		glBindBuffer(GL_ARRAY_BUFFER, fringeContext_.stereogram_gl_rgba_buf_in);
 		glBufferData(GL_ARRAY_BUFFER, rgba_size, NULL, GL_DYNAMIC_DRAW);
-
-		glBindBuffer(GL_ARRAY_BUFFER, fringeContext_.stereogram_gl_depth_buf_in);
-		glBufferData(GL_ARRAY_BUFFER, depth_size, NULL, GL_DYNAMIC_DRAW);
-
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-		//end generation of stereogram view buffers
 	}
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	//end generation of stereogram view buffers
 
 	// Create N-textures for outputting fringe data to the X displays
 	// Whatever holographic computation is done will be written
@@ -1556,14 +1554,18 @@ void DSCP4Render::copyStereogramToPBOs()
 	const int stereogramWidth = fringeContext_.algorithm_options.num_wafels_per_scanline * static_cast<unsigned int>(sqrt(fringeContext_.algorithm_options.num_views_x));
 	const int stereogramHeight = fringeContext_.algorithm_options.num_scanlines * static_cast<unsigned int>(sqrt(fringeContext_.algorithm_options.num_views_x));
 
-	//copy RGBA from stereogram views
-	glBindBuffer(GL_PIXEL_PACK_BUFFER, fringeContext_.stereogram_gl_rgba_buf_in);
+	// OpenCL can read RGBA texture directly from framebuffer, so we don't need to create PBO object
+	if (fringeContext_.algorithm_options.compute_method == DSCP4_COMPUTE_METHOD_CUDA)
+	{
+		//copy RGBA from stereogram views
+		glBindBuffer(GL_PIXEL_PACK_BUFFER, fringeContext_.stereogram_gl_rgba_buf_in);
 	glReadPixels(0, 0,
 		stereogramWidth,
 		stereogramHeight,
 		GL_RGBA, GL_UNSIGNED_BYTE, 0);
+	}
 
-	//copy DEPTH from stereogram views
+	//copy DEPTH from stereogram views, because CUDA/OpenCL cannot access depth data directly from framebuffer
 	glBindBuffer(GL_PIXEL_PACK_BUFFER, fringeContext_.stereogram_gl_depth_buf_in);
 	glReadPixels(0, 0,
 		stereogramWidth,
