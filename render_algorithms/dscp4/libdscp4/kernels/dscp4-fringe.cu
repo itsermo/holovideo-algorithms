@@ -13,6 +13,7 @@ const int N = 16;
 const int blocksize = 16;
 
 #include <stdio.h>
+#include <math.h>
 
 __global__ void hello(char *a, int *b)
 {
@@ -153,6 +154,9 @@ void dscp4_fringe_cuda_ComputeFringe(dscp4_fringe_cuda_context_t* cudaContext)
 		cudaContext->fringe_context->display_options.num_heads * sizeof(char) * 3 /
 		NUM_WAFELS;
 
+	const int STEREOGRAM_WIDTH = (int)sqrt((double)cudaContext->fringe_context->algorithm_options.num_views_x) * cudaContext->fringe_context->algorithm_options.num_wafels_per_scanline;
+	const int STEREOGRAM_HEIGHT = (int)sqrt((double)cudaContext->fringe_context->algorithm_options.num_views_x) * cudaContext->fringe_context->algorithm_options.num_scanlines;
+
 	void **output;
 	size_t * outputSizes;
 
@@ -178,14 +182,11 @@ void dscp4_fringe_cuda_ComputeFringe(dscp4_fringe_cuda_context_t* cudaContext)
 		error = cudaGraphicsResourceGetMappedPointer(&output[i], &outputSizes[i], cudaContext->fringe_cuda_resources[i]);
 	}
 
-	//error = cudaMemset(output[0], 255, outputSizes[0]);
+	error = cudaMemset(rgbaPtr, 255, 640*480*10);
 
 	// run kernel here
-	dim3 threadsPerBlock(
-		cudaContext->fringe_context->algorithm_options.num_wafels_per_scanline,
-		cudaContext->fringe_context->algorithm_options.num_scanlines);
-	dim3 numBlocks(cudaContext->fringe_context->algorithm_options.num_wafels_per_scanline * 4 / threadsPerBlock.x,
-		cudaContext->fringe_context->algorithm_options.num_scanlines * 4 / threadsPerBlock.y);
+	dim3 threadsPerBlock(16, 16);
+	dim3 numBlocks(32,1);
 	computeFringe <<<numBlocks, threadsPerBlock >>>(output[0], rgbaPtr, depthPtr);
 
 

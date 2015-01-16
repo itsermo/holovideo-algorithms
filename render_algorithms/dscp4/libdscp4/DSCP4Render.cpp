@@ -902,9 +902,7 @@ void DSCP4Render::drawForFringe()
 	drawForStereogram();
 #endif
 
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	glDrawBuffer(GL_BACK);
-
+	glReadBuffer(GL_COLOR_ATTACHMENT0);
 	if (fringeContext_.algorithm_options.compute_method == DSCP4_COMPUTE_METHOD_CUDA)
 	{
 #ifdef DSCP4_ENABLE_TRACE_LOG
@@ -914,6 +912,11 @@ void DSCP4Render::drawForFringe()
 		copyStereogramToPBOs();
 #endif
 	}
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glReadBuffer(GL_BACK);
+	glDrawBuffer(GL_BACK);
+
 
 #ifdef DSCP4_ENABLE_TRACE_LOG
 	duration = measureTime<>(std::bind(&DSCP4Render::computeHologram, this));
@@ -1617,26 +1620,29 @@ void DSCP4Render::drawFringeTextures()
 
 		glBindTexture(GL_TEXTURE_2D, fringeContext_.fringe_gl_tex_out[i]);
 
-//		glBindBuffer(GL_PIXEL_UNPACK_BUFFER, fringeContext_.fringe_gl_buf_out[i]);
-//
-//#ifdef DSCP4_ENABLE_TRACE_LOG
-//		auto duration = measureTime<>([&](){
-//			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
-//				fringeContext_.display_options.head_res_x,
-//				fringeContext_.display_options.head_res_y * 2,
-//				0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
-//		});
-//		LOG4CXX_TRACE(logger_, "Copying hologram fringe result " << i << " to texture took " << duration << " ms (" << 1.f / duration * 1000 << " fps)")
-//#else
-//		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
-//			fringeContext_.display_options.head_res_x,
-//			fringeContext_.display_options.head_res_y * 2,
-//			0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
-//#endif
+		if (fringeContext_.algorithm_options.compute_method == DSCP4_COMPUTE_METHOD_CUDA)
+		{
+			glBindBuffer(GL_PIXEL_UNPACK_BUFFER, fringeContext_.fringe_gl_buf_out[i]);
+			
+			#ifdef DSCP4_ENABLE_TRACE_LOG
+					auto duration = measureTime<>([&](){
+						glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
+							fringeContext_.display_options.head_res_x,
+							fringeContext_.display_options.head_res_y * 2,
+							0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+					});
+					LOG4CXX_TRACE(logger_, "Copying hologram fringe result " << i << " to texture took " << duration << " ms (" << 1.f / duration * 1000 << " fps)")
+			#else
+					glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
+						fringeContext_.display_options.head_res_x,
+						fringeContext_.display_options.head_res_y * 2,
+						0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+			#endif
 
-		//glBindBuffer(GL_PIXEL_UNPACK_BUFFER, fringeContext_.stereogram_gl_rgba_buf_in);
+			//glBindBuffer(GL_PIXEL_UNPACK_BUFFER, fringeContext_.stereogram_gl_rgba_buf_in);
 
-		//glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 4*fringeContext_.algorithm_options.num_wafels_per_scanline, 4*fringeContext_.algorithm_options.num_scanlines, GL_RGBA, GL_UNSIGNED_BYTE,0);
+			//glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 4*fringeContext_.algorithm_options.num_wafels_per_scanline, 4*fringeContext_.algorithm_options.num_scanlines, GL_RGBA, GL_UNSIGNED_BYTE,0);
+		}
 
 		glEnableClientState(GL_VERTEX_ARRAY);
 		glVertexPointer(3, GL_FLOAT, 0, Vertices);
