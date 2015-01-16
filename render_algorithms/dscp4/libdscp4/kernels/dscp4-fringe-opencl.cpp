@@ -15,6 +15,8 @@
 #include <sstream>
 #include <fstream>
 #include <string>
+#include <math.h>
+#include <stdio.h>
 
 #include <CL/cl.h>
 #include <CL/cl_gl.h>
@@ -73,7 +75,7 @@ extern "C" {
 		cl_int ret = CL_SUCCESS;
 
 		dscp4_fringe_opencl_context_t * context = (dscp4_fringe_opencl_context_t*)malloc(sizeof(dscp4_fringe_opencl_context_t));
-		memset(context, 0, sizeof(dscp4_fringe_opencl_context_t));
+		//memset(context, 0, sizeof(dscp4_fringe_opencl_context_t));
 
 		LOG4CXX_DEBUG(DSCP4_OPENCL_LOGGER, "Creating OpenCL Context");
 
