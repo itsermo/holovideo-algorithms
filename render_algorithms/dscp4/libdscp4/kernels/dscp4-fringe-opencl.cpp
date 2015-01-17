@@ -164,11 +164,14 @@ extern "C" {
 		context->command_queue = clCreateCommandQueue((cl_context)context->cl_context, deviceID, 0, &ret);
 		CHECK_OPENCL_RC(ret, "Could not create OpenCL command queue")
 
-			context->stereogram_rgba_opencl_resource = clCreateFromGLTexture2D((cl_context)context->cl_context, CL_MEM_READ_ONLY, GL_TEXTURE_2D, 0, fringeContext->stereogram_gl_fbo_color, &ret);
+		context->stereogram_rgba_opencl_resource = clCreateFromGLTexture2D((cl_context)context->cl_context, CL_MEM_READ_ONLY, GL_TEXTURE_2D, 0, fringeContext->stereogram_gl_fbo_color, &ret);
 		CHECK_OPENCL_RC(ret, "Could not create OpenCL stereogram RGBA memory resource from OpenGL")
 
-			context->stereogram_depth_opencl_resource = clCreateFromGLBuffer((cl_context)context->cl_context, CL_MEM_READ_ONLY,
-			fringeContext->stereogram_gl_depth_buf_in, &ret);
+		if (context->have_cl_gl_depth_images_extension)
+			context->stereogram_depth_opencl_resource = clCreateFromGLTexture2D((cl_context)context->cl_context, CL_MEM_READ_ONLY, GL_TEXTURE_2D, 0, fringeContext->stereogram_gl_fbo_depth, &ret);
+		else
+			context->stereogram_depth_opencl_resource = clCreateFromGLBuffer((cl_context)context->cl_context, CL_MEM_READ_ONLY, fringeContext->stereogram_gl_depth_buf_in, &ret);
+
 		CHECK_OPENCL_RC(ret, "Could not create OpenCL stereogram DEPTH memory resource from OpenGL")
 
 		context->fringe_opencl_resources = new void*[num_output_buffers];
@@ -187,7 +190,11 @@ extern "C" {
 		ret = clBuildProgram((cl_program)context->program, 1, &deviceID, NULL, NULL, NULL);
 		CHECK_OPENCL_RC(ret, "Could not build OpenCL program from source")
 
-		context->kernel = clCreateKernel((cl_program)context->program, "test_hologram", &ret);
+		if (context->have_cl_gl_depth_images_extension)
+			context->kernel = clCreateKernel((cl_program)context->program, "test_hologram2", &ret);
+		else
+			context->kernel = clCreateKernel((cl_program)context->program, "test_hologram", &ret);
+
 		CHECK_OPENCL_RC(ret, "Could not create OpenCL kernel object")
 
 		//context->kernel_global_worksize[0] = 64 - (context->fringe_context->algorithm_options.num_wafels_per_scanline % 64) + context->fringe_context->algorithm_options.num_wafels_per_scanline;
