@@ -1524,7 +1524,7 @@ void DSCP4Render::copyStereogramToPBOs()
 	if (fringeContext_.algorithm_options.compute_method == DSCP4_COMPUTE_METHOD_CUDA ||
 		!((dscp4_fringe_opencl_context_t*)computeContext_)->have_cl_gl_depth_images_extension)
 	{
-#else
+#endif
 	//copy DEPTH from stereogram views, because CUDA/OpenCL cannot access depth data directly from framebuffer
 	glBindBuffer(GL_PIXEL_PACK_BUFFER, fringeContext_.stereogram_gl_depth_buf_in);
 	glReadPixels(0, 0,
@@ -1534,7 +1534,6 @@ void DSCP4Render::copyStereogramToPBOs()
 
 	glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-#endif
 
 #ifdef DSCP4_HAVE_OPENCL
 	}
