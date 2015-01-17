@@ -20,6 +20,8 @@ extern "C" {
 		void * program;
 		void * command_queue;
 		void * logger;
+		bool have_cl_gl_depth_images_extension;
+		bool have_cl_gl_sharing_extension;
 	} dscp4_fringe_opencl_context_t;
 
 	dscp4_fringe_opencl_context_t* dscp4_fringe_opencl_CreateContext(dscp4_fringe_context_t *fringeContext, int *glContext);

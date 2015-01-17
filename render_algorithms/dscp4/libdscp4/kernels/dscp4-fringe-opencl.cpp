@@ -115,6 +115,23 @@ extern "C" {
 
 		CHECK_OPENCL_RC(clGetDeviceIDs(platformID, CL_DEVICE_TYPE_GPU, 1, &deviceID, &numDevices), "Getting OpenCL device ID for GPUs")
 
+		size_t extensionSize;
+		clGetDeviceInfo(deviceID, CL_DEVICE_EXTENSIONS, 0, NULL, &extensionSize);
+		char *extensions = new char[extensionSize];
+		clGetDeviceInfo(deviceID, CL_DEVICE_EXTENSIONS, extensionSize, extensions, NULL);
+
+		std::stringstream extensionsStringStream(extensions);
+		std::string extension;
+		while (std::getline(extensionsStringStream, extension, ' '))
+		{
+			if (extension == "cl_khr_gl_depth_images")
+				context->have_cl_gl_depth_images_extension = true;
+			else if (extension == "cl_khr_gl_sharing")
+				context->have_cl_gl_sharing_extension = true;
+		}
+
+		delete[] extensions;
+
 		LOG4CXX_DEBUG(DSCP4_OPENCL_LOGGER, "Found " << numDevices << " OpenCL GPU devices")
 
 		context->num_gpus = numDevices;
