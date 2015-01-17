@@ -1515,17 +1515,31 @@ void DSCP4Render::copyStereogramToPBOs()
 			fringeContext_.algorithm_options.cache.stereogram_res_x,
 			fringeContext_.algorithm_options.cache.stereogram_res_y,
 			GL_RGBA, GL_UNSIGNED_BYTE, 0);
-
-		//copy DEPTH from stereogram views, because CUDA/OpenCL cannot access depth data directly from framebuffer
-		glBindBuffer(GL_PIXEL_PACK_BUFFER, fringeContext_.stereogram_gl_depth_buf_in);
-		glReadPixels(0, 0,
-			fringeContext_.algorithm_options.cache.stereogram_res_x,
-			fringeContext_.algorithm_options.cache.stereogram_res_y,
-			GL_DEPTH_COMPONENT, GL_FLOAT, 0);
-
-		glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
+
+	// If we compile with OpenCL support, check to see if OpenCL supports
+	// depth texture extensions.  If not, then we need to copy depth texture
+	// to PBO, which is a performance hit (NVIDIA so far does not support this)
+#ifdef DSCP4_HAVE_OPENCL
+	if (fringeContext_.algorithm_options.compute_method == DSCP4_COMPUTE_METHOD_CUDA ||
+		!((dscp4_fringe_opencl_context_t*)computeContext_)->have_cl_gl_depth_images_extension)
+	{
+#else
+	//copy DEPTH from stereogram views, because CUDA/OpenCL cannot access depth data directly from framebuffer
+	glBindBuffer(GL_PIXEL_PACK_BUFFER, fringeContext_.stereogram_gl_depth_buf_in);
+	glReadPixels(0, 0,
+		fringeContext_.algorithm_options.cache.stereogram_res_x,
+		fringeContext_.algorithm_options.cache.stereogram_res_y,
+		GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+
+	glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+#endif
+
+#ifdef DSCP4_HAVE_OPENCL
+	}
+#endif
+
 }
 
 void DSCP4Render::drawFringeTextures()
