@@ -22,7 +22,7 @@ __kernel void turn_red(__write_only image2d_t fringe, __read_only image2d_t colo
 	//val = read_imagef(color, sampler, coords);
 	//float4 d = read_imagef(depth, sampler, coords);
 
-	val[which_buffer] = 1.f - d;
+	val.x = 1.f - d;
 
 	write_imagef(fringe, coords, val);
 }

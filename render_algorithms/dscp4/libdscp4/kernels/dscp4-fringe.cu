@@ -191,8 +191,8 @@ void dscp4_fringe_cuda_ComputeFringe(dscp4_fringe_cuda_context_t* cudaContext)
 
 	// run kernel here
 	dim3 threadsPerBlock(16, 16);
-	dim3 numBlocks(32,1);
-	computeFringe <<<numBlocks, threadsPerBlock >>>(output[0], rgbaPtr, depthPtr);
+	dim3 numBlocks(32,32);
+	//computeFringe <<<numBlocks, threadsPerBlock >>>(output[0], rgbaPtr, depthPtr);
 
 
 	//write texture outputs here
