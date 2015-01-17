@@ -145,6 +145,10 @@ namespace dscp4
 		void initFringeBuffers();
 		void deinitFringeBuffers();
 
+		// calculates the algorithm cached parameters for
+		// generating stereogram views and fringe pattern computation
+		void updateAlgorithmOptionsCache();
+
 		// The general rendering loop, this function is run for all render modes
 		// sets up the renderer and calls the appropriate draw() function
 		// which corresponds to the selected rendermode

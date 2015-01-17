@@ -35,6 +35,9 @@
 #define DSCP4_DEFAULT_DISPLAY_HEAD_RES_Y			2476
 #define DSCP4_DEFAULT_LOG_VERBOSITY					3
 #define DSCP4_DEFAULT_COMPUTE_METHOD				DSCP4_COMPUTE_METHOD_CUDA
+#define DSCP4_DEFAULT_ALGORITHM_OPENCL_KERNEL_FILENAME	"dscp4-fringe.cl"
+#define DSCP4_DEFAULT_ALGORITHM_OPENCL_WORKSIZE_X	64
+#define DSCP4_DEFAULT_ALGORITHM_OPENCL_WORKSIZE_Y	64
 
 #ifndef __cplusplus
 #include <stdbool.h>
@@ -138,12 +141,47 @@ extern "C"{
 		bool auto_scale_enabled;
 	} render_options_t;
 
+	// values that are computed once, based on algorithm
+	// parameters and display options, to set up the
+	// stereogram grid and also compute fringe pattern
+	typedef struct
+	{
+		// the number of output buffers,
+		// this is normally number of heads / number of heads per gpu
+		unsigned int num_output_buffers;
+
+		// the output buffer resolution in the X dimension (in pixels)
+		unsigned int output_buffer_res_x;
+
+		// the output buffer resolution in the Y dimension (in pixels)
+		unsigned int output_buffer_res_y;
+
+		// the width of the entire stereogram, in pixels
+		unsigned int stereogram_res_x;
+
+		// the height of the entire stereogram, in pixels
+		unsigned int stereogram_res_y;
+
+		// the number of views in the X dimension, in the stereogram grid
+		unsigned int stereogram_tile_x;
+
+		// the number of views in the Y dimension, in the stereogram grid
+		unsigned int stereogram_tile_y;
+
+		// the kernel is run on an entire hologram frame, that means
+		// this needs to be num wafels per scanline * num scanlines,
+		// but the size must be a multiple of local workgroup size
+		size_t opencl_global_workgroup_size[2];
+	} algorithm_cache_t;
+
 	typedef struct
 	{
 		unsigned int num_views_x, num_views_y, num_wafels_per_scanline, num_scanlines;
 		float fov_x, fov_y;
 		compute_method_t compute_method;
 		const char * opencl_kernel_filename;
+		size_t opencl_local_workgroup_size[2];
+		algorithm_cache_t cache;
 	} algorithm_options_t;
 
 	typedef struct

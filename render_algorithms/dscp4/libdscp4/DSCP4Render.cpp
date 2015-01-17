@@ -47,7 +47,11 @@ DSCP4Render::DSCP4Render() :
 						DSCP4_DEFAULT_ALGORITHM_NUM_SCANLINES,
 						DSCP4_DEFAULT_ALGORITHM_FOV_X,
 						DSCP4_DEFAULT_ALGORITHM_FOV_Y,
-						DSCP4_DEFAULT_COMPUTE_METHOD },
+						DSCP4_DEFAULT_COMPUTE_METHOD,
+						DSCP4_DEFAULT_ALGORITHM_OPENCL_KERNEL_FILENAME,
+						{ DSCP4_DEFAULT_ALGORITHM_OPENCL_WORKSIZE_X ,
+						DSCP4_DEFAULT_ALGORITHM_OPENCL_WORKSIZE_Y},
+						algorithm_cache_t() },
 					display_options_t {
 						DSCP4_DEFAULT_DISPLAY_NAME,
 						DSCP4_DEFAULT_DISPLAY_NUM_HEADS,
@@ -202,6 +206,8 @@ bool DSCP4Render::init()
 	glContexts_ = new SDL_GLContext[numWindows_];
 	windowWidth_ = new unsigned int[numWindows_];
 	windowHeight_ = new unsigned int[numWindows_];
+
+	updateAlgorithmOptionsCache();
 
 	std::unique_lock<std::mutex> initLock(isInitMutex_);
 	shouldRender_ = true;
@@ -747,16 +753,16 @@ void DSCP4Render::drawForStereogram()
 	// X and Y resolution for each tile, or stereogram view
 	// For "STEREOGRAM" render mode, we divide x and y res by 2
 	// so that many views can fit in the window, just for user friendliness
-	const int tileX = renderOptions_.render_mode == DSCP4_RENDER_MODE_STEREOGRAM_VIEWING ?
+	const int tile_x_res = renderOptions_.render_mode == DSCP4_RENDER_MODE_STEREOGRAM_VIEWING ?
 		fringeContext_.algorithm_options.num_wafels_per_scanline / 2 :
 		fringeContext_.algorithm_options.num_wafels_per_scanline;
 
-	const int tileY = renderOptions_.render_mode == DSCP4_RENDER_MODE_STEREOGRAM_VIEWING ?
+	const int tile_y_res = renderOptions_.render_mode == DSCP4_RENDER_MODE_STEREOGRAM_VIEWING ?
 		fringeContext_.algorithm_options.num_scanlines / 2 :
 		fringeContext_.algorithm_options.num_scanlines;
 
 	// The grid dimension
-	const int tileDim = static_cast<unsigned int>(sqrt(fringeContext_.algorithm_options.num_views_x));
+	const int tile_dim = static_cast<unsigned int>(sqrt(fringeContext_.algorithm_options.num_views_x));
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -766,11 +772,11 @@ void DSCP4Render::drawForStereogram()
 
 	for (unsigned int i = 0; i < fringeContext_.algorithm_options.num_views_x; i++)
 	{
-		glViewport(tileX*(i%tileDim), tileY*(i / tileDim), tileX, tileY);
+		glViewport(tile_x_res*(i%tile_dim), tile_y_res*(i / tile_dim), tile_x_res, tile_y_res);
 		
 		glMatrixMode(GL_PROJECTION);
 
-		const float ratio = static_cast<float>(tileX) / static_cast<float>(tileY);
+		const float ratio = static_cast<float>(tile_x_res) / static_cast<float>(tile_y_res);
 		const float q = (i - fringeContext_.algorithm_options.num_views_x * 0.5f) / static_cast<float>(fringeContext_.algorithm_options.num_views_x) * fringeContext_.algorithm_options.fov_y * DEG_TO_RAD;
 
 		projectionMatrix_ = buildOrthoXPerspYProjMat(-ratio, ratio, -1.0f, 1.0f, zNear_, zFar_, q);
@@ -1339,8 +1345,6 @@ int DSCP4Render::inputStateChanged(void* userdata, SDL_Event* event)
 
 void DSCP4Render::initFringeBuffers()
 {
-	const int stereogramWidth = fringeContext_.algorithm_options.num_wafels_per_scanline * static_cast<unsigned int>(sqrt(fringeContext_.algorithm_options.num_views_x));
-	const int stereogramHeight = fringeContext_.algorithm_options.num_scanlines * static_cast<unsigned int>(sqrt(fringeContext_.algorithm_options.num_views_x));
 
 	fringeContext_.fringe_gl_tex_out = new GLuint[numWindows_];
 	fringeContext_.fringe_gl_buf_out = new GLuint[numWindows_];
@@ -1360,8 +1364,8 @@ void DSCP4Render::initFringeBuffers()
 		GL_TEXTURE_2D,
 		0,
 		GL_DEPTH_COMPONENT32F,
-		stereogramWidth,
-		stereogramHeight,
+		fringeContext_.algorithm_options.cache.stereogram_res_x,
+		fringeContext_.algorithm_options.cache.stereogram_res_y,
 		0,
 		GL_DEPTH_COMPONENT,
 		GL_FLOAT,
@@ -1382,8 +1386,8 @@ void DSCP4Render::initFringeBuffers()
 		GL_TEXTURE_2D,
 		0,
 		GL_RGBA8,
-		stereogramWidth,
-		stereogramHeight,
+		fringeContext_.algorithm_options.cache.stereogram_res_x,
+		fringeContext_.algorithm_options.cache.stereogram_res_y,
 		0,
 		GL_RGBA,
 		GL_FLOAT,
@@ -1402,8 +1406,8 @@ void DSCP4Render::initFringeBuffers()
 		GL_TEXTURE_2D,
 		0,
 		GL_R32F,
-		stereogramWidth,
-		stereogramHeight,
+		fringeContext_.algorithm_options.cache.stereogram_res_x,
+		fringeContext_.algorithm_options.cache.stereogram_res_y,
 		0,
 		GL_RED,
 		GL_FLOAT,
@@ -1466,8 +1470,8 @@ void DSCP4Render::initFringeBuffers()
 
 
 	// begin generation of stereogram view buffers (these will go into CUDA kernels)
-	size_t rgba_size = stereogramWidth * stereogramHeight * sizeof(GLbyte)* 4;
-	size_t depth_size = stereogramWidth * stereogramHeight * sizeof(GLuint);
+	size_t rgba_size = fringeContext_.algorithm_options.cache.stereogram_res_x * fringeContext_.algorithm_options.cache.stereogram_res_y * sizeof(GLbyte)* 4;
+	size_t depth_size = fringeContext_.algorithm_options.cache.stereogram_res_x * fringeContext_.algorithm_options.cache.stereogram_res_y * sizeof(GLfloat);
 
 	// Create a PBO to store depth data.  Every frame rendered,
 	// depth buffer is copied into this PBO, which is sent to OpenCL kernel
@@ -1490,33 +1494,33 @@ void DSCP4Render::initFringeBuffers()
 	// Create N-textures for outputting fringe data to the X displays
 	// Whatever holographic computation is done will be written
 	// To these textures and ultimately displayed on the holovideo display
-	glGenTextures(numWindows_, fringeContext_.fringe_gl_tex_out);
+	glGenTextures(fringeContext_.algorithm_options.cache.num_output_buffers, fringeContext_.fringe_gl_tex_out);
 
-	char *blah = new char[fringeContext_.display_options.head_res_x * fringeContext_.display_options.head_res_y * 2 * 4];
-	for (size_t i = 0; i < fringeContext_.display_options.head_res_x * fringeContext_.display_options.head_res_y * 2 * 4; i++)
+	char *blah = new char[fringeContext_.algorithm_options.cache.output_buffer_res_x * fringeContext_.algorithm_options.cache.output_buffer_res_y * 4];
+	for (size_t i = 0; i < fringeContext_.algorithm_options.cache.output_buffer_res_x * fringeContext_.algorithm_options.cache.output_buffer_res_y * 4; i++)
 	{
 		blah[i] = i % 255;
 	}
 
 	if (fringeContext_.algorithm_options.compute_method == DSCP4_COMPUTE_METHOD_CUDA)
 	{
-		glGenBuffers(numWindows_, fringeContext_.fringe_gl_buf_out);
+		glGenBuffers(fringeContext_.algorithm_options.cache.num_output_buffers, fringeContext_.fringe_gl_buf_out);
 
-		for (unsigned int i = 0; i < numWindows_; i++)
+		for (unsigned int i = 0; i < fringeContext_.algorithm_options.cache.num_output_buffers; i++)
 		{
 			glBindBuffer(GL_ARRAY_BUFFER, fringeContext_.fringe_gl_buf_out[i]);
-			glBufferData(GL_ARRAY_BUFFER, fringeContext_.display_options.head_res_x * fringeContext_.display_options.head_res_y * 2 * sizeof(GLbyte)* 4, blah, GL_DYNAMIC_DRAW);
+			glBufferData(GL_ARRAY_BUFFER, fringeContext_.algorithm_options.cache.output_buffer_res_x * fringeContext_.algorithm_options.cache.output_buffer_res_y * sizeof(GLbyte)* 4, blah, GL_DYNAMIC_DRAW);
 			glBindBuffer(GL_ARRAY_BUFFER, 0);
 		}
 	}
 
-	for (size_t i = 0; i < numWindows_; i++)
+	for (size_t i = 0; i < fringeContext_.algorithm_options.cache.num_output_buffers; i++)
 	{
 		glBindTexture(GL_TEXTURE_2D, fringeContext_.fringe_gl_tex_out[i]);
 
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8,
-			fringeContext_.display_options.head_res_x,
-			fringeContext_.display_options.head_res_y * 2,
+			fringeContext_.algorithm_options.cache.output_buffer_res_x,
+			fringeContext_.algorithm_options.cache.output_buffer_res_y,
 			0, GL_RGBA, GL_UNSIGNED_BYTE, blah);
 
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -1551,25 +1555,22 @@ void DSCP4Render::deinitFringeBuffers()
 
 void DSCP4Render::copyStereogramToPBOs()
 {
-	const int stereogramWidth = fringeContext_.algorithm_options.num_wafels_per_scanline * static_cast<unsigned int>(sqrt(fringeContext_.algorithm_options.num_views_x));
-	const int stereogramHeight = fringeContext_.algorithm_options.num_scanlines * static_cast<unsigned int>(sqrt(fringeContext_.algorithm_options.num_views_x));
-
 	// OpenCL can read RGBA texture directly from framebuffer, so we don't need to create PBO object
 	if (fringeContext_.algorithm_options.compute_method == DSCP4_COMPUTE_METHOD_CUDA)
 	{
 		//copy RGBA from stereogram views
 		glBindBuffer(GL_PIXEL_PACK_BUFFER, fringeContext_.stereogram_gl_rgba_buf_in);
 	glReadPixels(0, 0,
-		stereogramWidth,
-		stereogramHeight,
+		fringeContext_.algorithm_options.cache.stereogram_res_x,
+		fringeContext_.algorithm_options.cache.stereogram_res_y,
 		GL_RGBA, GL_UNSIGNED_BYTE, 0);
 	}
 
 	//copy DEPTH from stereogram views, because CUDA/OpenCL cannot access depth data directly from framebuffer
 	glBindBuffer(GL_PIXEL_PACK_BUFFER, fringeContext_.stereogram_gl_depth_buf_in);
 	glReadPixels(0, 0,
-		stereogramWidth,
-		stereogramHeight,
+		fringeContext_.algorithm_options.cache.stereogram_res_x,
+		fringeContext_.algorithm_options.cache.stereogram_res_y,
 		GL_DEPTH_COMPONENT, GL_FLOAT, 0);
 
 	glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
@@ -1605,9 +1606,9 @@ void DSCP4Render::drawFringeTextures()
 		glMatrixMode(GL_PROJECTION);
 		projectionMatrix_ = glm::ortho(
 			0.f,
-			static_cast<float>(fringeContext_.display_options.head_res_x),
+			static_cast<float>(fringeContext_.algorithm_options.cache.output_buffer_res_x),
 			0.f,
-			static_cast<float>(fringeContext_.display_options.head_res_y)
+			static_cast<float>(fringeContext_.algorithm_options.cache.output_buffer_res_y)
 			);
 
 		glLoadMatrixf(glm::value_ptr(projectionMatrix_));
@@ -1629,15 +1630,15 @@ void DSCP4Render::drawFringeTextures()
 			#ifdef DSCP4_ENABLE_TRACE_LOG
 					auto duration = measureTime<>([&](){
 						glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
-							fringeContext_.display_options.head_res_x,
-							fringeContext_.display_options.head_res_y * 2,
+							fringeContext_.algorithm_options.cache.output_buffer_res_x,
+							fringeContext_.algorithm_options.cache.output_buffer_res_y,
 							0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
 					});
 					LOG4CXX_TRACE(logger_, "Copying hologram fringe result " << i << " to texture took " << duration << " ms (" << 1.f / duration * 1000 << " fps)")
 			#else
 					glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
-						fringeContext_.display_options.head_res_x,
-						fringeContext_.display_options.head_res_y * 2,
+						fringeContext_.algorithm_options.cache.output_buffer_res_x,
+						fringeContext_.algorithm_options.cache.output_buffer_res_y,
 						0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
 			#endif
 
@@ -1729,4 +1730,48 @@ void DSCP4Render::computeHologram()
 	default:
 		break;
 	}
+}
+
+void DSCP4Render::updateAlgorithmOptionsCache()
+{
+	fringeContext_.algorithm_options.cache.num_output_buffers =
+		fringeContext_.display_options.num_heads / fringeContext_.display_options.num_heads_per_gpu;
+
+	// the x res and y res are set by heads arranged vertically
+	// in the OS display management configurations
+	fringeContext_.algorithm_options.cache.output_buffer_res_x =
+		fringeContext_.display_options.head_res_x;
+
+	fringeContext_.algorithm_options.cache.output_buffer_res_y =
+		fringeContext_.display_options.head_res_y * fringeContext_.display_options.num_heads_per_gpu;
+
+	fringeContext_.algorithm_options.cache.stereogram_tile_x =
+		fringeContext_.algorithm_options.cache.stereogram_tile_y =
+		static_cast<unsigned int>(sqrt(fringeContext_.algorithm_options.num_views_x));
+
+	fringeContext_.algorithm_options.cache.stereogram_res_x =
+		fringeContext_.algorithm_options.cache.stereogram_tile_x
+		* fringeContext_.algorithm_options.num_wafels_per_scanline;
+
+	fringeContext_.algorithm_options.cache.stereogram_res_y =
+		fringeContext_.algorithm_options.cache.stereogram_tile_y
+		* fringeContext_.algorithm_options.num_scanlines;
+
+	// sets the global workgroup size X to number of wafels, if it is divisible by local size X
+	// otherwise it will set a global workgroup size to be the next multiple of local size X
+	// this is because global workgroup size should be as big as possible (the hologram size)
+	// but also divisible by the local workgroup size
+	fringeContext_.algorithm_options.cache.opencl_global_workgroup_size[0] =
+		fringeContext_.algorithm_options.num_wafels_per_scanline % fringeContext_.algorithm_options.opencl_local_workgroup_size[0] == 0 ?
+		fringeContext_.algorithm_options.num_wafels_per_scanline :
+		fringeContext_.algorithm_options.opencl_local_workgroup_size[0]
+		- (fringeContext_.algorithm_options.num_wafels_per_scanline % fringeContext_.algorithm_options.opencl_local_workgroup_size[0])
+		+ fringeContext_.algorithm_options.num_wafels_per_scanline;
+
+	fringeContext_.algorithm_options.cache.opencl_global_workgroup_size[1] =
+		fringeContext_.algorithm_options.num_scanlines % fringeContext_.algorithm_options.opencl_local_workgroup_size[1] == 0 ?
+		fringeContext_.algorithm_options.num_scanlines :
+		fringeContext_.algorithm_options.opencl_local_workgroup_size[1]
+		- (fringeContext_.algorithm_options.num_scanlines % fringeContext_.algorithm_options.opencl_local_workgroup_size[1])
+		+ fringeContext_.algorithm_options.num_scanlines;
 }

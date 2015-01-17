@@ -291,6 +291,30 @@ int main(int argc, const char* argv[])
 		if (options.getComputeMethod() == "opencl")
 		{
 			algorithmOptions.compute_method = DSCP4_COMPUTE_METHOD_OPENCL;
+#ifdef DSCP4_HAVE_OPENCL
+			boost::filesystem::path openclKernelFilePath = boost::filesystem::current_path() / options.getOpenCLKernelFileName();
+			if (!boost::filesystem::exists(openclKernelFilePath))
+			{
+				openclKernelFilePath = options.getKernelsPath() / options.getOpenCLKernelFileName();
+				if (!boost::filesystem::exists(openclKernelFilePath))
+				{
+					if (renderOptions.render_mode == DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE && algorithmOptions.compute_method == DSCP4_COMPUTE_METHOD_OPENCL)
+						throw std::runtime_error("Could not find OpenCL kernel file in current path or kernels path");
+					else
+					{
+						LOG4CXX_WARN(logger, "OpenCL kernel could not be found in working path or kernels path")
+					}
+
+				}
+			}
+
+			kernelFileName = openclKernelFilePath.string();
+			algorithmOptions.opencl_kernel_filename = kernelFileName.c_str();
+
+			algorithmOptions.opencl_local_workgroup_size[0] = options.getOpenCLKernelWorksizeX();
+			algorithmOptions.opencl_local_workgroup_size[1] = options.getOpenCLKernelWorksizeY();
+#endif
+
 		}
 		else if (options.getComputeMethod() == "cuda")
 		{
@@ -300,27 +324,6 @@ int main(int argc, const char* argv[])
 		{
 			algorithmOptions.compute_method = DSCP4_COMPUTE_METHOD_NONE;
 		}
-
-#ifdef DSCP4_HAVE_OPENCL
-		boost::filesystem::path openclKernelFilePath = boost::filesystem::current_path() / options.getOpenCLKernelFileName();
-		if (!boost::filesystem::exists(openclKernelFilePath))
-		{
-			openclKernelFilePath = options.getKernelsPath() / options.getOpenCLKernelFileName();
-			if (!boost::filesystem::exists(openclKernelFilePath))
-			{
-				if (renderOptions.render_mode == DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE && algorithmOptions.compute_method == DSCP4_COMPUTE_METHOD_OPENCL)
-					throw std::runtime_error("Could not find OpenCL kernel file in current path or kernels path");
-				else
-				{
-					LOG4CXX_WARN(logger, "OpenCL kernel could not be found in working path or kernels path")
-				}
-
-			}
-		}
-
-		kernelFileName = openclKernelFilePath.string();
-		algorithmOptions.opencl_kernel_filename = kernelFileName.c_str();
-#endif
 
 	}
 	catch (std::exception& e)

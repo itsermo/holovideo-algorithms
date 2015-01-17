@@ -34,10 +34,16 @@ algorithmOptions_("Algorithm options")
 
 #ifdef DSCP4_HAVE_OPENCL
 	algorithmOptions_.add_options()
-		("opencl-kernel,k",
-		boost::program_options::value<std::string>()->default_value(DSCP4_ALGORITHM_OPENCL_KERNEL_FILENAME),
-		"the filename of the OpenCL kernel to use for fringe computation"
-		);
+		("opencl-kernel-filename,k",
+		boost::program_options::value<std::string>(),
+		"the filename of the OpenCL kernel to use for fringe computation")
+		("opencl-worksize-x",
+		boost::program_options::value<size_t>(),
+		"the local workgroup size for the OpenCL fringe computation kernel in the X-dimension (e.g. 64)")
+		("opencl-worksize-y",
+		boost::program_options::value<size_t>(),
+		"the local workgroup size for the OpenCL fringe computation kernel in the Y-dimension (e.g. 64)")
+		;
 #endif
 
 	renderOptions_.add_options()

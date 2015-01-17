@@ -23,7 +23,6 @@
 #define DSCP4_INPUT_DEFAULT_OBJECT_FILENAME "bun_zipper_res4.ply"
 #define DSCP4_INPUT_DEFAULT_GEN_NORMALS "flat"
 #define DSCP4_INPUT_DEFAULT_TRIANGULATE_MESH true
-#define DSCP4_ALGORITHM_OPENCL_KERNEL_FILENAME "dscp4-fringe.cl"
 #define DSCP4_RENDER_DEFAULT_AUTOSCALE true
 #define DSCP4_RENDER_DEFAULT_SHADEMODEL "flat"
 
@@ -82,7 +81,9 @@ public:
 	std::string getComputeMethod() { return traverseOption<std::string>("compute-method", "algorithm.compute_method"); }
 
 #ifdef DSCP4_HAVE_OPENCL
-	std::string getOpenCLKernelFileName() { return vm_["opencl-kernel"].as<std::string>(); }
+	std::string getOpenCLKernelFileName() { return traverseOption<std::string>("opencl-kernel-filename", "algorithm.opencl_kernel_filename"); }
+	size_t getOpenCLKernelWorksizeX() { return traverseOption<size_t>("opencl-worksize-x", "algorithm.opencl_local_workgroup_size_x"); }
+	size_t getOpenCLKernelWorksizeY() { return traverseOption<size_t>("opencl-worksize-y", "algorithm.opencl_local_workgroup_size_y"); }
 #endif
 
 	//Display options
