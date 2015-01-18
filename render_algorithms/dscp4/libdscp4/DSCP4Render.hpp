@@ -47,9 +47,8 @@
 
 #include <boost/filesystem.hpp>
 
-#define DSCP4_RENDER_DEFAULT_ZNEAR 0.01f
-#define DSCP4_RENDER_DEFAULT_ZFAR 5.0f
-
+#define DSCP4_RENDER_DEFAULT_ZNEAR 0.05f
+#define DSCP4_RENDER_DEFAULT_ZFAR 1.5f
 
 namespace dscp4
 {
@@ -67,6 +66,12 @@ namespace dscp4
 		glm::vec4 diffuseColor;
 		glm::vec4 specularColor;
 		glm::vec4 globalAmbientColor;
+	};
+
+	enum DrawMode
+	{
+		DSCP4_DRAW_MODE_COLOR,
+		DSCP4_DRAW_MODE_DEPTH
 	};
 
 	class DSCP4Render
@@ -116,8 +121,12 @@ namespace dscp4
 		void setCameraView(Camera cameraView) { std::lock_guard<std::mutex> lg(cameraMutex_);  camera_ = cameraView; cameraChanged_ = true; }
 		void setLighting(Lighting lighting) { std::lock_guard<std::mutex> lg(lightingMutex_);  lighting_ = lighting; lightingChanged_ = true; }
 
+		// For viewing, or stereogram mode, shows either color or depth to the window
+		void setDrawMode(DrawMode drawMode) { drawMode_ = drawMode; }
+		DrawMode getDrawMode() { return drawMode_; }
+
 		// Force frame to redraw
-		void Update() { updateFrameCV_.notify_all(); }
+		void Update() { cameraChanged_ = true; }
 
 	private:
 
@@ -159,12 +168,15 @@ namespace dscp4
 		// which corresponds to the selected rendermode
 		void renderLoop();			
 		
+		// Generates an N-view stereogram to a single FBO
+		void generateStereogram();
+
 		// Generates a single view of the model with aspect ratio from algorithm options
 		void drawForViewing();
 
-		// Generates and renders stereograms to a single FBO
-		void drawForStereogram(); 
-		
+		// Generates stereograms as a texture, and then calls drawStereogramTexture()
+		void drawForStereogram();
+
 		// Generates stereograms and displays each view in each window
 		void drawForAerialDisplay();
 		
@@ -175,6 +187,10 @@ namespace dscp4
 		// to each texture (texture per window)
 		// (this is the final step, after compute hologram)
 		void drawFringeTextures();
+
+		// Draws the stereogram texture to the GL back buffer
+		// This is the last step view stereogram viewing mode
+		void drawStereogramTexture();
 
 		// Copies the stereogram data to a PBO
 		// This is done after generating views, meant for passing
@@ -247,6 +263,7 @@ namespace dscp4
 
 		Camera camera_;
 		Lighting lighting_;
+		DrawMode drawMode_;
 
 #ifdef DSCP4_HAVE_LOG4CXX
 		log4cxx::LoggerPtr logger_ = log4cxx::Logger::getLogger("edu.mit.media.obmg.holovideo.dscp4.lib.renderer");
