@@ -274,6 +274,11 @@ bool DSCP4Render::initWindow(SDL_Window*& window, SDL_GLContext& glContext, int 
 
 	SDL_GL_MakeCurrent(window, glContext);
 
+	while (glGetError() != GL_NO_ERROR)
+	{
+
+	}
+
 	LOG4CXX_DEBUG(logger_, "Turning on VSYNC")
 	SDL_GL_SetSwapInterval(1);
 
@@ -490,7 +495,6 @@ void DSCP4Render::renderLoop()
 	lighting_.diffuseColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.f);
 	lighting_.specularColor = glm::vec4(1.f, 1.f, 1.f, 1.f);
 	lighting_.globalAmbientColor = glm::vec4(0.f, 0.f, 0.f, 1.f);
-
 	// Both model viewing and stereogram viewing just require 1 window,
 	// so we only initialize one context and window
 	// These modes are only for debugging/visualizing purposes
@@ -537,8 +541,8 @@ void DSCP4Render::renderLoop()
 
 		SDL_GL_MakeCurrent(windows_[0], glContexts_[0]);
 
-		initFringeBuffers();
-
+		initStereogramTextures();
+		initFringeTextures();
 		initComputeMethod();
 		
 	}
@@ -669,7 +673,8 @@ void DSCP4Render::renderLoop()
 	if (renderOptions_.render_mode == DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE)
 	{
 		deinitComputeMethod();
-		deinitFringeBuffers();
+		deinitFringeTextures();
+		deinitStereogramTextures();
 	}
 
 	for (unsigned int i = 0; i < numWindows_; i++)
@@ -1343,19 +1348,72 @@ int DSCP4Render::inputStateChanged(void* userdata, SDL_Event* event)
 	return 0;
 }
 
-void DSCP4Render::initFringeBuffers()
+void DSCP4Render::initFringeTextures()
 {
-
 	fringeContext_.fringe_gl_tex_out = new GLuint[numWindows_];
-	fringeContext_.fringe_gl_buf_out = new GLuint[numWindows_];
 
+	// Create N-textures for outputting fringe data to the X displays
+	// Whatever holographic computation is done will be written
+	// To these textures and ultimately displayed on the holovideo display
+	glGenTextures(fringeContext_.algorithm_options.cache.num_output_buffers, fringeContext_.fringe_gl_tex_out);
+
+	char *blah = new char[fringeContext_.algorithm_options.cache.output_buffer_res_x * fringeContext_.algorithm_options.cache.output_buffer_res_y * 4];
+	for (size_t i = 0; i < fringeContext_.algorithm_options.cache.output_buffer_res_x * fringeContext_.algorithm_options.cache.output_buffer_res_y * 4; i++)
+	{
+		blah[i] = i % 255;
+	}
+
+	if (fringeContext_.algorithm_options.compute_method == DSCP4_COMPUTE_METHOD_CUDA)
+	{
+		fringeContext_.fringe_gl_buf_out = new GLuint[numWindows_];
+
+		glGenBuffers(fringeContext_.algorithm_options.cache.num_output_buffers, fringeContext_.fringe_gl_buf_out);
+
+		for (unsigned int i = 0; i < fringeContext_.algorithm_options.cache.num_output_buffers; i++)
+		{
+			glBindBuffer(GL_ARRAY_BUFFER, fringeContext_.fringe_gl_buf_out[i]);
+			glBufferData(GL_ARRAY_BUFFER, fringeContext_.algorithm_options.cache.output_buffer_res_x * fringeContext_.algorithm_options.cache.output_buffer_res_y * sizeof(GLbyte)* 4, blah, GL_DYNAMIC_DRAW);
+			glBindBuffer(GL_ARRAY_BUFFER, 0);
+		}
+	}
+
+	for (size_t i = 0; i < fringeContext_.algorithm_options.cache.num_output_buffers; i++)
+	{
+		glBindTexture(GL_TEXTURE_2D, fringeContext_.fringe_gl_tex_out[i]);
+
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8,
+			fringeContext_.algorithm_options.cache.output_buffer_res_x,
+			fringeContext_.algorithm_options.cache.output_buffer_res_y,
+			0, GL_RGBA, GL_UNSIGNED_BYTE, blah);
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glBindTexture(GL_TEXTURE_2D, 0);
+	}
+
+	delete[] blah;
+}
+
+void DSCP4Render::deinitFringeTextures()
+{
+	if (fringeContext_.algorithm_options.compute_method == DSCP4_COMPUTE_METHOD_CUDA)
+		glDeleteBuffers(numWindows_, fringeContext_.fringe_gl_buf_out);
+
+	glDeleteTextures(numWindows_, fringeContext_.fringe_gl_tex_out);
+
+
+	delete[] fringeContext_.fringe_gl_buf_out;
+	delete[] fringeContext_.fringe_gl_tex_out;
+}
+
+void DSCP4Render::initStereogramTextures()
+{
 	// create a new FBO for stereograms, this is required because if
 	// we try to render stereograms to the normal frame-buffer, they
 	// will be clipped by window size being smaller than N views
 	glGenFramebuffers(1, &fringeContext_.stereogram_gl_fbo);
-	//glGenTextures(1, &fringeContext_.stereogram_gl_fbo_color);
-	//glGenRenderbuffers(1, &fringeContext_.stereogram_gl_fbo_color);
-	//glGenRenderbuffers(1, &fringeContext_.stereogram_gl_fbo_depth);
 
 	//create depth texture
 	glGenTextures(1, &fringeContext_.stereogram_gl_fbo_depth);
@@ -1441,67 +1499,19 @@ void DSCP4Render::initFringeBuffers()
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	//end generation of stereogram view buffers
-
-	// Create N-textures for outputting fringe data to the X displays
-	// Whatever holographic computation is done will be written
-	// To these textures and ultimately displayed on the holovideo display
-	glGenTextures(fringeContext_.algorithm_options.cache.num_output_buffers, fringeContext_.fringe_gl_tex_out);
-
-	char *blah = new char[fringeContext_.algorithm_options.cache.output_buffer_res_x * fringeContext_.algorithm_options.cache.output_buffer_res_y * 4];
-	for (size_t i = 0; i < fringeContext_.algorithm_options.cache.output_buffer_res_x * fringeContext_.algorithm_options.cache.output_buffer_res_y * 4; i++)
-	{
-		blah[i] = i % 255;
-	}
-
-	if (fringeContext_.algorithm_options.compute_method == DSCP4_COMPUTE_METHOD_CUDA)
-	{
-		glGenBuffers(fringeContext_.algorithm_options.cache.num_output_buffers, fringeContext_.fringe_gl_buf_out);
-
-		for (unsigned int i = 0; i < fringeContext_.algorithm_options.cache.num_output_buffers; i++)
-		{
-			glBindBuffer(GL_ARRAY_BUFFER, fringeContext_.fringe_gl_buf_out[i]);
-			glBufferData(GL_ARRAY_BUFFER, fringeContext_.algorithm_options.cache.output_buffer_res_x * fringeContext_.algorithm_options.cache.output_buffer_res_y * sizeof(GLbyte)* 4, blah, GL_DYNAMIC_DRAW);
-			glBindBuffer(GL_ARRAY_BUFFER, 0);
-		}
-	}
-
-	for (size_t i = 0; i < fringeContext_.algorithm_options.cache.num_output_buffers; i++)
-	{
-		glBindTexture(GL_TEXTURE_2D, fringeContext_.fringe_gl_tex_out[i]);
-
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8,
-			fringeContext_.algorithm_options.cache.output_buffer_res_x,
-			fringeContext_.algorithm_options.cache.output_buffer_res_y,
-			0, GL_RGBA, GL_UNSIGNED_BYTE, blah);
-
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glBindTexture(GL_TEXTURE_2D, 0);
-	}
-
-	delete[] blah;
-
-	//glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 }
 
-void DSCP4Render::deinitFringeBuffers()
+void DSCP4Render::deinitStereogramTextures()
 {
 	if (fringeContext_.algorithm_options.compute_method == DSCP4_COMPUTE_METHOD_CUDA)
 	{
 		glDeleteBuffers(1, &fringeContext_.stereogram_gl_rgba_buf_in);
 		glDeleteBuffers(1, &fringeContext_.stereogram_gl_depth_buf_in);
-		glDeleteBuffers(numWindows_, fringeContext_.fringe_gl_buf_out);
 	}
 
-	glDeleteTextures(numWindows_, fringeContext_.fringe_gl_tex_out);
 	glDeleteFramebuffers(1, &fringeContext_.stereogram_gl_fbo);
 	glDeleteTextures(1, &fringeContext_.stereogram_gl_fbo_color);
 	glDeleteTextures(1, &fringeContext_.stereogram_gl_fbo_depth);
-
-	delete[] fringeContext_.fringe_gl_buf_out;
-	delete[] fringeContext_.fringe_gl_tex_out;
 }
 
 void DSCP4Render::copyStereogramToPBOs()

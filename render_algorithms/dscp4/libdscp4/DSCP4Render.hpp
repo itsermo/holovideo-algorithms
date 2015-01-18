@@ -142,8 +142,13 @@ namespace dscp4
 		bool initLightingShader(int which);
 		void deinitLightingShader(int which);
 
-		void initFringeBuffers();
-		void deinitFringeBuffers();
+		// Initializes textures (and PBOs--if necessary) for storing generated stereogram views
+		void initStereogramTextures();
+		void deinitStereogramTextures();
+
+		// Initializes textures (and PBOs--if necessary) for holovideo fringe output
+		void initFringeTextures();
+		void deinitFringeTextures();
 
 		// calculates the algorithm cached parameters for
 		// generating stereogram views and fringe pattern computation
