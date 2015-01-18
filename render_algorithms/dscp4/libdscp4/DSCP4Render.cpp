@@ -93,7 +93,7 @@ DSCP4Render::DSCP4Render(render_options_t renderOptions,
 	lightingChanged_(false),
 	meshChanged_(false),
 	drawMode_(DSCP4_DRAW_MODE_COLOR),
-	fringeContext_({ algorithmOptions, displayOptions, nullptr, 0, 0, 0, 0, 0, nullptr, nullptr })
+	fringeContext_({ algorithmOptions, displayOptions, nullptr, 0,0,0, 0, 0, 0, 0, 0, nullptr, nullptr })
 {
 
 #ifdef DSCP4_HAVE_LOG4CXX
@@ -496,59 +496,35 @@ void DSCP4Render::renderLoop()
 	lighting_.diffuseColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.f);
 	lighting_.specularColor = glm::vec4(1.f, 1.f, 1.f, 1.f);
 	lighting_.globalAmbientColor = glm::vec4(0.f, 0.f, 0.f, 1.f);
-	// Both model viewing and stereogram viewing just require 1 window,
-	// so we only initialize one context and window
-	// These modes are only for debugging/visualizing purposes
-	switch (renderOptions_.render_mode)
+
+	// Init windows, for stereogram and model viewing
+	// this is only 1 window, for aerial it is
+	// number of displays, and for holovideo it is number of GPUs
+	for (unsigned int i = 0; i < numWindows_; i++)
 	{
-	case DSCP4_RENDER_MODE_MODEL_VIEWING:
-	case DSCP4_RENDER_MODE_STEREOGRAM_VIEWING:
+		initWindow(windows_[i], glContexts_[i], i);
 
-		initWindow(windows_[0], glContexts_[0], 0);
-
-		// Add ambient and diffuse lighting to the scene
+		// Add ambient and diffuse lighting to every scene
 		glLightfv(GL_LIGHT0, GL_AMBIENT, glm::value_ptr(lighting_.ambientColor));
 		glLightfv(GL_LIGHT0, GL_DIFFUSE, glm::value_ptr(lighting_.diffuseColor));
 
 		glLightModelfv(GL_AMBIENT_AND_DIFFUSE, glm::value_ptr(lighting_.globalAmbientColor));
+	}
 
-		initStereogramTextures();
+	SDL_GL_MakeCurrent(windows_[0], glContexts_[0]);
 
+	switch (renderOptions_.render_mode)
+	{
+	case DSCP4_RENDER_MODE_MODEL_VIEWING:
+		initViewingTextures();
 		break;
-	case DSCP4_RENDER_MODE_AERIAL_DISPLAY:
-
-		for (unsigned int i = 0; i < numWindows_; i++)
-		{
-			initWindow(windows_[i], glContexts_[i], i);
-
-			// Add ambient and diffuse lighting to every scene
-			glLightfv(GL_LIGHT0, GL_AMBIENT, glm::value_ptr(lighting_.ambientColor));
-			glLightfv(GL_LIGHT0, GL_DIFFUSE, glm::value_ptr(lighting_.diffuseColor));
-
-			glLightModelfv(GL_AMBIENT_AND_DIFFUSE, glm::value_ptr(lighting_.globalAmbientColor));
-		}
-
+	case DSCP4_RENDER_MODE_STEREOGRAM_VIEWING:
+		initStereogramTextures();
 		break;
 	case DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE:
-	{
-		for (unsigned int i = 0; i < numWindows_; i++)
-		{
-			initWindow(windows_[i], glContexts_[i], i);
-
-			// Add ambient and diffuse lighting to every scene
-			glLightfv(GL_LIGHT0, GL_AMBIENT, glm::value_ptr(lighting_.ambientColor));
-			glLightfv(GL_LIGHT0, GL_DIFFUSE, glm::value_ptr(lighting_.diffuseColor));
-
-			glLightModelfv(GL_AMBIENT_AND_DIFFUSE, glm::value_ptr(lighting_.globalAmbientColor));
-		}
-
-		SDL_GL_MakeCurrent(windows_[0], glContexts_[0]);
-
 		initStereogramTextures();
 		initFringeTextures();
 		initComputeMethod();
-		
-	}
 		break;
 	default:
 		break;
@@ -600,12 +576,7 @@ void DSCP4Render::renderLoop()
 			{
 			case DSCP4_RENDER_MODE_MODEL_VIEWING:
 			{
-#ifdef DSCP4_ENABLE_TRACE_LOG
-				auto duration = measureTime<>(std::bind(&DSCP4Render::drawForViewing, this));
-				LOG4CXX_TRACE(logger_, "Generating a single view took " << duration << " ms (" << 1.f / duration * 1000 << " fps)")
-#else
 				drawForViewing();
-#endif
 				SDL_GL_SwapWindow(windows_[0]);
 			}
 				break;
@@ -668,11 +639,21 @@ void DSCP4Render::renderLoop()
 
 	SDL_GL_MakeCurrent(windows_[0], glContexts_[0]);
 
-	if (renderOptions_.render_mode == DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE)
+	switch (renderOptions_.render_mode)
 	{
+	case DSCP4_RENDER_MODE_MODEL_VIEWING:
+		deinitViewingTextures();
+		break;
+	case DSCP4_RENDER_MODE_STEREOGRAM_VIEWING:
+		deinitStereogramTextures();
+		break;
+	case DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE:
 		deinitComputeMethod();
 		deinitFringeTextures();
 		deinitStereogramTextures();
+		break;
+	default:
+		break;
 	}
 
 	for (unsigned int i = 0; i < numWindows_; i++)
@@ -773,16 +754,18 @@ void DSCP4Render::generateStereogram()
 	glDrawBuffer(GL_BACK);
 }
 
-void DSCP4Render::drawForViewing()
+void DSCP4Render::generateView()
 {
+	glBindFramebuffer(GL_FRAMEBUFFER, fringeContext_.view_gl_fbo);
+	glDrawBuffer(GL_COLOR_ATTACHMENT0);
+
 	const float ratio = (float)windowWidth_[0] / (float)windowHeight_[0];
 	{
 		std::lock_guard<std::mutex> lgc(cameraMutex_);
 		glMatrixMode(GL_PROJECTION);
 
 		projectionMatrix_ = glm::mat4();
-		projectionMatrix_ *= glm::perspective(fringeContext_.algorithm_options.fov_y * DEG_TO_RAD, ratio, 0.01f, 5.f);
-
+		projectionMatrix_ *= glm::perspective(fringeContext_.algorithm_options.fov_y * DEG_TO_RAD, ratio, 3.f, 5.f);
 
 		glLoadMatrixf(glm::value_ptr(projectionMatrix_));
 
@@ -827,6 +810,27 @@ void DSCP4Render::drawForViewing()
 
 	glDisable(GL_LIGHT0);
 	glDisable(GL_DEPTH_TEST);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glDrawBuffer(GL_BACK);
+}
+
+void DSCP4Render::drawForViewing()
+{
+#ifdef DSCP4_ENABLE_TRACE_LOG
+	auto duration = measureTime<>(std::bind(&DSCP4Render::generateView, this));
+	LOG4CXX_TRACE(logger_, "Generating a single view took " << duration << " ms (" << 1.f / duration * 1000 << " fps)")
+#else
+	generateView();
+#endif
+
+#ifdef DSCP4_ENABLE_TRACE_LOG
+	duration = measureTime<>(std::bind(&DSCP4Render::drawViewingTexture, this));
+	LOG4CXX_TRACE(logger_, "Drawing a single view took " << duration << " ms (" << 1.f / duration * 1000 << " fps)")
+#else
+	drawViewingTexture();
+#endif
+	
 }
 
 void DSCP4Render::drawForStereogram()
@@ -1358,64 +1362,81 @@ int DSCP4Render::inputStateChanged(void* userdata, SDL_Event* event)
 	return 0;
 }
 
-void DSCP4Render::initFringeTextures()
+void DSCP4Render::initViewingTextures()
 {
-	fringeContext_.fringe_gl_tex_out = new GLuint[numWindows_];
+	// create a new FBO for single view render mode
+	// we render to a custom FBO with textures, rendering to a texture quad
+	// so that we can siwitch between rendering depth/color to the window
+	glGenFramebuffers(1, &fringeContext_.view_gl_fbo);
 
-	// Create N-textures for outputting fringe data to the X displays
-	// Whatever holographic computation is done will be written
-	// To these textures and ultimately displayed on the holovideo display
-	glGenTextures(fringeContext_.algorithm_options.cache.num_output_buffers, fringeContext_.fringe_gl_tex_out);
+	//create depth texture
+	glGenTextures(1, &fringeContext_.view_gl_fbo_depth);
+	glBindTexture(GL_TEXTURE_2D, fringeContext_.view_gl_fbo_depth);
+	glTexImage2D(
+		GL_TEXTURE_2D,
+		0,
+		GL_DEPTH_COMPONENT32F,
+		fringeContext_.algorithm_options.num_wafels_per_scanline,
+		fringeContext_.algorithm_options.num_scanlines,
+		0,
+		GL_DEPTH_COMPONENT,
+		GL_FLOAT,
+		0
+		);
 
-	char *blah = new char[fringeContext_.algorithm_options.cache.output_buffer_res_x * fringeContext_.algorithm_options.cache.output_buffer_res_y * 4];
-	for (size_t i = 0; i < fringeContext_.algorithm_options.cache.output_buffer_res_x * fringeContext_.algorithm_options.cache.output_buffer_res_y * 4; i++)
-	{
-		blah[i] = i % 255;
-	}
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-	if (fringeContext_.algorithm_options.compute_method == DSCP4_COMPUTE_METHOD_CUDA)
-	{
-		fringeContext_.fringe_gl_buf_out = new GLuint[numWindows_];
+	glBindTexture(GL_TEXTURE_2D, 0);
 
-		glGenBuffers(fringeContext_.algorithm_options.cache.num_output_buffers, fringeContext_.fringe_gl_buf_out);
+	//generate color texture
+	glGenTextures(1, &fringeContext_.view_gl_fbo_color);
+	glBindTexture(GL_TEXTURE_2D, fringeContext_.view_gl_fbo_color);
+	glTexImage2D(
+		GL_TEXTURE_2D,
+		0,
+		GL_RGBA8,
+		fringeContext_.algorithm_options.num_wafels_per_scanline,
+		fringeContext_.algorithm_options.num_scanlines,
+		0,
+		GL_RGBA,
+		GL_FLOAT,
+		0
+		);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-		for (unsigned int i = 0; i < fringeContext_.algorithm_options.cache.num_output_buffers; i++)
-		{
-			glBindBuffer(GL_ARRAY_BUFFER, fringeContext_.fringe_gl_buf_out[i]);
-			glBufferData(GL_ARRAY_BUFFER, fringeContext_.algorithm_options.cache.output_buffer_res_x * fringeContext_.algorithm_options.cache.output_buffer_res_y * sizeof(GLbyte)* 4, blah, GL_DYNAMIC_DRAW);
-			glBindBuffer(GL_ARRAY_BUFFER, 0);
-		}
-	}
+	glBindTexture(GL_TEXTURE_2D, 0);
 
-	for (size_t i = 0; i < fringeContext_.algorithm_options.cache.num_output_buffers; i++)
-	{
-		glBindTexture(GL_TEXTURE_2D, fringeContext_.fringe_gl_tex_out[i]);
+	// Attach the depth texture and the color texture (to which depths will be output)
+	glBindFramebuffer(GL_FRAMEBUFFER, fringeContext_.view_gl_fbo);
+	glFramebufferTexture2D(
+		GL_FRAMEBUFFER,
+		GL_DEPTH_ATTACHMENT,
+		GL_TEXTURE_2D,
+		fringeContext_.view_gl_fbo_depth,
+		0
+		);
+	glFramebufferTexture2D(
+		GL_FRAMEBUFFER,
+		GL_COLOR_ATTACHMENT0,
+		GL_TEXTURE_2D,
+		fringeContext_.view_gl_fbo_color,
+		0
+		);
 
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8,
-			fringeContext_.algorithm_options.cache.output_buffer_res_x,
-			fringeContext_.algorithm_options.cache.output_buffer_res_y,
-			0, GL_RGBA, GL_UNSIGNED_BYTE, blah);
-
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glBindTexture(GL_TEXTURE_2D, 0);
-	}
-
-	delete[] blah;
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void DSCP4Render::deinitFringeTextures()
+void DSCP4Render::deinitViewingTextures()
 {
-	if (fringeContext_.algorithm_options.compute_method == DSCP4_COMPUTE_METHOD_CUDA)
-		glDeleteBuffers(numWindows_, fringeContext_.fringe_gl_buf_out);
-
-	glDeleteTextures(numWindows_, fringeContext_.fringe_gl_tex_out);
-
-
-	delete[] fringeContext_.fringe_gl_buf_out;
-	delete[] fringeContext_.fringe_gl_tex_out;
+	glDeleteTextures(1, &fringeContext_.view_gl_fbo_color);
+	glDeleteTextures(1, &fringeContext_.view_gl_fbo_depth);
+	glDeleteFramebuffers(1, &fringeContext_.view_gl_fbo);
 }
 
 void DSCP4Render::initStereogramTextures()
@@ -1522,6 +1543,65 @@ void DSCP4Render::deinitStereogramTextures()
 	glDeleteFramebuffers(1, &fringeContext_.stereogram_gl_fbo);
 	glDeleteTextures(1, &fringeContext_.stereogram_gl_fbo_color);
 	glDeleteTextures(1, &fringeContext_.stereogram_gl_fbo_depth);
+}
+void DSCP4Render::initFringeTextures()
+{
+	fringeContext_.fringe_gl_tex_out = new GLuint[numWindows_];
+
+	// Create N-textures for outputting fringe data to the X displays
+	// Whatever holographic computation is done will be written
+	// To these textures and ultimately displayed on the holovideo display
+	glGenTextures(fringeContext_.algorithm_options.cache.num_output_buffers, fringeContext_.fringe_gl_tex_out);
+
+	char *blah = new char[fringeContext_.algorithm_options.cache.output_buffer_res_x * fringeContext_.algorithm_options.cache.output_buffer_res_y * 4];
+	for (size_t i = 0; i < fringeContext_.algorithm_options.cache.output_buffer_res_x * fringeContext_.algorithm_options.cache.output_buffer_res_y * 4; i++)
+	{
+		blah[i] = i % 255;
+	}
+
+	if (fringeContext_.algorithm_options.compute_method == DSCP4_COMPUTE_METHOD_CUDA)
+	{
+		fringeContext_.fringe_gl_buf_out = new GLuint[numWindows_];
+
+		glGenBuffers(fringeContext_.algorithm_options.cache.num_output_buffers, fringeContext_.fringe_gl_buf_out);
+
+		for (unsigned int i = 0; i < fringeContext_.algorithm_options.cache.num_output_buffers; i++)
+		{
+			glBindBuffer(GL_ARRAY_BUFFER, fringeContext_.fringe_gl_buf_out[i]);
+			glBufferData(GL_ARRAY_BUFFER, fringeContext_.algorithm_options.cache.output_buffer_res_x * fringeContext_.algorithm_options.cache.output_buffer_res_y * sizeof(GLbyte)* 4, blah, GL_DYNAMIC_DRAW);
+			glBindBuffer(GL_ARRAY_BUFFER, 0);
+		}
+	}
+
+	for (size_t i = 0; i < fringeContext_.algorithm_options.cache.num_output_buffers; i++)
+	{
+		glBindTexture(GL_TEXTURE_2D, fringeContext_.fringe_gl_tex_out[i]);
+
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8,
+			fringeContext_.algorithm_options.cache.output_buffer_res_x,
+			fringeContext_.algorithm_options.cache.output_buffer_res_y,
+			0, GL_RGBA, GL_UNSIGNED_BYTE, blah);
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glBindTexture(GL_TEXTURE_2D, 0);
+	}
+
+	delete[] blah;
+}
+
+void DSCP4Render::deinitFringeTextures()
+{
+	if (fringeContext_.algorithm_options.compute_method == DSCP4_COMPUTE_METHOD_CUDA)
+		glDeleteBuffers(numWindows_, fringeContext_.fringe_gl_buf_out);
+
+	glDeleteTextures(numWindows_, fringeContext_.fringe_gl_tex_out);
+
+
+	delete[] fringeContext_.fringe_gl_buf_out;
+	delete[] fringeContext_.fringe_gl_tex_out;
 }
 
 void DSCP4Render::copyStereogramToPBOs()
@@ -1672,10 +1752,6 @@ void DSCP4Render::drawStereogramTexture()
 	const GLubyte indices[] = { 0, 1, 2, // first triangle (bottom left - top left - top right)
 		0, 2, 3 };
 
-	//glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	//glDrawBuffer(GL_BACK);
-	//glReadBuffer(GL_BACK);
-
 	glEnable(GL_TEXTURE_2D);
 
 	glViewport(0, 0, windowWidth_[0], windowHeight_[0]);
@@ -1702,6 +1778,65 @@ void DSCP4Render::drawStereogramTexture()
 		glBindTexture(GL_TEXTURE_2D, fringeContext_.stereogram_gl_fbo_depth);
 	else
 		glBindTexture(GL_TEXTURE_2D, fringeContext_.stereogram_gl_fbo_color);
+
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glVertexPointer(3, GL_FLOAT, 0, Vertices);
+
+	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+	glTexCoordPointer(2, GL_FLOAT, 0, TexCoord);
+
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, indices);
+
+	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+	glDisableClientState(GL_VERTEX_ARRAY);
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glDisable(GL_TEXTURE_2D);
+}
+
+void DSCP4Render::drawViewingTexture()
+{
+	GLfloat Vertices[] = { 0.f, 0.f, 0.f,
+		static_cast<float>(windowWidth_[0]), 0, 0,
+		static_cast<float>(windowWidth_[0]),
+		static_cast<float>(windowHeight_[0]), 0.f,
+		0.f, static_cast<float>(windowHeight_[0]), 0.f
+	};
+
+	GLfloat TexCoord[] = { 0, 0,
+		1.f, 0.f,
+		1.f, 1.f,
+		0.f, 1.f,
+	};
+
+	const GLubyte indices[] = { 0, 1, 2, // first triangle (bottom left - top left - top right)
+		0, 2, 3 };
+
+	glEnable(GL_TEXTURE_2D);
+
+	glViewport(0, 0, windowWidth_[0], windowHeight_[0]);
+
+	glMatrixMode(GL_PROJECTION);
+	projectionMatrix_ = glm::ortho(
+		0.f,
+		static_cast<float>(windowWidth_[0]),
+		0.f,
+		static_cast<float>(windowHeight_[0])
+		);
+
+	glLoadMatrixf(glm::value_ptr(projectionMatrix_));
+
+	glMatrixMode(GL_MODELVIEW);
+	glLoadMatrixf(glm::value_ptr(glm::mat4()));
+
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	glDisable(GL_LIGHTING);
+
+	if (drawMode_ == DSCP4_DRAW_MODE_DEPTH)
+		glBindTexture(GL_TEXTURE_2D, fringeContext_.view_gl_fbo_depth);
+	else
+		glBindTexture(GL_TEXTURE_2D, fringeContext_.view_gl_fbo_color);
 
 	glEnableClientState(GL_VERTEX_ARRAY);
 	glVertexPointer(3, GL_FLOAT, 0, Vertices);

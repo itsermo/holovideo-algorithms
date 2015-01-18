@@ -151,7 +151,13 @@ namespace dscp4
 		bool initLightingShader(int which);
 		void deinitLightingShader(int which);
 
-		// Initializes textures (and PBOs--if necessary) for storing generated stereogram views
+		// Initializes textures for storing generated view color
+		// and depth (for viewing render mode)
+		void initViewingTextures();
+		void deinitViewingTextures();
+
+		// Initializes textures (and PBOs--if necessary) for storing
+		// stereogram views (for stereogram and holovideo render modes)
 		void initStereogramTextures();
 		void deinitStereogramTextures();
 
@@ -168,6 +174,9 @@ namespace dscp4
 		// which corresponds to the selected rendermode
 		void renderLoop();			
 		
+		// Generates a view to an FBO for model viewing mode
+		void generateView();
+
 		// Generates an N-view stereogram to a single FBO
 		void generateStereogram();
 
@@ -183,14 +192,18 @@ namespace dscp4
 		// Generates stereograms, computes hologram, and then calls drawFringeTextures()
 		void drawForFringe();     
 
+		// Draws the model viewing texture to the GL back buffer
+		// This is the last step for model viewing mode
+		void drawViewingTexture();
+
+		// Draws the stereogram texture to the GL back buffer
+		// This is the last step in stereogram viewing mode
+		void drawStereogramTexture();
+
 		// Copies the the fringe pattern FBO
 		// to each texture (texture per window)
 		// (this is the final step, after compute hologram)
 		void drawFringeTextures();
-
-		// Draws the stereogram texture to the GL back buffer
-		// This is the last step view stereogram viewing mode
-		void drawStereogramTexture();
 
 		// Copies the stereogram data to a PBO
 		// This is done after generating views, meant for passing
