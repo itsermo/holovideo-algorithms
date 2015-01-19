@@ -1,5 +1,6 @@
 #include "DSCP4Render.hpp"
 
+#include <sstream>
 #include <iostream>
 #include <iomanip>
 
@@ -204,7 +205,6 @@ bool DSCP4Render::init()
 	SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
-
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 
@@ -1974,23 +1974,28 @@ void DSCP4Render::updateAlgorithmOptionsCache()
 		fringeContext_.algorithm_options.cache.stereogram_tile_y
 		* fringeContext_.algorithm_options.num_scanlines;
 
+
+
 	// sets the global workgroup size X to number of wafels, if it is divisible by local size X
 	// otherwise it will set a global workgroup size to be the next multiple of local size X
 	// this is because global workgroup size should be as big as possible (the hologram size)
 	// but also divisible by the local workgroup size
-	fringeContext_.algorithm_options.cache.opencl_global_workgroup_size[0] =
-		fringeContext_.algorithm_options.num_wafels_per_scanline % fringeContext_.algorithm_options.opencl_local_workgroup_size[0] == 0 ?
-		fringeContext_.algorithm_options.num_wafels_per_scanline :
-		fringeContext_.algorithm_options.opencl_local_workgroup_size[0]
-		- (fringeContext_.algorithm_options.num_wafels_per_scanline % fringeContext_.algorithm_options.opencl_local_workgroup_size[0])
-		+ fringeContext_.algorithm_options.num_wafels_per_scanline;
+	if (fringeContext_.algorithm_options.compute_method == DSCP4_COMPUTE_METHOD_OPENCL)
+	{
+		fringeContext_.algorithm_options.cache.opencl_global_workgroup_size[0] =
+			fringeContext_.algorithm_options.num_wafels_per_scanline % fringeContext_.algorithm_options.opencl_local_workgroup_size[0] == 0 ?
+			fringeContext_.algorithm_options.num_wafels_per_scanline :
+			fringeContext_.algorithm_options.opencl_local_workgroup_size[0]
+			- (fringeContext_.algorithm_options.num_wafels_per_scanline % fringeContext_.algorithm_options.opencl_local_workgroup_size[0])
+			+ fringeContext_.algorithm_options.num_wafels_per_scanline;
 
-	fringeContext_.algorithm_options.cache.opencl_global_workgroup_size[1] =
-		fringeContext_.algorithm_options.num_scanlines % fringeContext_.algorithm_options.opencl_local_workgroup_size[1] == 0 ?
-		fringeContext_.algorithm_options.num_scanlines :
-		fringeContext_.algorithm_options.opencl_local_workgroup_size[1]
-		- (fringeContext_.algorithm_options.num_scanlines % fringeContext_.algorithm_options.opencl_local_workgroup_size[1])
-		+ fringeContext_.algorithm_options.num_scanlines;
+		fringeContext_.algorithm_options.cache.opencl_global_workgroup_size[1] =
+			fringeContext_.algorithm_options.num_scanlines % fringeContext_.algorithm_options.opencl_local_workgroup_size[1] == 0 ?
+			fringeContext_.algorithm_options.num_scanlines :
+			fringeContext_.algorithm_options.opencl_local_workgroup_size[1]
+			- (fringeContext_.algorithm_options.num_scanlines % fringeContext_.algorithm_options.opencl_local_workgroup_size[1])
+			+ fringeContext_.algorithm_options.num_scanlines;
+	}
 }
 
 #ifdef DSCP4_HAVE_PNG
@@ -2094,8 +2099,8 @@ void DSCP4Render::saveScreenshotPNG()
 				std::stringstream colorFilenameSS;
 				colorFilenameSS << "dscp4_stereogram_color_" << std::setfill('0') << std::setw(2) << i << ".png";
 
-				std::string& colorFilename = colorFilenameSS.str();
-				std::string& depthFilename = depthFilenameSS.str();
+				std::string colorFilename = colorFilenameSS.str();
+				std::string depthFilename = depthFilenameSS.str();
 
 #ifdef DSCP4_ENABLE_TRACE_LOG
 				duration = measureTime<>([&](){
@@ -2146,7 +2151,7 @@ void DSCP4Render::saveScreenshotPNG()
 			std::stringstream fringeFilenameSS;
 			fringeFilenameSS << "dscp4_fringe_pattern_" << std::setfill('0') << std::setw(2) << i << ".png";
 
-			std::string& fringeFilename = fringeFilenameSS.str();
+			std::string fringeFilename = fringeFilenameSS.str();
 
 #ifdef DSCP4_ENABLE_TRACE_LOG
 			auto duration = measureTime<>([&](){

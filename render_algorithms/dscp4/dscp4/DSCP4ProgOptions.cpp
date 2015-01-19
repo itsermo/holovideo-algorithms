@@ -38,10 +38,10 @@ algorithmOptions_("Algorithm options")
 		boost::program_options::value<std::string>(),
 		"the filename of the OpenCL kernel to use for fringe computation")
 		("opencl-worksize-x",
-		boost::program_options::value<size_t>(),
+		boost::program_options::value<unsigned int>(),
 		"the local workgroup size for the OpenCL fringe computation kernel in the X-dimension (e.g. 64)")
 		("opencl-worksize-y",
-		boost::program_options::value<size_t>(),
+		boost::program_options::value<unsigned int>(),
 		"the local workgroup size for the OpenCL fringe computation kernel in the Y-dimension (e.g. 64)")
 		;
 #endif

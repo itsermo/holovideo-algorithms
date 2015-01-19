@@ -82,8 +82,8 @@ public:
 
 #ifdef DSCP4_HAVE_OPENCL
 	std::string getOpenCLKernelFileName() { return traverseOption<std::string>("opencl-kernel-filename", "algorithm.opencl_kernel_filename"); }
-	size_t getOpenCLKernelWorksizeX() { return traverseOption<size_t>("opencl-worksize-x", "algorithm.opencl_local_workgroup_size_x"); }
-	size_t getOpenCLKernelWorksizeY() { return traverseOption<size_t>("opencl-worksize-y", "algorithm.opencl_local_workgroup_size_y"); }
+	size_t getOpenCLKernelWorksizeX() { return static_cast<size_t>(traverseOption<unsigned int>("opencl-worksize-x", "algorithm.opencl_local_workgroup_size_x")); }
+	size_t getOpenCLKernelWorksizeY() { return static_cast<size_t>(traverseOption<unsigned int>("opencl-worksize-y", "algorithm.opencl_local_workgroup_size_y")); }
 #endif
 
 	//Display options
