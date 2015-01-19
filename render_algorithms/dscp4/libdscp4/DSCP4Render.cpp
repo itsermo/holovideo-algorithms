@@ -2085,7 +2085,7 @@ void DSCP4Render::saveScreenshotPNG()
 #endif
 
 
-		for (int i = 0; i < fringeContext_.algorithm_options.num_views_x; i++)
+		for (unsigned int i = 0; i < fringeContext_.algorithm_options.num_views_x; i++)
 		{
 
 				std::stringstream depthFilenameSS;
@@ -2141,7 +2141,7 @@ void DSCP4Render::saveScreenshotPNG()
 		fringeBuffer = new unsigned char[fringeContext_.algorithm_options.cache.output_buffer_res_x * fringeContext_.algorithm_options.cache.output_buffer_res_y * 4];
 
 
-		for (int i = 0; i < fringeContext_.algorithm_options.cache.num_output_buffers; i++)
+		for (unsigned int i = 0; i < fringeContext_.algorithm_options.cache.num_output_buffers; i++)
 		{
 			std::stringstream fringeFilenameSS;
 			fringeFilenameSS << "dscp4_fringe_pattern_" << std::setfill('0') << std::setw(2) << i << ".png";

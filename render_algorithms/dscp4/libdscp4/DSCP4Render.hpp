@@ -47,8 +47,8 @@
 
 #include <boost/filesystem.hpp>
 
-#define DSCP4_RENDER_DEFAULT_ZNEAR 0.05f
-#define DSCP4_RENDER_DEFAULT_ZFAR 1.5f
+#define DSCP4_RENDER_DEFAULT_ZNEAR 0.00001f
+#define DSCP4_RENDER_DEFAULT_ZFAR 2.25f
 
 namespace dscp4
 {
