@@ -20,10 +20,12 @@
   * GLM 0.9.6.1+ (header-only library for common OpenGL math functions,
 	such as matrix multiplication)
   * SDL 2.0.1+ (takes care of window management, OpenGL render contexts)
-  * CUDA 6.5 (fringe computation is done in CUDA)
-  * OpenCL 1.1 (fringe computation done with OpenCL)
+  * CUDA 6.5 (optional, fringe computation is done in CUDA)
+  * OpenCL 1.1 (optional, fringe computation done with OpenCL)
   * Log4Cxx v0.10.0+ (optional, for logging errors and info)
-  * ASSIMP 3.1.1+ (for importing 3D object files, like .ply files)
+  * ASSIMP 3.1.1+ (optional, for importing 3D object files, like .ply files)
+  * zLib 1.2.2+ (optional, for PNG screenshots)
+  * libpng 1.2 (optional, for PNG screenshots)
   
  DSCP4 is a CMAKE package, that is composed of two C++11 projects:
  
@@ -65,8 +67,8 @@
  
  a) Install the dependenices using the command below:
  
-	sudo apt-get install cmake g++ libboost-all-dev libglew-dev \
-	libglm-dev libsdl2-dev libassimp-dev liblog4cxx10-dev
+	sudo apt-get install cmake g++ libboost-all-dev libglew-dev libpng-dev \
+	zlib1g-dev libglm-dev libsdl2-dev libassimp-dev liblog4cxx10-dev
  
  c) Install CUDA 6.5 by navigating to 
     https://developer.nvidia.com/cuda-downloads
@@ -113,8 +115,14 @@
                             or can't install liblog4cxx, this can turn off all 
                             dependencies to log4cxx and turn off logging)
 
- -DWITH_TRACE_LOG={YES|NO}  (Turns on performance logging. The act of logging
-							can impact performance, so this is off by default)
+ -DWITH_TRACE_LOG={YES|NO}  (Turns on performance logging. Use with "-v 6" 
+			     command option)
+
+ -DWITH_OPENCL={YES|NO}	    (Turns on OpenCL fringe computation)
+
+ -DWITH_CUDA={YES|NO}	    (Turns on NVIDIA CUDA fringe computation)
+
+ -DWITH_PNG={YES|NO}	    (Turns on screenshot capability)
 
  These can be used like so:
 
@@ -137,6 +145,7 @@
   * dscp4 executable to /usr/local/bin
   * 3d model files from dscp4/models to /usr/local/dscp4/models
   * shader files from libdscp4/shaders to /usr/local/dscp4/shaders
+  * OpenCL kernel files fromt libdscp4/kernels to /usr/local/dscp4/kernels
   * it will generate dscp4.conf from dscp4.conf.in and copy to /etc/dscp4
  
  == 5. CONFIGURING ==
@@ -159,10 +168,20 @@
  Will open dscp4 with the dragon.ply model file.  First it will search for
  "dragon.ply" locally, if it can't be found, it will navigate to the
  model_path, as defined by /etc/dscp4.conf and look for the file there.
- 
+
+ From the render window, there are many useful keyboard shortcuts:
+
+  - Use the arrow keys to rotate the view
+  - Hold LEFT SHIFT and arrow keys, Z,X to translate the object
+  - Hold LEFT SHIFT and W,A,S,D,Z,X to change light position 
+  - Press "R" key to toggle model spinning, arrow keys will set spin rate
+  - CTRL + S will dump the current color and depth buffer to PNG files
+  - SPACEBAR toggles the render window view mode from color to depth buffer
+  - Q will close the render window
+
  == 7. UNINSTALLING ==
  
- Simply running the following command:
+ Simply running the following command from the CMAKE build path:
 	
 	sudo make uninstall
 
