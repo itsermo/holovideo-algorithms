@@ -222,6 +222,10 @@ namespace dscp4
 		void drawMesh(mesh_t& mesh);
 		void drawObjects();
 
+#ifdef DSCP4_HAVE_PNG
+		void saveScreenshotPNG();
+#endif
+
 		// Renderer projection settings
 		float zNear_;
 		float zFar_;
@@ -254,7 +258,9 @@ namespace dscp4
 
 		SDL_Window **windows_;
 		SDL_GLContext *glContexts_;
-		static int inputStateChanged(void* userdata, SDL_Event* event);
+
+		// Handle the input on window (keyboard/mouse)
+		int inputStateChanged(SDL_Event* event);
 
 		std::map<std::string, mesh_t> meshes_;
 

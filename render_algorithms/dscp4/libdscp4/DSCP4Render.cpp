@@ -1,7 +1,15 @@
 #include "DSCP4Render.hpp"
 
+#include <iostream>
+#include <iomanip>
+
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+
+#ifdef DSCP4_HAVE_PNG
+#include <boost/gil/gil_all.hpp>
+#include <boost/gil/extension/io/png_io.hpp>
+#endif
 
 // This checks for a true condition, prints the error message, cleans up and returns false
 #define CHECK_SDL_RC(rc_condition, what)				\
@@ -95,7 +103,6 @@ DSCP4Render::DSCP4Render(render_options_t renderOptions,
 	drawMode_(DSCP4_DRAW_MODE_COLOR),
 	fringeContext_({ algorithmOptions, displayOptions, nullptr, 0,0,0, 0, 0, 0, 0, 0, nullptr, nullptr })
 {
-
 #ifdef DSCP4_HAVE_LOG4CXX
 	
 	log4cxx::BasicConfigurator::resetConfiguration();
@@ -531,7 +538,7 @@ void DSCP4Render::renderLoop()
 	}
 
 	// For capturing mouse and keyboard events
-	SDL_AddEventWatch(DSCP4Render::inputStateChanged, this);
+	//SDL_AddEventWatch(DSCP4Render::inputStateChanged, this);
 
 	// Sanity check, i'm pretty sure you don't want different resolutions
 	bool resAreDifferent = false;
@@ -625,12 +632,13 @@ void DSCP4Render::renderLoop()
 #endif
 
 	poll:
-		SDL_PollEvent(&event);
+		if(SDL_PollEvent(&event))
+			inputStateChanged(&event);
 	}
 
 	initLock.lock();
 
-	SDL_DelEventWatch(DSCP4Render::inputStateChanged, this);
+	//SDL_DelEventWatch(DSCP4Render::inputStateChanged, this);
 
 	std::unique_lock<std::mutex> meshLock(meshMutex_);
 	for (auto it = meshes_.begin(); it != meshes_.end(); it++)
@@ -1221,53 +1229,49 @@ glm::mat4 DSCP4Render::buildOrthoXPerspYProjMat(
 	return shearOrtho;
 }
 
-int DSCP4Render::inputStateChanged(void* userdata, SDL_Event* event)
+int DSCP4Render::inputStateChanged(SDL_Event* event)
 {
-	auto render = (DSCP4Render*)userdata;
-
 	if (event->key.type == SDL_KEYDOWN)
 	{
 
 		if (event->key.keysym.mod == SDL_Keymod::KMOD_LSHIFT)
 		{
-			auto camera = render->getCameraView();
-			auto lighting = render->getLighting();
 
 			switch (event->key.keysym.scancode)
 			{
 			case  SDL_Scancode::SDL_SCANCODE_W:
-				lighting.position[1] += 0.1f;
+				lighting_.position[1] += 0.1f;
 				break;
 			case SDL_Scancode::SDL_SCANCODE_S:
-				lighting.position[1] -= 0.1f;
+				lighting_.position[1] -= 0.1f;
 				break;
 			case  SDL_Scancode::SDL_SCANCODE_A:
-				lighting.position[0] -= 0.1f;
+				lighting_.position[0] -= 0.1f;
 				break;
 			case SDL_Scancode::SDL_SCANCODE_D:
-				lighting.position[0] += 0.1f;
+				lighting_.position[0] += 0.1f;
 				break;
 			case  SDL_Scancode::SDL_SCANCODE_Z:
-				lighting.position[2] -= 0.1f;
+				lighting_.position[2] -= 0.1f;
 				break;
 			case SDL_Scancode::SDL_SCANCODE_X:
-				lighting.position[2] += 0.1f;
+				lighting_.position[2] += 0.1f;
 				break;
 			case  SDL_Scancode::SDL_SCANCODE_UP:
-				camera.eye[1] += 0.1f;
-				camera.center[1] += 0.1f;
+				camera_.eye[1] += 0.1f;
+				camera_.center[1] += 0.1f;
 				break;
 			case  SDL_Scancode::SDL_SCANCODE_DOWN:
-				camera.eye[1] -= 0.1f;
-				camera.center[1] -= 0.1f;
+				camera_.eye[1] -= 0.1f;
+				camera_.center[1] -= 0.1f;
 				break;
 			case  SDL_Scancode::SDL_SCANCODE_LEFT:
-				camera.eye[0] -= 0.1f;
-				camera.center[0] -= 0.1f;
+				camera_.eye[0] -= 0.1f;
+				camera_.center[0] -= 0.1f;
 				break;
 			case SDL_Scancode::SDL_SCANCODE_RIGHT:
-				camera.eye[0] += 0.1f;
-				camera.center[0] += 0.1f;
+				camera_.eye[0] += 0.1f;
+				camera_.center[0] += 0.1f;
 				break;
 			case SDL_Scancode::SDL_SCANCODE_EQUALS:
 				//zFar_ += 0.01f;
@@ -1287,7 +1291,7 @@ int DSCP4Render::inputStateChanged(void* userdata, SDL_Event* event)
 			case SDL_Scancode::SDL_SCANCODE_D:
 			case  SDL_Scancode::SDL_SCANCODE_Z:
 			case SDL_Scancode::SDL_SCANCODE_X:
-				render->setLighting(lighting);
+				lightingChanged_ = true;
 				break;
 			default:
 				break;
@@ -1299,37 +1303,51 @@ int DSCP4Render::inputStateChanged(void* userdata, SDL_Event* event)
 			case  SDL_Scancode::SDL_SCANCODE_DOWN:
 			case  SDL_Scancode::SDL_SCANCODE_LEFT:
 			case SDL_Scancode::SDL_SCANCODE_RIGHT:
-				render->setCameraView(camera);
+				cameraChanged_ = true;
 				break;
+			default:
+				break;
+			}
+		}
+		else if (event->key.keysym.mod == SDL_Keymod::KMOD_LCTRL || event->key.keysym.mod == SDL_Keymod::KMOD_RCTRL)
+		{
+			switch (event->key.keysym.scancode)
+			{
+
+			case SDL_Scancode::SDL_SCANCODE_S:
+#ifdef DSCP4_HAVE_PNG
+				saveScreenshotPNG();
+#endif
+				break;
+
 			default:
 				break;
 			}
 		}
 		else
 		{
-
 			switch (event->key.keysym.scancode)
 			{
 			case  SDL_Scancode::SDL_SCANCODE_UP:
-				render->setRotateViewAngleX(render->getRotateViewAngleX() + 10.f);
+				rotateAngleX_.store(rotateAngleX_ + 10.f);
 				break;
 			case  SDL_Scancode::SDL_SCANCODE_DOWN:
-				render->setRotateViewAngleX(render->getRotateViewAngleX() - 10.f);
+				rotateAngleX_.store(rotateAngleX_ - 10.f);
 				break;
 			case  SDL_Scancode::SDL_SCANCODE_LEFT:
-				if (render->getSpinOn())
-					render->setRotateIncrement(render->getRotateIncrement() - 0.2f);
+				if (spinOn_)
+					rotateIncrement_.store(rotateIncrement_ - .2f);
 				else
-					render->setRotateViewAngleY(render->getRotateViewAngleY() + 10.f);
+					rotateAngleY_.store(rotateAngleY_ + 10.f);
 				break;
 			case SDL_Scancode::SDL_SCANCODE_RIGHT:
-				if (render->getSpinOn())
-					render->setRotateIncrement(render->getRotateIncrement() + 0.2f);
+				if (spinOn_)
+					rotateIncrement_.store(rotateIncrement_ + 0.2f);
 				else
-					render->setRotateViewAngleY(render->getRotateViewAngleY() - 10.f);
+					rotateAngleY_.store(rotateAngleY_ - 10.f);
 				break;
 			case  SDL_Scancode::SDL_SCANCODE_R:
-				render->setSpinOn(!render->getSpinOn());
+				spinOn_.store(!spinOn_);
 				break;
 			case SDL_Scancode::SDL_SCANCODE_LEFTBRACKET:
 				//q += 0.01f;
@@ -1338,7 +1356,7 @@ int DSCP4Render::inputStateChanged(void* userdata, SDL_Event* event)
 				//q -= 0.01f;
 				break;
 			case SDL_Scancode::SDL_SCANCODE_Q:
-				render->deinit();
+				shouldRender_ = false;
 				break;
 			case SDL_Scancode::SDL_SCANCODE_EQUALS:
 				//zNear_ += 0.01f;
@@ -1347,15 +1365,16 @@ int DSCP4Render::inputStateChanged(void* userdata, SDL_Event* event)
 				//zNear_ -= 0.01f;
 				break;
 			case SDL_Scancode::SDL_SCANCODE_SPACE:
-				if (render->getDrawMode() == DSCP4_DRAW_MODE_COLOR)
-					render->setDrawMode(DSCP4_DRAW_MODE_DEPTH);
+				if (drawMode_ == DSCP4_DRAW_MODE_COLOR)
+					drawMode_ = DSCP4_DRAW_MODE_DEPTH;
 				else
-					render->setDrawMode(DSCP4_DRAW_MODE_COLOR);
-				render->Update();
+					drawMode_ = DSCP4_DRAW_MODE_COLOR;
 				break;
 			default:
 				break;
 			}
+
+			Update();
 		}
 	}
 
@@ -1544,6 +1563,7 @@ void DSCP4Render::deinitStereogramTextures()
 	glDeleteTextures(1, &fringeContext_.stereogram_gl_fbo_color);
 	glDeleteTextures(1, &fringeContext_.stereogram_gl_fbo_depth);
 }
+
 void DSCP4Render::initFringeTextures()
 {
 	fringeContext_.fringe_gl_tex_out = new GLuint[numWindows_];
@@ -1965,3 +1985,134 @@ void DSCP4Render::updateAlgorithmOptionsCache()
 		- (fringeContext_.algorithm_options.num_scanlines % fringeContext_.algorithm_options.opencl_local_workgroup_size[1])
 		+ fringeContext_.algorithm_options.num_scanlines;
 }
+
+#ifdef DSCP4_HAVE_PNG
+void DSCP4Render::saveScreenshotPNG()
+{
+	switch (renderOptions_.render_mode)
+	{
+	case DSCP4_RENDER_MODE_MODEL_VIEWING:
+	{
+		unsigned char * colorBuf = nullptr;
+		float * depthBuf = nullptr;
+		unsigned short * depthBuf2 = nullptr;
+		boost::gil::rgba8_view_t colorImg;
+		boost::gil::gray32f_view_t depthImg;
+		boost::gil::gray16_view_t depthImg2;
+
+		colorBuf = new unsigned char[fringeContext_.algorithm_options.num_wafels_per_scanline * fringeContext_.algorithm_options.num_scanlines * 4];
+		depthBuf = new float[fringeContext_.algorithm_options.num_wafels_per_scanline * fringeContext_.algorithm_options.num_scanlines];
+		depthBuf2 = new unsigned short[fringeContext_.algorithm_options.num_wafels_per_scanline * fringeContext_.algorithm_options.num_scanlines];
+
+		glBindTexture(GL_TEXTURE_2D, fringeContext_.view_gl_fbo_color);
+		glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, colorBuf);
+		glBindTexture(GL_TEXTURE_2D, fringeContext_.view_gl_fbo_depth);
+		glGetTexImage(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, GL_FLOAT, depthBuf);
+		glBindTexture(GL_TEXTURE_2D, 0);
+
+		colorImg = boost::gil::interleaved_view(fringeContext_.algorithm_options.num_wafels_per_scanline, fringeContext_.algorithm_options.num_scanlines, (boost::gil::rgba8_pixel_t*)colorBuf, fringeContext_.algorithm_options.num_wafels_per_scanline * 4);
+		depthImg = boost::gil::interleaved_view(fringeContext_.algorithm_options.num_wafels_per_scanline, fringeContext_.algorithm_options.num_scanlines, (boost::gil::gray32f_pixel_t*)depthBuf, fringeContext_.algorithm_options.num_wafels_per_scanline * 4);
+		depthImg2 = boost::gil::interleaved_view(fringeContext_.algorithm_options.num_wafels_per_scanline, fringeContext_.algorithm_options.num_scanlines, (boost::gil::gray16_pixel_t*)depthBuf2, fringeContext_.algorithm_options.num_wafels_per_scanline * 2);
+
+		boost::gil::copy_and_convert_pixels(depthImg, depthImg2);
+
+		boost::gil::png_write_view("dscp4_model_color.png", boost::gil::flipped_up_down_view(colorImg));
+		boost::gil::png_write_view("dscp4_model_depth.png", boost::gil::flipped_up_down_view(depthImg2));
+
+		delete[] colorBuf;
+		delete[] depthBuf;
+		delete[] depthBuf2;
+	}
+		break;
+	case DSCP4_RENDER_MODE_AERIAL_DISPLAY:
+		break;
+	case DSCP4_RENDER_MODE_STEREOGRAM_VIEWING:
+	{
+		unsigned char * colorBuf = nullptr;
+		float * depthBuf = nullptr;
+		unsigned short * depthBuf2 = nullptr;
+		boost::gil::rgba8_view_t colorImg;
+		boost::gil::gray32f_view_t depthImg;
+		boost::gil::gray16_view_t depthImg2;
+
+		colorBuf = new unsigned char[fringeContext_.algorithm_options.cache.stereogram_res_x * fringeContext_.algorithm_options.cache.stereogram_res_y * 4];
+		depthBuf = new float[fringeContext_.algorithm_options.cache.stereogram_res_x * fringeContext_.algorithm_options.cache.stereogram_res_y];
+		depthBuf2 = new unsigned short[fringeContext_.algorithm_options.cache.stereogram_res_x * fringeContext_.algorithm_options.cache.stereogram_res_y];
+
+		glBindTexture(GL_TEXTURE_2D, fringeContext_.stereogram_gl_fbo_color);
+		glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, colorBuf);
+		glBindTexture(GL_TEXTURE_2D, fringeContext_.stereogram_gl_fbo_depth);
+		glGetTexImage(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, GL_FLOAT, depthBuf);
+		glBindTexture(GL_TEXTURE_2D, 0);
+
+		colorImg = boost::gil::interleaved_view(fringeContext_.algorithm_options.cache.stereogram_res_x, fringeContext_.algorithm_options.cache.stereogram_res_y, (boost::gil::rgba8_pixel_t*)colorBuf, fringeContext_.algorithm_options.cache.stereogram_res_x * 4);
+		depthImg = boost::gil::interleaved_view(fringeContext_.algorithm_options.cache.stereogram_res_x, fringeContext_.algorithm_options.cache.stereogram_res_y, (boost::gil::gray32f_pixel_t*)depthBuf, fringeContext_.algorithm_options.cache.stereogram_res_x * 4);
+		depthImg2 = boost::gil::interleaved_view(fringeContext_.algorithm_options.cache.stereogram_res_x, fringeContext_.algorithm_options.cache.stereogram_res_y, (boost::gil::gray16_pixel_t*)depthBuf2, fringeContext_.algorithm_options.cache.stereogram_res_x * 2);
+
+		boost::gil::copy_and_convert_pixels(depthImg, depthImg2);
+
+		boost::gil::png_write_view("dscp4_stereogram_color.png", boost::gil::flipped_up_down_view(colorImg));
+		boost::gil::png_write_view("dscp4_stereogram_depth.png", boost::gil::flipped_up_down_view(depthImg2));
+
+		for (int i = 0; i < fringeContext_.algorithm_options.num_views_x; i++)
+		{
+			std::stringstream depthFilenameSS;
+			depthFilenameSS << "dscp4_stereogram_depth_" << std::setfill('0') << std::setw(2) << i << ".png";
+
+			std::stringstream colorFilenameSS;
+			colorFilenameSS << "dscp4_stereogram_color_" << std::setfill('0') << std::setw(2) << i << ".png";
+
+			std::string& colorFilename = colorFilenameSS.str();
+			std::string& depthFilename = depthFilenameSS.str();
+
+			auto colorSubImg = boost::gil::subimage_view(colorImg, 
+				fringeContext_.algorithm_options.num_wafels_per_scanline * (i%static_cast<unsigned int>(sqrt(fringeContext_.algorithm_options.num_views_x))),
+				fringeContext_.algorithm_options.num_scanlines *(i/static_cast<unsigned int>(sqrt(fringeContext_.algorithm_options.num_views_x))),
+				fringeContext_.algorithm_options.num_wafels_per_scanline,
+				fringeContext_.algorithm_options.num_scanlines);
+			boost::gil::png_write_view(colorFilename.c_str(), boost::gil::flipped_up_down_view(colorSubImg));
+
+			auto depthSubImg = boost::gil::subimage_view(depthImg2,
+				fringeContext_.algorithm_options.num_wafels_per_scanline * (i%static_cast<unsigned int>(sqrt(fringeContext_.algorithm_options.num_views_x))),
+				fringeContext_.algorithm_options.num_scanlines *(i / static_cast<unsigned int>(sqrt(fringeContext_.algorithm_options.num_views_x))),
+				fringeContext_.algorithm_options.num_wafels_per_scanline,
+				fringeContext_.algorithm_options.num_scanlines);
+			boost::gil::png_write_view(depthFilename.c_str(), boost::gil::flipped_up_down_view(depthSubImg));
+		}
+
+		delete[] colorBuf;
+		delete[] depthBuf;
+		delete[] depthBuf2;
+	}
+		break;
+	case DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE:
+	{
+		unsigned char * fringeBuffer = nullptr;
+		fringeBuffer = new unsigned char[fringeContext_.algorithm_options.cache.output_buffer_res_x * fringeContext_.algorithm_options.cache.output_buffer_res_y * 4];
+
+
+		for (int i = 0; i < fringeContext_.algorithm_options.cache.num_output_buffers; i++)
+		{
+			std::stringstream fringeFilenameSS;
+			fringeFilenameSS << "dscp4_fringe_pattern_" << std::setfill('0') << std::setw(2) << i << ".png";
+
+			std::string& fringeFilename = fringeFilenameSS.str();
+
+			glBindTexture(GL_TEXTURE_2D, fringeContext_.fringe_gl_tex_out[i]);
+			glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, fringeBuffer);
+
+			auto fringeImage = boost::gil::interleaved_view(fringeContext_.algorithm_options.cache.output_buffer_res_x, fringeContext_.algorithm_options.cache.output_buffer_res_y, (boost::gil::rgba8_pixel_t*)fringeBuffer, fringeContext_.algorithm_options.cache.output_buffer_res_x * 4);
+			boost::gil::png_write_view(fringeFilename.c_str(), boost::gil::flipped_up_down_view(fringeImage));
+		}
+
+		glBindTexture(GL_TEXTURE, 0);
+
+		delete[] fringeBuffer;
+	}
+		break;
+	default:
+		break;
+	}
+
+}
+#endif

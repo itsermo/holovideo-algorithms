@@ -34,6 +34,11 @@ if(WITH_OPENCL)
 	add_definitions(-DDSCP4_HAVE_OPENCL)
 endif()
 
+if(WITH_PNG)
+	add_definitions(-DDSCP4_HAVE_PNG)
+	include_directories(${ZLIB_INCLUDE_DIRS} ${PNG_INCLUDE_DIRS})
+endif()
+
 file(GLOB DSCP4_LIB_SRC
 	"*.h"
 	"*.hpp"
@@ -70,6 +75,10 @@ endif()
 if(X11_FOUND)
 	add_definitions(-DDSCP4_ENABLE_X11)
 	target_link_libraries(${DSCP4_LIB} ${X11_LIBRARIES})
+endif()
+
+if(WITH_PNG)
+	target_link_libraries(${DSCP4_LIB} ${PNG_LIBRARIES} ${ZLIB_LIBRARIES})
 endif()
 
 file(GLOB SHADER_FILES
