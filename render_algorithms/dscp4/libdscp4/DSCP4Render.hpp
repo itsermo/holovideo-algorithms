@@ -217,6 +217,7 @@ namespace dscp4
 		// Uses CUDA/OpenCL to compute the hologram
 		void computeHologram();
 
+		// Drawing mesh/point cloud functions
 		void drawPointCloud();
 		void drawAllMeshes();
 		void drawMesh(mesh_t& mesh);

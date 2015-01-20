@@ -32,6 +32,16 @@ algorithmOptions_("Algorithm options")
 		"chooses the hologram computation method. valid options are 'cuda' and 'opencl'");
 #endif
 
+#ifdef DSCP4_HAVE_CUDA
+	algorithmOptions_.add_options()
+		("cuda-block-dim-x",
+		boost::program_options::value<unsigned int>(),
+		"sets the CUDA kernel block X dimension (number of threads per block)")
+		("cuda-block-dim-y",
+		boost::program_options::value<unsigned int>(),
+		"sets the CUDA kernel block Y dimension (number of threads per block)");
+#endif
+
 #ifdef DSCP4_HAVE_OPENCL
 	algorithmOptions_.add_options()
 		("opencl-kernel-filename,k",

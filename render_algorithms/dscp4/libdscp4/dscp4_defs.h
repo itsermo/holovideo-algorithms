@@ -38,6 +38,8 @@
 #define DSCP4_DEFAULT_ALGORITHM_OPENCL_KERNEL_FILENAME	"dscp4-fringe.cl"
 #define DSCP4_DEFAULT_ALGORITHM_OPENCL_WORKSIZE_X	64
 #define DSCP4_DEFAULT_ALGORITHM_OPENCL_WORKSIZE_Y	64
+#define DSCP4_DEFAULT_ALGORITHM_CUDA_BLOCK_DIM_X	8
+#define DSCP4_DEFAULT_ALGORITHM_CUDA_BLOCK_DIM_Y	4
 
 #ifndef __cplusplus
 #include <stdbool.h>
@@ -171,9 +173,13 @@ extern "C"{
 		unsigned int stereogram_num_tiles_y;
 
 		// the kernel is run on an entire hologram frame, that means
-		// this needs to be num wafels per scanline * num scanlines,
+		// global size needs to be { num_wafels_per_scanline, num_scanlines},
 		// but the size must be a multiple of local workgroup size
 		size_t opencl_global_workgroup_size[2];
+
+		// number of blocks is a function of the hologram frame dimensions
+		// and the block dimensions
+		unsigned int cuda_number_of_blocks[2];
 	} algorithm_cache_t;
 
 	typedef struct
@@ -183,6 +189,7 @@ extern "C"{
 		compute_method_t compute_method;
 		const char * opencl_kernel_filename;
 		size_t opencl_local_workgroup_size[2];
+		unsigned int cuda_block_dimensions[2];
 		algorithm_cache_t cache;
 	} algorithm_options_t;
 

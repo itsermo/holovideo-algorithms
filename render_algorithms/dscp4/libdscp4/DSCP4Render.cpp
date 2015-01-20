@@ -60,6 +60,8 @@ DSCP4Render::DSCP4Render() :
 						DSCP4_DEFAULT_ALGORITHM_OPENCL_KERNEL_FILENAME,
 						{ DSCP4_DEFAULT_ALGORITHM_OPENCL_WORKSIZE_X ,
 						DSCP4_DEFAULT_ALGORITHM_OPENCL_WORKSIZE_Y},
+						{ DSCP4_DEFAULT_ALGORITHM_CUDA_BLOCK_DIM_X,
+						DSCP4_DEFAULT_ALGORITHM_CUDA_BLOCK_DIM_Y },
 						algorithm_cache_t() },
 					display_options_t {
 						DSCP4_DEFAULT_DISPLAY_NAME,
@@ -1975,7 +1977,7 @@ void DSCP4Render::updateAlgorithmOptionsCache()
 		* fringeContext_.algorithm_options.num_scanlines;
 
 
-
+#ifdef DSCP4_HAVE_OPENCL
 	// sets the global workgroup size X to number of wafels, if it is divisible by local size X
 	// otherwise it will set a global workgroup size to be the next multiple of local size X
 	// this is because global workgroup size should be as big as possible (the hologram size)
@@ -1996,6 +1998,30 @@ void DSCP4Render::updateAlgorithmOptionsCache()
 			- (fringeContext_.algorithm_options.num_scanlines % fringeContext_.algorithm_options.opencl_local_workgroup_size[1])
 			+ fringeContext_.algorithm_options.num_scanlines;
 	}
+#endif
+
+#ifdef DSCP4_HAVE_CUDA
+	if (fringeContext_.algorithm_options.compute_method == DSCP4_COMPUTE_METHOD_CUDA)
+	{
+		fringeContext_.algorithm_options.cache.cuda_number_of_blocks[0] =
+			fringeContext_.algorithm_options.num_wafels_per_scanline % fringeContext_.algorithm_options.cuda_block_dimensions[0] == 0 ?
+			fringeContext_.algorithm_options.num_wafels_per_scanline / fringeContext_.algorithm_options.cuda_block_dimensions[0] :
+			(fringeContext_.algorithm_options.num_wafels_per_scanline
+			+ (fringeContext_.algorithm_options.cuda_block_dimensions[0]
+			- fringeContext_.algorithm_options.num_wafels_per_scanline % fringeContext_.algorithm_options.cuda_block_dimensions[0]))
+			/ fringeContext_.algorithm_options.cuda_block_dimensions[0];
+
+		fringeContext_.algorithm_options.cache.cuda_number_of_blocks[1] =
+			fringeContext_.algorithm_options.num_scanlines % fringeContext_.algorithm_options.cuda_block_dimensions[1] == 0 ?
+			fringeContext_.algorithm_options.num_scanlines / fringeContext_.algorithm_options.cuda_block_dimensions[1] :
+			(fringeContext_.algorithm_options.num_scanlines
+			+ (fringeContext_.algorithm_options.cuda_block_dimensions[1]
+			- fringeContext_.algorithm_options.num_scanlines % fringeContext_.algorithm_options.cuda_block_dimensions[1]))
+			/ fringeContext_.algorithm_options.cuda_block_dimensions[1];
+	}
+
+#endif
+
 }
 
 #ifdef DSCP4_HAVE_PNG

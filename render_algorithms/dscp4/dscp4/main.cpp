@@ -288,9 +288,12 @@ int main(int argc, const char* argv[])
 		algorithmOptions.fov_y = options.getFovY();
 
 
+
+
 		if (options.getComputeMethod() == "opencl")
 		{
 			algorithmOptions.compute_method = DSCP4_COMPUTE_METHOD_OPENCL;
+
 #ifdef DSCP4_HAVE_OPENCL
 			boost::filesystem::path openclKernelFilePath = boost::filesystem::current_path() / options.getOpenCLKernelFileName();
 			if (!boost::filesystem::exists(openclKernelFilePath))
@@ -319,6 +322,10 @@ int main(int argc, const char* argv[])
 		else if (options.getComputeMethod() == "cuda")
 		{
 			algorithmOptions.compute_method = DSCP4_COMPUTE_METHOD_CUDA;
+#ifdef DSCP4_HAVE_CUDA
+			algorithmOptions.cuda_block_dimensions[0] = options.getCUDABlockDimensionX();
+			algorithmOptions.cuda_block_dimensions[1] = options.getCUDABlockDimensionY();
+#endif
 		}
 		else
 		{

@@ -52,54 +52,59 @@ verbosity = 3
 ;				 be selected to show proper image on Mark IV)
 render_mode = holovideo
 
-;the shader filename prefix, for example if it's set to "pointlight"
-;the shaders it will look for are "pointlight.vert" and "pointlight.frag"
+; the shader filename prefix, for example if it's set to "pointlight"
+; the shaders it will look for are "pointlight.vert" and "pointlight.frag"
 shader_filename = pointlight
 
-;shader light position
+; shader light position
 light_pos_x = -4.0
 light_pos_y = 4.0
 light_pos_z = 2.0
 
 [algorithm]
-;the number of panorama scene views in horizontal dimension
+; the number of panorama scene views in horizontal dimension
 num_views_x = 16
 
-;the number of panorama scene views in vertical (1 because it's an HPO display)
+; the number of panorama scene views in vertical (1 because it's an HPO display)
 num_views_y = 1
 
-;the horizontal resolution of a scanline (how many wafels per scanline), in wafels
-;(must be divisible by 4)
+; the horizontal resolution of a scanline (how many wafels per scanline), in wafels
+; (must be divisible by 4)
 num_wafels = 693
 
-;the vertical resolution (number of scanlines total), in scanlines
-;(must be divisible by 4)
+; the vertical resolution (number of scanlines total), in scanlines
+; (must be divisible by 4)
 num_scanlines = 468
 
 ; field of view
 fov_x = 30.0
 fov_y = 30.0
 
-;chooses the fringe compute method, valid options are "cuda" or "opencl"
+; chooses the fringe compute method, valid options are "cuda" or "opencl"
 compute_method = ${DEFAULT_COMPUTE_METHOD}
 
-;opencl algorithm options
+; opencl algorithm options
 opencl_kernel_filename = dscp4-fringe.cl
 opencl_local_workgroup_size_x = 64
 opencl_local_workgroup_size_y = 1
 
+; cuda algorithm options
+; block dimension is the number of threads per block in X or Y
+cuda_block_dimension_x = 8
+cuda_block_dimension_y = 4
+
 [display]
-;friendly name of the display
+; friendly name of the display
 display_name = MIT Mark IV
 
-;the number of physical VGA/DisplayPort outputs
+; the number of physical VGA/DisplayPort outputs
 num_heads = 6
 
-;the number of heads per GPU
+; the number of heads per GPU
 num_heads_per_gpu = 2
 
-;the horizontal modeline resolution per DVI/VGA/DisplayPort output, in pixels
+; the horizontal modeline resolution per DVI/VGA/DisplayPort output, in pixels
 head_x = 3552
 
-;the vertical modeline resolution per DVI/VGA/DisplayPort output, in pixels
+; the vertical modeline resolution per DVI/VGA/DisplayPort output, in pixels
 head_y = 2476

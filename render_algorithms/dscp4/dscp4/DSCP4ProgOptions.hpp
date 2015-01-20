@@ -80,6 +80,11 @@ public:
 	float getFovY() { return pt_.get<float>("algorithm.fov_y"); }
 	std::string getComputeMethod() { return traverseOption<std::string>("compute-method", "algorithm.compute_method"); }
 
+#ifdef DSCP4_HAVE_CUDA
+	unsigned int getCUDABlockDimensionX() { return traverseOption<unsigned int>("cuda-block-dim-x", "algorithm.cuda_block_dimension_x"); }
+	unsigned int getCUDABlockDimensionY() { return traverseOption<unsigned int>("cuda-block-dim-y", "algorithm.cuda_block_dimension_y"); }
+#endif
+
 #ifdef DSCP4_HAVE_OPENCL
 	std::string getOpenCLKernelFileName() { return traverseOption<std::string>("opencl-kernel-filename", "algorithm.opencl_kernel_filename"); }
 	size_t getOpenCLKernelWorksizeX() { return static_cast<size_t>(traverseOption<unsigned int>("opencl-worksize-x", "algorithm.opencl_local_workgroup_size_x")); }

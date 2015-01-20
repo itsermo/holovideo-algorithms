@@ -206,15 +206,20 @@ void dscp4_fringe_cuda_ComputeFringe(dscp4_fringe_cuda_context_t* cudaContext)
 	//	error = cudaMemset((char*)output[2] + i*3552*4, 0, cudaContext->fringe_context->algorithm_options.cache.stereogram_res_x * 4);
 	//}
 
-	
 	// run kernel here
 	for (unsigned int i = 0; i < cudaContext->fringe_context->algorithm_options.cache.num_fringe_buffers; i++)
 	{
 
-		dim3 threadsPerBlock(8, 4);
-		dim3 numBlocks(cudaContext->fringe_context->algorithm_options.num_wafels_per_scanline / threadsPerBlock.x,
-			cudaContext->fringe_context->algorithm_options.num_scanlines / threadsPerBlock.y);
-		computeFringe << <numBlocks, threadsPerBlock >> >(
+		dim3 threadsPerBlock(
+			cudaContext->fringe_context->algorithm_options.cuda_block_dimensions[0],
+			cudaContext->fringe_context->algorithm_options.cuda_block_dimensions[1]
+			);
+		dim3 numBlocks(
+			cudaContext->fringe_context->algorithm_options.cache.cuda_number_of_blocks[0],
+			cudaContext->fringe_context->algorithm_options.cache.cuda_number_of_blocks[1]
+			);
+
+		computeFringe <<<numBlocks, threadsPerBlock>>>(
 			output[i],
 			rgbaPtr,
 			depthPtr,
