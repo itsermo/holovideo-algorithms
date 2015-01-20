@@ -278,20 +278,16 @@ __global__ void computeFringe(
 
 	if (i < num_wafels_per_scanline && j < num_scanlines)
 	{
-		((unsigned char*)fringeDataOut)[(j * fringe_buffer_res_x * 4) + (i * 4)] = ((unsigned char*)rgbaIn)[j * num_wafels_per_scanline * stereogram_num_tiles_x * 4 + i * 4];
-		((unsigned char*)fringeDataOut)[(j * fringe_buffer_res_x * 4) + (i * 4) + 1] = ((unsigned char*)rgbaIn)[j * num_wafels_per_scanline * stereogram_num_tiles_x * 4 + i * 4 + 1];
-		((unsigned char*)fringeDataOut)[(j * fringe_buffer_res_x * 4) + (i * 4) + 2] = ((unsigned char*)rgbaIn)[j * num_wafels_per_scanline * stereogram_num_tiles_x * 4 + i * 4 + 2];
-		((unsigned char*)fringeDataOut)[(j * fringe_buffer_res_x * 4) + (i * 4) + 3] = 0;
-		//((unsigned char*)fringeDataOut)[j * 3552 * 4 + i * 4+1] = ((unsigned char*)rgbaIn)[j * 693 * 4 + i * 4];
-		//((unsigned char*)fringeDataOut)[j * 3552 * 4 + i * 4 + 1] = ((unsigned char*)rgbaIn)[j * 693 * 4 + i * 4 + 1];
-		//((unsigned char*)fringeDataOut)[j * 3552 * 4 + i * 4 + 2] = ((unsigned char*)rgbaIn)[j * 693 * 4 + i * 4 + 2];
-		//((unsigned char*)fringeDataOut)[j * 3552 * 4 + i * 4 + 3] = 255;
-		//((unsigned char*)fringeDataOut)[j * 3552 * 4 + i] = ((unsigned char*)rgbaIn)[j * 693 * 4 + i];
-		//((unsigned char*)fringeDataOut)[j * 3552 * 4 + i+1] = ((unsigned char*)rgbaIn)[j * 693 * 4 + i+1];
+		for (unsigned int y = 0; y < stereogram_num_tiles_y; y++)
+		{
+			for (unsigned int x = 0; x < stereogram_num_tiles_x; x++)
+			{
+				((unsigned char*)fringeDataOut)[(j * fringe_buffer_res_x * 4) + (i * 4)] = ((unsigned char*)rgbaIn)[j * num_wafels_per_scanline * stereogram_num_tiles_x * 4 + i * 4 ];
+				((unsigned char*)fringeDataOut)[(j * fringe_buffer_res_x * 4) + (i * 4) + 1] = ((unsigned char*)rgbaIn)[j * num_wafels_per_scanline * stereogram_num_tiles_x * 4 + i * 4 + 1];
+				((unsigned char*)fringeDataOut)[(j * fringe_buffer_res_x * 4) + (i * 4) + 2] = ((unsigned char*)rgbaIn)[j * num_wafels_per_scanline * stereogram_num_tiles_x * 4 + i * 4 + 2];
+				((unsigned char*)fringeDataOut)[(j * fringe_buffer_res_x * 4) + (i * 4) + 3] = 0;
+			}
+		}
 
-		//((unsigned char*)fringeDataOut)[j * 3552 * 4 + i+3] = ((unsigned char*)rgbaIn)[j * 693 * 4 + i+3];
-
-		((int*)fringeDataOut)[i] = 0;
-		((int*)fringeDataOut)[j] = 0;
 	}
 }
