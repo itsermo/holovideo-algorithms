@@ -150,13 +150,13 @@ extern "C"{
 	{
 		// the number of output buffers,
 		// this is normally number of heads / number of heads per gpu
-		unsigned int num_output_buffers;
+		unsigned int num_fringe_buffers;
 
 		// the output buffer resolution in the X dimension (in pixels)
-		unsigned int output_buffer_res_x;
+		unsigned int fringe_buffer_res_x;
 
 		// the output buffer resolution in the Y dimension (in pixels)
-		unsigned int output_buffer_res_y;
+		unsigned int fringe_buffer_res_y;
 
 		// the width of the entire stereogram, in pixels
 		unsigned int stereogram_res_x;
@@ -165,10 +165,10 @@ extern "C"{
 		unsigned int stereogram_res_y;
 
 		// the number of views in the X dimension, in the stereogram grid
-		unsigned int stereogram_tile_x;
+		unsigned int stereogram_num_tiles_x;
 
 		// the number of views in the Y dimension, in the stereogram grid
-		unsigned int stereogram_tile_y;
+		unsigned int stereogram_num_tiles_y;
 
 		// the kernel is run on an entire hologram frame, that means
 		// this needs to be num wafels per scanline * num scanlines,

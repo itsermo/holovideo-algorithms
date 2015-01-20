@@ -1580,10 +1580,10 @@ void DSCP4Render::initFringeTextures()
 	// Create N-textures for outputting fringe data to the X displays
 	// Whatever holographic computation is done will be written
 	// To these textures and ultimately displayed on the holovideo display
-	glGenTextures(fringeContext_.algorithm_options.cache.num_output_buffers, fringeContext_.fringe_gl_tex_out);
+	glGenTextures(fringeContext_.algorithm_options.cache.num_fringe_buffers, fringeContext_.fringe_gl_tex_out);
 
-	char *blah = new char[fringeContext_.algorithm_options.cache.output_buffer_res_x * fringeContext_.algorithm_options.cache.output_buffer_res_y * 4];
-	for (size_t i = 0; i < fringeContext_.algorithm_options.cache.output_buffer_res_x * fringeContext_.algorithm_options.cache.output_buffer_res_y * 4; i++)
+	char *blah = new char[fringeContext_.algorithm_options.cache.fringe_buffer_res_x * fringeContext_.algorithm_options.cache.fringe_buffer_res_y * 4];
+	for (size_t i = 0; i < fringeContext_.algorithm_options.cache.fringe_buffer_res_x * fringeContext_.algorithm_options.cache.fringe_buffer_res_y * 4; i++)
 	{
 		blah[i] = i % 255;
 	}
@@ -1592,23 +1592,23 @@ void DSCP4Render::initFringeTextures()
 	{
 		fringeContext_.fringe_gl_buf_out = new GLuint[numWindows_];
 
-		glGenBuffers(fringeContext_.algorithm_options.cache.num_output_buffers, fringeContext_.fringe_gl_buf_out);
+		glGenBuffers(fringeContext_.algorithm_options.cache.num_fringe_buffers, fringeContext_.fringe_gl_buf_out);
 
-		for (unsigned int i = 0; i < fringeContext_.algorithm_options.cache.num_output_buffers; i++)
+		for (unsigned int i = 0; i < fringeContext_.algorithm_options.cache.num_fringe_buffers; i++)
 		{
 			glBindBuffer(GL_ARRAY_BUFFER, fringeContext_.fringe_gl_buf_out[i]);
-			glBufferData(GL_ARRAY_BUFFER, fringeContext_.algorithm_options.cache.output_buffer_res_x * fringeContext_.algorithm_options.cache.output_buffer_res_y * sizeof(GLbyte)* 4, blah, GL_DYNAMIC_DRAW);
+			glBufferData(GL_ARRAY_BUFFER, fringeContext_.algorithm_options.cache.fringe_buffer_res_x * fringeContext_.algorithm_options.cache.fringe_buffer_res_y * sizeof(GLbyte)* 4, blah, GL_DYNAMIC_DRAW);
 			glBindBuffer(GL_ARRAY_BUFFER, 0);
 		}
 	}
 
-	for (size_t i = 0; i < fringeContext_.algorithm_options.cache.num_output_buffers; i++)
+	for (size_t i = 0; i < fringeContext_.algorithm_options.cache.num_fringe_buffers; i++)
 	{
 		glBindTexture(GL_TEXTURE_2D, fringeContext_.fringe_gl_tex_out[i]);
 
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8,
-			fringeContext_.algorithm_options.cache.output_buffer_res_x,
-			fringeContext_.algorithm_options.cache.output_buffer_res_y,
+			fringeContext_.algorithm_options.cache.fringe_buffer_res_x,
+			fringeContext_.algorithm_options.cache.fringe_buffer_res_y,
 			0, GL_RGBA, GL_UNSIGNED_BYTE, blah);
 
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -1679,10 +1679,10 @@ void DSCP4Render::copyStereogramToPBOs()
 void DSCP4Render::drawFringeTextures()
 {
 	GLfloat Vertices[] = { 0.f, 0.f, 0.f,
-		static_cast<float>(fringeContext_.algorithm_options.cache.output_buffer_res_x), 0, 0,
-		static_cast<float>(fringeContext_.algorithm_options.cache.output_buffer_res_x),
-		static_cast<float>(fringeContext_.algorithm_options.cache.output_buffer_res_y), 0.f,
-		0.f, static_cast<float>(fringeContext_.algorithm_options.cache.output_buffer_res_y), 0.f
+		static_cast<float>(fringeContext_.algorithm_options.cache.fringe_buffer_res_x), 0, 0,
+		static_cast<float>(fringeContext_.algorithm_options.cache.fringe_buffer_res_x),
+		static_cast<float>(fringeContext_.algorithm_options.cache.fringe_buffer_res_y), 0.f,
+		0.f, static_cast<float>(fringeContext_.algorithm_options.cache.fringe_buffer_res_y), 0.f
 	};
 
 	
@@ -1706,9 +1706,9 @@ void DSCP4Render::drawFringeTextures()
 		glMatrixMode(GL_PROJECTION);
 		projectionMatrix_ = glm::ortho(
 			0.f,
-			static_cast<float>(fringeContext_.algorithm_options.cache.output_buffer_res_x),
+			static_cast<float>(fringeContext_.algorithm_options.cache.fringe_buffer_res_x),
 			0.f,
-			static_cast<float>(fringeContext_.algorithm_options.cache.output_buffer_res_y)
+			static_cast<float>(fringeContext_.algorithm_options.cache.fringe_buffer_res_y)
 			);
 
 		glLoadMatrixf(glm::value_ptr(projectionMatrix_));
@@ -1729,15 +1729,15 @@ void DSCP4Render::drawFringeTextures()
 			#ifdef DSCP4_ENABLE_TRACE_LOG
 					auto duration = measureTime<>([&](){
 						glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
-							fringeContext_.algorithm_options.cache.output_buffer_res_x,
-							fringeContext_.algorithm_options.cache.output_buffer_res_y,
+							fringeContext_.algorithm_options.cache.fringe_buffer_res_x,
+							fringeContext_.algorithm_options.cache.fringe_buffer_res_y,
 							0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
 					});
 					LOG4CXX_TRACE(logger_, "Copying hologram fringe result " << i << " to texture took " << duration << " ms (" << 1.f / duration * 1000 << " fps)")
 			#else
 					glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
-						fringeContext_.algorithm_options.cache.output_buffer_res_x,
-						fringeContext_.algorithm_options.cache.output_buffer_res_y,
+						fringeContext_.algorithm_options.cache.fringe_buffer_res_x,
+						fringeContext_.algorithm_options.cache.fringe_buffer_res_y,
 						0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
 			#endif
 
@@ -1951,27 +1951,27 @@ void DSCP4Render::computeHologram()
 
 void DSCP4Render::updateAlgorithmOptionsCache()
 {
-	fringeContext_.algorithm_options.cache.num_output_buffers =
+	fringeContext_.algorithm_options.cache.num_fringe_buffers =
 		fringeContext_.display_options.num_heads / fringeContext_.display_options.num_heads_per_gpu;
 
 	// the x res and y res are set by heads arranged vertically
 	// in the OS display management configurations
-	fringeContext_.algorithm_options.cache.output_buffer_res_x =
+	fringeContext_.algorithm_options.cache.fringe_buffer_res_x =
 		fringeContext_.display_options.head_res_x;
 
-	fringeContext_.algorithm_options.cache.output_buffer_res_y =
+	fringeContext_.algorithm_options.cache.fringe_buffer_res_y =
 		fringeContext_.display_options.head_res_y * fringeContext_.display_options.num_heads_per_gpu;
 
-	fringeContext_.algorithm_options.cache.stereogram_tile_x =
-		fringeContext_.algorithm_options.cache.stereogram_tile_y =
+	fringeContext_.algorithm_options.cache.stereogram_num_tiles_x =
+		fringeContext_.algorithm_options.cache.stereogram_num_tiles_y =
 		static_cast<unsigned int>(sqrt(fringeContext_.algorithm_options.num_views_x));
 
 	fringeContext_.algorithm_options.cache.stereogram_res_x =
-		fringeContext_.algorithm_options.cache.stereogram_tile_x
+		fringeContext_.algorithm_options.cache.stereogram_num_tiles_x
 		* fringeContext_.algorithm_options.num_wafels_per_scanline;
 
 	fringeContext_.algorithm_options.cache.stereogram_res_y =
-		fringeContext_.algorithm_options.cache.stereogram_tile_y
+		fringeContext_.algorithm_options.cache.stereogram_num_tiles_y
 		* fringeContext_.algorithm_options.num_scanlines;
 
 
@@ -2143,10 +2143,10 @@ void DSCP4Render::saveScreenshotPNG()
 	case DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE:
 	{
 		unsigned char * fringeBuffer = nullptr;
-		fringeBuffer = new unsigned char[fringeContext_.algorithm_options.cache.output_buffer_res_x * fringeContext_.algorithm_options.cache.output_buffer_res_y * 4];
+		fringeBuffer = new unsigned char[fringeContext_.algorithm_options.cache.fringe_buffer_res_x * fringeContext_.algorithm_options.cache.fringe_buffer_res_y * 4];
 
 
-		for (unsigned int i = 0; i < fringeContext_.algorithm_options.cache.num_output_buffers; i++)
+		for (unsigned int i = 0; i < fringeContext_.algorithm_options.cache.num_fringe_buffers; i++)
 		{
 			std::stringstream fringeFilenameSS;
 			fringeFilenameSS << "dscp4_fringe_pattern_" << std::setfill('0') << std::setw(2) << i << ".png";
@@ -2160,10 +2160,10 @@ void DSCP4Render::saveScreenshotPNG()
 			glBindTexture(GL_TEXTURE_2D, fringeContext_.fringe_gl_tex_out[i]);
 			glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, fringeBuffer);
 
-			auto fringeImage = boost::gil::interleaved_view(fringeContext_.algorithm_options.cache.output_buffer_res_x, fringeContext_.algorithm_options.cache.output_buffer_res_y, (boost::gil::rgba8_pixel_t*)fringeBuffer, fringeContext_.algorithm_options.cache.output_buffer_res_x * 4);
+			auto fringeImage = boost::gil::interleaved_view(fringeContext_.algorithm_options.cache.fringe_buffer_res_x, fringeContext_.algorithm_options.cache.fringe_buffer_res_y, (boost::gil::rgba8_pixel_t*)fringeBuffer, fringeContext_.algorithm_options.cache.fringe_buffer_res_x * 4);
 			boost::gil::png_write_view(fringeFilename.c_str(), boost::gil::flipped_up_down_view(fringeImage));
 			
-			LOG4CXX_INFO(logger_, "Saved hologram fringe pattern buffer " << i + 1 << " of " << fringeContext_.algorithm_options.cache.num_output_buffers << " to '" << (boost::filesystem::current_path() / fringeFilename).string() << "'")
+			LOG4CXX_INFO(logger_, "Saved hologram fringe pattern buffer " << i + 1 << " of " << fringeContext_.algorithm_options.cache.num_fringe_buffers << " to '" << (boost::filesystem::current_path() / fringeFilename).string() << "'")
 
 #ifdef DSCP4_ENABLE_TRACE_LOG
 			});

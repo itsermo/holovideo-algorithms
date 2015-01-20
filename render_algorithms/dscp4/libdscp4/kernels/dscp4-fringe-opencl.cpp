@@ -79,7 +79,7 @@ extern "C" {
 
 		LOG4CXX_DEBUG(DSCP4_OPENCL_LOGGER, "Creating OpenCL Context");
 
-		const unsigned int num_output_buffers = fringeContext->display_options.num_heads / fringeContext->display_options.num_heads_per_gpu;
+		const unsigned int num_fringe_buffers = fringeContext->display_options.num_heads / fringeContext->display_options.num_heads_per_gpu;
 
 #if defined (__APPLE__) || defined(MACOSX)
 		static const char* CL_GL_SHARING_EXT = "cl_APPLE_gl_sharing";
@@ -174,9 +174,9 @@ extern "C" {
 
 		CHECK_OPENCL_RC(ret, "Could not create OpenCL stereogram DEPTH memory resource from OpenGL")
 
-		context->fringe_opencl_resources = new void*[num_output_buffers];
+		context->fringe_opencl_resources = new void*[num_fringe_buffers];
 
-		for (unsigned int i = 0; i < num_output_buffers; i++)
+		for (unsigned int i = 0; i < num_fringe_buffers; i++)
 		{
 			context->fringe_opencl_resources[i] = (cl_mem)clCreateFromGLTexture2D((cl_context)context->cl_context, CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, fringeContext->fringe_gl_tex_out[i], &ret);
 			CHECK_OPENCL_RC(ret, "Could not create OpenCL fringe output texture memory resource " << i << " from OpenGL")
@@ -208,10 +208,10 @@ extern "C" {
 		ret = clSetKernelArg((cl_kernel)context->kernel, 5, sizeof(cl_uint), &context->fringe_context->algorithm_options.num_scanlines);
 		ret = clSetKernelArg((cl_kernel)context->kernel, 6, sizeof(cl_uint), &context->fringe_context->algorithm_options.cache.stereogram_res_x);
 		ret = clSetKernelArg((cl_kernel)context->kernel, 7, sizeof(cl_uint), &context->fringe_context->algorithm_options.cache.stereogram_res_y);
-		ret = clSetKernelArg((cl_kernel)context->kernel, 8, sizeof(cl_uint), &context->fringe_context->algorithm_options.cache.stereogram_tile_x);
-		ret = clSetKernelArg((cl_kernel)context->kernel, 9, sizeof(cl_uint), &context->fringe_context->algorithm_options.cache.stereogram_tile_y);
-		ret = clSetKernelArg((cl_kernel)context->kernel, 10, sizeof(cl_uint), &context->fringe_context->algorithm_options.cache.output_buffer_res_x);
-		ret = clSetKernelArg((cl_kernel)context->kernel, 11, sizeof(cl_uint), &context->fringe_context->algorithm_options.cache.output_buffer_res_y);
+		ret = clSetKernelArg((cl_kernel)context->kernel, 8, sizeof(cl_uint), &context->fringe_context->algorithm_options.cache.stereogram_num_tiles_x);
+		ret = clSetKernelArg((cl_kernel)context->kernel, 9, sizeof(cl_uint), &context->fringe_context->algorithm_options.cache.stereogram_num_tiles_y);
+		ret = clSetKernelArg((cl_kernel)context->kernel, 10, sizeof(cl_uint), &context->fringe_context->algorithm_options.cache.fringe_buffer_res_x);
+		ret = clSetKernelArg((cl_kernel)context->kernel, 11, sizeof(cl_uint), &context->fringe_context->algorithm_options.cache.fringe_buffer_res_y);
 
 		return context;
 	}
@@ -232,11 +232,11 @@ extern "C" {
 		CHECK_OPENCL_RC(ret, "Could not release OpenCL program")
 
 
-		const unsigned int num_output_buffers =
+		const unsigned int num_fringe_buffers =
 			(*openclContext)->fringe_context->display_options.num_heads /
 			(*openclContext)->fringe_context->display_options.num_heads_per_gpu;
 
-		for (unsigned int i = 0; i < num_output_buffers; i++)
+		for (unsigned int i = 0; i < num_fringe_buffers; i++)
 		{
 			ret = clReleaseMemObject((cl_mem)(*openclContext)->fringe_opencl_resources[i]);
 			CHECK_OPENCL_RC(ret, "Could not release fringe texture " << i << " OpenCL memory resource")
@@ -263,34 +263,34 @@ extern "C" {
 
 	void dscp4_fringe_opencl_ComputeFringe(dscp4_fringe_opencl_context_t* openclContext)
 	{
-		const unsigned int num_output_buffers = openclContext->fringe_context->algorithm_options.cache.num_output_buffers;
+		const unsigned int num_fringe_buffers = openclContext->fringe_context->algorithm_options.cache.num_fringe_buffers;
 
 		cl_int ret = 0;
 
-		cl_event *event = new cl_event[num_output_buffers * 3];
+		cl_event *event = new cl_event[num_fringe_buffers * 3];
 
 		glFinish();
 
-		for (unsigned int i = 0; i < num_output_buffers; i++)
+		for (unsigned int i = 0; i < num_fringe_buffers; i++)
 		{
 			ret = clSetKernelArg((cl_kernel)openclContext->kernel, 0, sizeof(cl_mem), &(openclContext->fringe_opencl_resources[i]));
 			ret = clSetKernelArg((cl_kernel)openclContext->kernel, 3, sizeof(cl_uint), &i);
 
 			ret = clEnqueueAcquireGLObjects((cl_command_queue)openclContext->command_queue, 1, (const cl_mem*)&openclContext->stereogram_rgba_opencl_resource, 0, NULL, NULL);
 			ret = clEnqueueAcquireGLObjects((cl_command_queue)openclContext->command_queue, 1, (const cl_mem*)&openclContext->stereogram_depth_opencl_resource, 0, NULL, NULL);
-			ret = clEnqueueAcquireGLObjects((cl_command_queue)openclContext->command_queue, 1, (const cl_mem*)&openclContext->fringe_opencl_resources[i], 0, NULL, &event[i*num_output_buffers]);
+			ret = clEnqueueAcquireGLObjects((cl_command_queue)openclContext->command_queue, 1, (const cl_mem*)&openclContext->fringe_opencl_resources[i], 0, NULL, &event[i*num_fringe_buffers]);
 
 			ret = clEnqueueNDRangeKernel((cl_command_queue)openclContext->command_queue, (cl_kernel)openclContext->kernel, 2, NULL,
-				(const size_t*)openclContext->fringe_context->algorithm_options.cache.opencl_global_workgroup_size, (const size_t*)openclContext->fringe_context->algorithm_options.opencl_local_workgroup_size, 1, &event[i*num_output_buffers], &event[i*num_output_buffers+1]);
+				(const size_t*)openclContext->fringe_context->algorithm_options.cache.opencl_global_workgroup_size, (const size_t*)openclContext->fringe_context->algorithm_options.opencl_local_workgroup_size, 1, &event[i*num_fringe_buffers], &event[i*num_fringe_buffers+1]);
 
 			ret = clEnqueueReleaseGLObjects((cl_command_queue)openclContext->command_queue, 1, (const cl_mem*)&openclContext->stereogram_rgba_opencl_resource, 0, NULL, NULL);
-			ret = clEnqueueReleaseGLObjects((cl_command_queue)openclContext->command_queue, 1, (const cl_mem*)&openclContext->fringe_opencl_resources[i], 1, &event[i*num_output_buffers+1], &event[i*num_output_buffers+2]);
+			ret = clEnqueueReleaseGLObjects((cl_command_queue)openclContext->command_queue, 1, (const cl_mem*)&openclContext->fringe_opencl_resources[i], 1, &event[i*num_fringe_buffers+1], &event[i*num_fringe_buffers+2]);
 			ret = clEnqueueReleaseGLObjects((cl_command_queue)openclContext->command_queue, 1, (const cl_mem*)&openclContext->stereogram_depth_opencl_resource, 0, NULL, NULL);
 		}
 
-		for (unsigned int i = 0; i < num_output_buffers; i++)
+		for (unsigned int i = 0; i < num_fringe_buffers; i++)
 		{
-			ret = clWaitForEvents(1, &event[i* num_output_buffers + 2]);
+			ret = clWaitForEvents(1, &event[i* num_fringe_buffers + 2]);
 		}
 
 		delete[] event;

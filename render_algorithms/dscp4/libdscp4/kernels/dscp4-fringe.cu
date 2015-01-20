@@ -15,27 +15,24 @@ const int blocksize = 16;
 #include <stdio.h>
 #include <math.h>
 
+__global__ void computeFringe(
+	void * fringeDataOut,
+	const void * rgbaIn,
+	const void * depthIn,
+	const unsigned int which_buffer,
+	const unsigned int num_wafels_per_scanline,
+	const unsigned int num_scanlines,
+	const unsigned int stereogram_res_x,
+	const unsigned int stereogram_res_y,
+	const unsigned int stereogram_num_tiles_x,
+	const unsigned int stereogram_num_tiles_y,
+	const unsigned int fringe_buffer_res_x,
+	const unsigned int fringe_buffer_res_y
+	);
+
 __global__ void hello(char *a, int *b)
 {
 	a[threadIdx.x] += b[threadIdx.x];
-}
-
-__global__ void computeFringe(void * fringeDataOut, void * rgbaIn, void * depthIn)
-{
-	int i = (blockIdx.x * blockDim.x) + threadIdx.x;
-	int j = (blockIdx.y * blockDim.y) + threadIdx.y;
-
-	((unsigned char*)fringeDataOut)[j * 3552 * 4 + i * 4] = ((unsigned char*)rgbaIn)[j * 693 * 4 + i*4];
-	((unsigned char*)fringeDataOut)[j * 3552 * 4 + i * 4 + 1] = ((unsigned char*)rgbaIn)[j * 693 * 4 + i * 4+1];
-	((unsigned char*)fringeDataOut)[j * 3552 * 4 + i * 4 + 2] = ((unsigned char*)rgbaIn)[j * 693 * 4 + i * 4 + 2];
-	((unsigned char*)fringeDataOut)[j * 3552 * 4 + i * 4 + 3] = 255;
-	//((unsigned char*)fringeDataOut)[j * 3552 * 4 + i] = ((unsigned char*)rgbaIn)[j * 693 * 4 + i];
-	//((unsigned char*)fringeDataOut)[j * 3552 * 4 + i+1] = ((unsigned char*)rgbaIn)[j * 693 * 4 + i+1];
-	//((unsigned char*)fringeDataOut)[j * 3552 * 4 + i+2] = ((unsigned char*)rgbaIn)[j * 693 * 4 + i+2];
-	//((unsigned char*)fringeDataOut)[j * 3552 * 4 + i+3] = ((unsigned char*)rgbaIn)[j * 693 * 4 + i+3];
-
-	((int*)fringeDataOut)[i] = 0;
-	((int*)fringeDataOut)[j] = 0;
 }
 
 char * dscp4_fringe_cuda_HelloWorld()
@@ -198,25 +195,40 @@ void dscp4_fringe_cuda_ComputeFringe(dscp4_fringe_cuda_context_t* cudaContext)
 
 	}
 
-	for (unsigned int i = 0; i < cudaContext->fringe_context->algorithm_options.cache.stereogram_res_y; i++)
-	{
-		cudaMemcpy((unsigned char*)output[1] + i * 3552 * 4, (unsigned char*)rgbaPtr + i*cudaContext->fringe_context->algorithm_options.cache.stereogram_res_x * 4, cudaContext->fringe_context->algorithm_options.cache.stereogram_res_x * 4, cudaMemcpyDeviceToDevice);
-		//cudaMemcpy((unsigned char*)output[1] + i * 3552 * 4, depthPtr, cudaContext->fringe_context->algorithm_options.cache.stereogram_res_x * 4, cudaMemcpyDeviceToDevice);
-		//cudaMemcpy((unsigned char*)output[2] + i * 3552 * 4, rgbaPtr, cudaContext->fringe_context->algorithm_options.cache.stereogram_res_x * 4, cudaMemcpyDeviceToDevice);
-		//cudaMemcpy((char*)output[0] + i * 3552 * 4, depthPtr, cudaContext->fringe_context->algorithm_options.cache.stereogram_res_x * 4, cudaMemcpyDeviceToDevice);
-		//error = cudaMemset((char*)output[0] + i*3552*4, 255, cudaContext->fringe_context->algorithm_options.cache.stereogram_res_x * 4);
-		//error = cudaMemset((char*)output[1] + i*3552*4, 127, cudaContext->fringe_context->algorithm_options.cache.stereogram_res_x * 4);
-		//error = cudaMemset((char*)output[2] + i*3552*4, 30, cudaContext->fringe_context->algorithm_options.cache.stereogram_res_x * 4);
-	}
+	//for (unsigned int i = 0; i < cudaContext->fringe_context->algorithm_options.cache.stereogram_res_y; i++)
+	//{
+	//	cudaMemcpy((unsigned char*)output[1] + i * 3552 * 4, (unsigned char*)rgbaPtr + i*cudaContext->fringe_context->algorithm_options.cache.stereogram_res_x * 4, cudaContext->fringe_context->algorithm_options.cache.stereogram_res_x * 4, cudaMemcpyDeviceToDevice);
+	//	//cudaMemcpy((unsigned char*)output[1] + i * 3552 * 4, depthPtr, cudaContext->fringe_context->algorithm_options.cache.stereogram_res_x * 4, cudaMemcpyDeviceToDevice);
+	//	//cudaMemcpy((unsigned char*)output[2] + i * 3552 * 4, rgbaPtr, cudaContext->fringe_context->algorithm_options.cache.stereogram_res_x * 4, cudaMemcpyDeviceToDevice);
+	//	//cudaMemcpy((char*)output[0] + i * 3552 * 4, depthPtr, cudaContext->fringe_context->algorithm_options.cache.stereogram_res_x * 4, cudaMemcpyDeviceToDevice);
+	//	//error = cudaMemset((char*)output[0] + i*3552*4, 255, cudaContext->fringe_context->algorithm_options.cache.stereogram_res_x * 4);
+	//	//error = cudaMemset((char*)output[1] + i*3552*4, 127, cudaContext->fringe_context->algorithm_options.cache.stereogram_res_x * 4);
+	//	error = cudaMemset((char*)output[2] + i*3552*4, 0, cudaContext->fringe_context->algorithm_options.cache.stereogram_res_x * 4);
+	//}
 
-
-
+	
 	// run kernel here
-	dim3 threadsPerBlock(8, 4);
-	dim3 numBlocks(cudaContext->fringe_context->algorithm_options.num_wafels_per_scanline / threadsPerBlock.x,
-		cudaContext->fringe_context->algorithm_options.num_scanlines / threadsPerBlock.y);
-	computeFringe <<<numBlocks, threadsPerBlock >>>(output[2], rgbaPtr, depthPtr);
+	for (unsigned int i = 0; i < cudaContext->fringe_context->algorithm_options.cache.num_fringe_buffers; i++)
+	{
 
+		dim3 threadsPerBlock(8, 4);
+		dim3 numBlocks(cudaContext->fringe_context->algorithm_options.num_wafels_per_scanline / threadsPerBlock.x,
+			cudaContext->fringe_context->algorithm_options.num_scanlines / threadsPerBlock.y);
+		computeFringe << <numBlocks, threadsPerBlock >> >(
+			output[i],
+			rgbaPtr,
+			depthPtr,
+			i,
+			cudaContext->fringe_context->algorithm_options.num_wafels_per_scanline,
+			cudaContext->fringe_context->algorithm_options.num_scanlines,
+			cudaContext->fringe_context->algorithm_options.cache.stereogram_res_x,
+			cudaContext->fringe_context->algorithm_options.cache.stereogram_res_y,
+			cudaContext->fringe_context->algorithm_options.cache.stereogram_num_tiles_x,
+			cudaContext->fringe_context->algorithm_options.cache.stereogram_num_tiles_y,
+			cudaContext->fringe_context->algorithm_options.cache.fringe_buffer_res_x,
+			cudaContext->fringe_context->algorithm_options.cache.fringe_buffer_res_y
+			);
+	}
 
 	//write texture outputs here
 
@@ -240,3 +252,41 @@ void dscp4_fringe_cuda_ComputeFringe(dscp4_fringe_cuda_context_t* cudaContext)
 	free(output);
 	free(outputSizes);
 };
+
+__global__ void computeFringe(
+	void * fringeDataOut,
+	const void * rgbaIn,
+	const void * depthIn,
+	const unsigned int which_buffer,
+	const unsigned int num_wafels_per_scanline,
+	const unsigned int num_scanlines,
+	const unsigned int stereogram_res_x,
+	const unsigned int stereogram_res_y,
+	const unsigned int stereogram_num_tiles_x,
+	const unsigned int stereogram_num_tiles_y,
+	const unsigned int fringe_buffer_res_x,
+	const unsigned int fringe_buffer_res_y
+	)
+{
+	int i = (blockIdx.x * blockDim.x) + threadIdx.x;
+	int j = (blockIdx.y * blockDim.y) + threadIdx.y;
+
+	if (i < num_wafels_per_scanline && j < num_scanlines)
+	{
+		((unsigned char*)fringeDataOut)[(j * fringe_buffer_res_x * 4) + (i * 4)] = ((unsigned char*)rgbaIn)[j * num_wafels_per_scanline * stereogram_num_tiles_x * 4 + i * 4];
+		((unsigned char*)fringeDataOut)[(j * fringe_buffer_res_x * 4) + (i * 4) + 1] = ((unsigned char*)rgbaIn)[j * num_wafels_per_scanline * stereogram_num_tiles_x * 4 + i * 4 + 1];
+		((unsigned char*)fringeDataOut)[(j * fringe_buffer_res_x * 4) + (i * 4) + 2] = ((unsigned char*)rgbaIn)[j * num_wafels_per_scanline * stereogram_num_tiles_x * 4 + i * 4 + 2];
+		((unsigned char*)fringeDataOut)[(j * fringe_buffer_res_x * 4) + (i * 4) + 3] = 0;
+		//((unsigned char*)fringeDataOut)[j * 3552 * 4 + i * 4+1] = ((unsigned char*)rgbaIn)[j * 693 * 4 + i * 4];
+		//((unsigned char*)fringeDataOut)[j * 3552 * 4 + i * 4 + 1] = ((unsigned char*)rgbaIn)[j * 693 * 4 + i * 4 + 1];
+		//((unsigned char*)fringeDataOut)[j * 3552 * 4 + i * 4 + 2] = ((unsigned char*)rgbaIn)[j * 693 * 4 + i * 4 + 2];
+		//((unsigned char*)fringeDataOut)[j * 3552 * 4 + i * 4 + 3] = 255;
+		//((unsigned char*)fringeDataOut)[j * 3552 * 4 + i] = ((unsigned char*)rgbaIn)[j * 693 * 4 + i];
+		//((unsigned char*)fringeDataOut)[j * 3552 * 4 + i+1] = ((unsigned char*)rgbaIn)[j * 693 * 4 + i+1];
+
+		//((unsigned char*)fringeDataOut)[j * 3552 * 4 + i+3] = ((unsigned char*)rgbaIn)[j * 693 * 4 + i+3];
+
+		((int*)fringeDataOut)[i] = 0;
+		((int*)fringeDataOut)[j] = 0;
+	}
+}
