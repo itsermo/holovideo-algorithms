@@ -22,8 +22,18 @@ __global__ void hello(char *a, int *b)
 
 __global__ void computeFringe(void * fringeDataOut, void * rgbaIn, void * depthIn)
 {
-	unsigned int i = (blockIdx.x * blockDim.x) + threadIdx.x;
-	unsigned int j = (blockIdx.y * blockDim.y) + threadIdx.y;
+	int i = (blockIdx.x * blockDim.x) + threadIdx.x;
+	int j = (blockIdx.y * blockDim.y) + threadIdx.y;
+
+	((unsigned char*)fringeDataOut)[j * 3552 * 4 + i * 4] = ((unsigned char*)rgbaIn)[j * 693 * 4 + i*4];
+	((unsigned char*)fringeDataOut)[j * 3552 * 4 + i * 4 + 1] = ((unsigned char*)rgbaIn)[j * 693 * 4 + i * 4+1];
+	((unsigned char*)fringeDataOut)[j * 3552 * 4 + i * 4 + 2] = ((unsigned char*)rgbaIn)[j * 693 * 4 + i * 4 + 2];
+	((unsigned char*)fringeDataOut)[j * 3552 * 4 + i * 4 + 3] = 255;
+	//((unsigned char*)fringeDataOut)[j * 3552 * 4 + i] = ((unsigned char*)rgbaIn)[j * 693 * 4 + i];
+	//((unsigned char*)fringeDataOut)[j * 3552 * 4 + i+1] = ((unsigned char*)rgbaIn)[j * 693 * 4 + i+1];
+	//((unsigned char*)fringeDataOut)[j * 3552 * 4 + i+2] = ((unsigned char*)rgbaIn)[j * 693 * 4 + i+2];
+	//((unsigned char*)fringeDataOut)[j * 3552 * 4 + i+3] = ((unsigned char*)rgbaIn)[j * 693 * 4 + i+3];
+
 	((int*)fringeDataOut)[i] = 0;
 	((int*)fringeDataOut)[j] = 0;
 }
@@ -188,22 +198,29 @@ void dscp4_fringe_cuda_ComputeFringe(dscp4_fringe_cuda_context_t* cudaContext)
 
 	}
 
-	for (int i = 0; i < cudaContext->fringe_context->algorithm_options.cache.stereogram_res_y; i++)
+	for (unsigned int i = 0; i < cudaContext->fringe_context->algorithm_options.cache.stereogram_res_y; i++)
 	{
-		error = cudaMemset((char*)output[0] + i*3552*4, 255, cudaContext->fringe_context->algorithm_options.cache.stereogram_res_x * 4);
-		error = cudaMemset((char*)output[1] + i*3552*4, 127, cudaContext->fringe_context->algorithm_options.cache.stereogram_res_x * 4);
-		error = cudaMemset((char*)output[2] + i*3552*4, 30, cudaContext->fringe_context->algorithm_options.cache.stereogram_res_x * 4);
+		cudaMemcpy((unsigned char*)output[1] + i * 3552 * 4, (unsigned char*)rgbaPtr + i*cudaContext->fringe_context->algorithm_options.cache.stereogram_res_x * 4, cudaContext->fringe_context->algorithm_options.cache.stereogram_res_x * 4, cudaMemcpyDeviceToDevice);
+		//cudaMemcpy((unsigned char*)output[1] + i * 3552 * 4, depthPtr, cudaContext->fringe_context->algorithm_options.cache.stereogram_res_x * 4, cudaMemcpyDeviceToDevice);
+		//cudaMemcpy((unsigned char*)output[2] + i * 3552 * 4, rgbaPtr, cudaContext->fringe_context->algorithm_options.cache.stereogram_res_x * 4, cudaMemcpyDeviceToDevice);
+		//cudaMemcpy((char*)output[0] + i * 3552 * 4, depthPtr, cudaContext->fringe_context->algorithm_options.cache.stereogram_res_x * 4, cudaMemcpyDeviceToDevice);
+		//error = cudaMemset((char*)output[0] + i*3552*4, 255, cudaContext->fringe_context->algorithm_options.cache.stereogram_res_x * 4);
+		//error = cudaMemset((char*)output[1] + i*3552*4, 127, cudaContext->fringe_context->algorithm_options.cache.stereogram_res_x * 4);
+		//error = cudaMemset((char*)output[2] + i*3552*4, 30, cudaContext->fringe_context->algorithm_options.cache.stereogram_res_x * 4);
 	}
 
+
+
 	// run kernel here
-	//dim3 threadsPerBlock(16, 16);
-	//dim3 numBlocks(32,32);
-	//computeFringe <<<numBlocks, threadsPerBlock >>>(output[0], rgbaPtr, depthPtr);
+	dim3 threadsPerBlock(8, 4);
+	dim3 numBlocks(cudaContext->fringe_context->algorithm_options.num_wafels_per_scanline / threadsPerBlock.x,
+		cudaContext->fringe_context->algorithm_options.num_scanlines / threadsPerBlock.y);
+	computeFringe <<<numBlocks, threadsPerBlock >>>(output[2], rgbaPtr, depthPtr);
 
 
 	//write texture outputs here
 
-	for (int i = 0; i < cudaContext->fringe_context->display_options.num_heads / 2; i++)
+	for (unsigned int i = 0; i < cudaContext->fringe_context->display_options.num_heads / 2; i++)
 	{
 		error = cudaGraphicsUnmapResources(1, (cudaGraphicsResource_t*)(&cudaContext->fringe_cuda_resources[i]), 0);
 		if(error != cudaSuccess)
