@@ -44,31 +44,6 @@ if (rc != CL_SUCCESS)											\
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-
-	//int IsExtensionSupported(
-	//	const char* support_str, const char* ext_string, size_t ext_buffer_size)
-	//{
-	//	size_t offset = 0;
-	//	const char* space_substr = strnstr(ext_string + offset, " ", ext_buffer_size - offset);
-	//	size_t space_pos = space_substr ? space_substr - ext_string : 0;
-	//	while (space_pos < ext_buffer_size)
-	//	{
-	//		if (strncmp(support_str, ext_string + offset, space_pos) == 0)
-	//		{
-	//			// Device supports requested extension!
-	//			printf("INFO OpenCL -- Found extension support '%s'!\n", support_str);
-	//			return 1;
-	//		}
-	//		// Keep searching -- skip to next token string
-	//		offset = space_pos + 1;
-	//		space_substr = strnstr(ext_string + offset, " ", ext_buffer_size - offset);
-	//		space_pos = space_substr ? space_substr - ext_string : 0;
-	//	}
-	//	printf("ERROR OpenCL -- Extension not supported '%s'!\n", support_str);
-	//	return 0;
-	//}
-
 	dscp4_fringe_opencl_context_t* dscp4_fringe_opencl_CreateContext(dscp4_fringe_context_t *fringeContext, int *glContext)
 	{
 

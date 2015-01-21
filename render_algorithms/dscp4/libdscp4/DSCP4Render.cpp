@@ -1984,14 +1984,14 @@ void DSCP4Render::updateAlgorithmOptionsCache()
 	// but also divisible by the local workgroup size
 	if (fringeContext_.algorithm_options.compute_method == DSCP4_COMPUTE_METHOD_OPENCL)
 	{
-		fringeContext_.algorithm_options.cache.opencl_global_workgroup_size[0] =
+		fringeContext_.algorithm_options.cache.opencl_global_workgroup_size[0] = fringeContext_.algorithm_options.opencl_local_workgroup_size[0] == 0 ? fringeContext_.algorithm_options.num_wafels_per_scanline :
 			fringeContext_.algorithm_options.num_wafels_per_scanline % fringeContext_.algorithm_options.opencl_local_workgroup_size[0] == 0 ?
 			fringeContext_.algorithm_options.num_wafels_per_scanline :
 			fringeContext_.algorithm_options.opencl_local_workgroup_size[0]
 			- (fringeContext_.algorithm_options.num_wafels_per_scanline % fringeContext_.algorithm_options.opencl_local_workgroup_size[0])
 			+ fringeContext_.algorithm_options.num_wafels_per_scanline;
 
-		fringeContext_.algorithm_options.cache.opencl_global_workgroup_size[1] =
+		fringeContext_.algorithm_options.cache.opencl_global_workgroup_size[1] = fringeContext_.algorithm_options.opencl_local_workgroup_size[1] == 0 ? fringeContext_.algorithm_options.num_scanlines :
 			fringeContext_.algorithm_options.num_scanlines % fringeContext_.algorithm_options.opencl_local_workgroup_size[1] == 0 ?
 			fringeContext_.algorithm_options.num_scanlines :
 			fringeContext_.algorithm_options.opencl_local_workgroup_size[1]

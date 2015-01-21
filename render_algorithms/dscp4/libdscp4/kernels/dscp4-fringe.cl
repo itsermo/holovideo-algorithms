@@ -105,9 +105,9 @@ __kernel void computeFringe2(
 			val = (float4)(0.0f, 0.0f, 1.0f, 1.0f);
 
 		//val = read_imagef(color, sampler, coords);
-		float4 d = read_imagef(stereogram_depth_in, sampler, coords);
+		float4 d = read_imagef(stereogram_color_in, sampler, coords);
 
-		val.x = 1.f - d.x;
+		val.x = 1.f - d.y;
 
 		write_imagef(fringe_buffer_out, coords, val);
 	}

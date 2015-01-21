@@ -287,9 +287,6 @@ int main(int argc, const char* argv[])
 		algorithmOptions.fov_x = options.getFovX();
 		algorithmOptions.fov_y = options.getFovY();
 
-
-
-
 		if (options.getComputeMethod() == "opencl")
 		{
 			algorithmOptions.compute_method = DSCP4_COMPUTE_METHOD_OPENCL;
