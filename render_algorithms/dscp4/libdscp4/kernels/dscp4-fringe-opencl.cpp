@@ -167,6 +167,18 @@ extern "C" {
 
 		ret = clBuildProgram((cl_program)context->program, 1, &deviceID, NULL, NULL, NULL);
 		CHECK_OPENCL_RC(ret, "Could not build OpenCL program from source")
+		
+		if (ret == CL_BUILD_PROGRAM_FAILURE)
+		{
+			size_t len;
+			clGetProgramBuildInfo((cl_program)context->program, deviceID, CL_PROGRAM_BUILD_LOG, NULL, NULL, &len);
+
+			char * log = new char[len];
+			clGetProgramBuildInfo((cl_program)context->program, deviceID, CL_PROGRAM_BUILD_LOG, len, log, &len);
+
+			LOG4CXX_ERROR(DSCP4_OPENCL_LOGGER, "OpenCL Build Log:\n" << log)
+
+		}
 
 		if (context->have_cl_gl_depth_images_extension)
 			context->kernel = clCreateKernel((cl_program)context->program, "computeFringe2", &ret);

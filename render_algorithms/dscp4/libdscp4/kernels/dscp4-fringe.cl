@@ -3,10 +3,12 @@ CLK_NORMALIZED_COORDS_FALSE
 | CLK_ADDRESS_CLAMP_TO_EDGE
 | CLK_FILTER_NEAREST;
 
-__constant float m_pi = 3.14159265358979323846264338327950288f;
-__constant float two_pi_color_r = 2.f * m_pi / 0.0000350;
-__constant float two_pi_color_g = 2.f * m_pi / 0.0000450;
-__constant float two_pi_color_b = 2.f * m_pi / 0.0000650;
+#ifndef M_PI
+#define M_PI 3.14159265358979323846264338327950288f
+#endif
+#define TWO_PI_COLOR_R 2.f * M_PI / 0.0000350f
+#define TWO_PI_COLOR_G 2.f * M_PI / 0.0000450f
+#define TWO_PI_COLOR_B 2.f * M_PI / 0.0000650f
 
 
 // Computes the DSCP hologram, where stereogram
@@ -54,7 +56,7 @@ __kernel void computeFringe(
 					//val = read_imagef(color, sampler, coords);
 					//float4 d = read_imagef(depth, sampler, coords);
 
-					val.x = cos(sqrt(1.f - d*d)*m_pi);
+					val.x = cos(sqrt(1.f - d*d)*M_PI);
 
 
 					//coords.y += sy * num_scanlines;
