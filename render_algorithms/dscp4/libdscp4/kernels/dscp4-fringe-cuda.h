@@ -22,8 +22,6 @@ extern "C" {
 
 	void dscp4_fringe_cuda_DestroyContext(dscp4_fringe_cuda_context_t** cudaContext);
 
-	char * dscp4_fringe_cuda_HelloWorld();
-
 	void dscp4_fringe_cuda_ComputeFringe(dscp4_fringe_cuda_context_t* cudaContext);
 
 #ifdef __cplusplus

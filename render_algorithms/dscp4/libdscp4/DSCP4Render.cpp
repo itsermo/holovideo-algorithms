@@ -1923,7 +1923,7 @@ void DSCP4Render::deinitComputeMethod()
 		break;
 	case DSCP4_COMPUTE_METHOD_OPENCL:
 #ifdef DSCP4_HAVE_OPENCL
-		LOG4CXX_DEBUG(logger_, "OpenCL -- Deinitializing CUDA context")
+		LOG4CXX_DEBUG(logger_, "OpenCL -- Deinitializing OpenCL context")
 		dscp4_fringe_opencl_DestroyContext((dscp4_fringe_opencl_context_t**)&computeContext_);
 #endif
 		break;

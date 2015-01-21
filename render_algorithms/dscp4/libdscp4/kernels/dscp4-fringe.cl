@@ -6,9 +6,9 @@ CLK_NORMALIZED_COORDS_FALSE
 #ifndef M_PI
 #define M_PI 3.14159265358979323846264338327950288f
 #endif
-#define TWO_PI_COLOR_R 2.f * M_PI / 0.0000350f
-#define TWO_PI_COLOR_G 2.f * M_PI / 0.0000450f
-#define TWO_PI_COLOR_B 2.f * M_PI / 0.0000650f
+#define TWO_PI_COLOR_R 2 * M_PI / 0.000000650f
+#define TWO_PI_COLOR_G 2 * M_PI / 0.000000510f
+#define TWO_PI_COLOR_B 2 * M_PI / 0.000000475f
 
 
 // Computes the DSCP hologram, where stereogram
@@ -38,6 +38,9 @@ __kernel void computeFringe(
 		{
 			coords.x = get_global_id(0);
 			coords.y = get_global_id(1);
+
+			float wafel = 0.f;
+
 			for (uint sy = 0; sy < 4; sy++)
 			{
 				for (uint sx = 0; sx < 4; sx++)
@@ -56,10 +59,7 @@ __kernel void computeFringe(
 					//val = read_imagef(color, sampler, coords);
 					//float4 d = read_imagef(depth, sampler, coords);
 
-					val.x = cos(sqrt(1.f - d*d)*M_PI);
-
-
-					//coords.y += sy * num_scanlines;
+					val.x = cos(sqrt(1.f - d*d + d*d)*TWO_PI_COLOR_R - d + d*sin(30.f) - 0.5f);
 
 					write_imagef(fringe_buffer_out, coords, val);
 					coords.x += num_wafels_per_scanline;
