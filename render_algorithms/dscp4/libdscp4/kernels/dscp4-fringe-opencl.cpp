@@ -130,6 +130,9 @@ extern "C" {
 				context->have_cl_gl_sharing_extension = true;
 		}
 
+		//for testing
+		context->have_cl_gl_depth_images_extension = false;
+
 		delete[] extensions;
 
 		LOG4CXX_DEBUG(DSCP4_OPENCL_LOGGER, "Found " << numDevices << " OpenCL GPU devices")
@@ -191,9 +194,9 @@ extern "C" {
 		CHECK_OPENCL_RC(ret, "Could not build OpenCL program from source")
 
 		if (context->have_cl_gl_depth_images_extension)
-			context->kernel = clCreateKernel((cl_program)context->program, "test_hologram2", &ret);
+			context->kernel = clCreateKernel((cl_program)context->program, "computeFringe2", &ret);
 		else
-			context->kernel = clCreateKernel((cl_program)context->program, "test_hologram", &ret);
+			context->kernel = clCreateKernel((cl_program)context->program, "computeFringe", &ret);
 
 		CHECK_OPENCL_RC(ret, "Could not create OpenCL kernel object")
 
