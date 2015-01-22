@@ -159,7 +159,7 @@ extern "C" {
 
 		for (unsigned int i = 0; i < num_fringe_buffers; i++)
 		{
-			context->fringe_opencl_resources[i] = (cl_mem)clCreateFromGLTexture2D((cl_context)context->cl_context, CL_MEM_WRITE_ONLY, GL_TEXTURE_2D, 0, fringeContext->fringe_gl_tex_out[i], &ret);
+			context->fringe_opencl_resources[i] = (cl_mem)clCreateFromGLTexture2D((cl_context)context->cl_context, CL_MEM_READ_WRITE, GL_TEXTURE_2D, 0, fringeContext->fringe_gl_tex_out[i], &ret);
 			CHECK_OPENCL_RC(ret, "Could not create OpenCL fringe output texture memory resource " << i << " from OpenGL")
 		}
 
@@ -194,17 +194,22 @@ extern "C" {
 		//context->kernel_global_worksize[1] = context->fringe_context->algorithm_options.num_scanlines;
 		//context->kernel_local_worksize[0] = 64;
 		//context->kernel_local_worksize[1] = 1;
+		ret = clSetKernelArg((cl_kernel)context->kernel, 0, sizeof(cl_mem), &(context->fringe_opencl_resources[0]));
+		ret = clSetKernelArg((cl_kernel)context->kernel, 1, sizeof(cl_mem), &(context->fringe_opencl_resources[1]));
+		ret = clSetKernelArg((cl_kernel)context->kernel, 2, sizeof(cl_mem), &(context->fringe_opencl_resources[2]));
 
-		ret = clSetKernelArg((cl_kernel)context->kernel, 1, sizeof(cl_mem), &(context->stereogram_rgba_opencl_resource));
-		ret = clSetKernelArg((cl_kernel)context->kernel, 2, sizeof(cl_mem), &(context->stereogram_depth_opencl_resource));
-		ret = clSetKernelArg((cl_kernel)context->kernel, 4, sizeof(cl_uint), &context->fringe_context->algorithm_options.num_wafels_per_scanline);
-		ret = clSetKernelArg((cl_kernel)context->kernel, 5, sizeof(cl_uint), &context->fringe_context->algorithm_options.num_scanlines);
-		ret = clSetKernelArg((cl_kernel)context->kernel, 6, sizeof(cl_uint), &context->fringe_context->algorithm_options.cache.stereogram_res_x);
-		ret = clSetKernelArg((cl_kernel)context->kernel, 7, sizeof(cl_uint), &context->fringe_context->algorithm_options.cache.stereogram_res_y);
-		ret = clSetKernelArg((cl_kernel)context->kernel, 8, sizeof(cl_uint), &context->fringe_context->algorithm_options.cache.stereogram_num_tiles_x);
-		ret = clSetKernelArg((cl_kernel)context->kernel, 9, sizeof(cl_uint), &context->fringe_context->algorithm_options.cache.stereogram_num_tiles_y);
-		ret = clSetKernelArg((cl_kernel)context->kernel, 10, sizeof(cl_uint), &context->fringe_context->algorithm_options.cache.fringe_buffer_res_x);
-		ret = clSetKernelArg((cl_kernel)context->kernel, 11, sizeof(cl_uint), &context->fringe_context->algorithm_options.cache.fringe_buffer_res_y);
+		ret = clSetKernelArg((cl_kernel)context->kernel, 3, sizeof(cl_mem), &(context->stereogram_rgba_opencl_resource));
+		ret = clSetKernelArg((cl_kernel)context->kernel, 4, sizeof(cl_mem), &(context->stereogram_depth_opencl_resource));
+		ret = clSetKernelArg((cl_kernel)context->kernel, 5, sizeof(cl_uint), &context->fringe_context->algorithm_options.num_wafels_per_scanline);
+		ret = clSetKernelArg((cl_kernel)context->kernel, 6, sizeof(cl_uint), &context->fringe_context->algorithm_options.num_scanlines);
+		ret = clSetKernelArg((cl_kernel)context->kernel, 7, sizeof(cl_uint), &context->fringe_context->algorithm_options.cache.stereogram_res_x);
+		ret = clSetKernelArg((cl_kernel)context->kernel, 8, sizeof(cl_uint), &context->fringe_context->algorithm_options.cache.stereogram_res_y);
+		ret = clSetKernelArg((cl_kernel)context->kernel, 9, sizeof(cl_uint), &context->fringe_context->algorithm_options.cache.stereogram_num_tiles_x);
+		ret = clSetKernelArg((cl_kernel)context->kernel, 10, sizeof(cl_uint), &context->fringe_context->algorithm_options.cache.stereogram_num_tiles_y);
+		ret = clSetKernelArg((cl_kernel)context->kernel, 11, sizeof(cl_uint), &context->fringe_context->algorithm_options.cache.fringe_buffer_res_x);
+		ret = clSetKernelArg((cl_kernel)context->kernel, 12, sizeof(cl_uint), &context->fringe_context->algorithm_options.cache.fringe_buffer_res_y);
+		ret = clSetKernelArg((cl_kernel)context->kernel, 13, 600*sizeof(cl_char), NULL);
+		ret = clSetKernelArg((cl_kernel)context->kernel, 14, 600*sizeof(cl_char), NULL);
 
 		return context;
 	}
@@ -256,7 +261,9 @@ extern "C" {
 
 	void dscp4_fringe_opencl_ComputeFringe(dscp4_fringe_opencl_context_t* openclContext)
 	{
-		const unsigned int num_fringe_buffers = openclContext->fringe_context->algorithm_options.cache.num_fringe_buffers;
+		//const unsigned int num_fringe_buffers = openclContext->fringe_context->algorithm_options.cache.num_fringe_buffers;
+
+		const unsigned int num_fringe_buffers = 1;
 
 		cl_int ret = 0;
 
@@ -266,18 +273,22 @@ extern "C" {
 
 		for (unsigned int i = 0; i < num_fringe_buffers; i++)
 		{
-			ret = clSetKernelArg((cl_kernel)openclContext->kernel, 0, sizeof(cl_mem), &(openclContext->fringe_opencl_resources[i]));
-			ret = clSetKernelArg((cl_kernel)openclContext->kernel, 3, sizeof(cl_uint), &i);
+			//ret = clSetKernelArg((cl_kernel)openclContext->kernel, 0, sizeof(cl_mem), &(openclContext->fringe_opencl_resources[i]));
+			//ret = clSetKernelArg((cl_kernel)openclContext->kernel, 3, sizeof(cl_uint), &i);
 
 			ret = clEnqueueAcquireGLObjects((cl_command_queue)openclContext->command_queue, 1, (const cl_mem*)&openclContext->stereogram_rgba_opencl_resource, 0, NULL, NULL);
 			ret = clEnqueueAcquireGLObjects((cl_command_queue)openclContext->command_queue, 1, (const cl_mem*)&openclContext->stereogram_depth_opencl_resource, 0, NULL, NULL);
-			ret = clEnqueueAcquireGLObjects((cl_command_queue)openclContext->command_queue, 1, (const cl_mem*)&openclContext->fringe_opencl_resources[i], 0, NULL, &event[i*num_fringe_buffers]);
+			ret = clEnqueueAcquireGLObjects((cl_command_queue)openclContext->command_queue, 1, (const cl_mem*)&openclContext->fringe_opencl_resources[0], 0, NULL, &event[i*num_fringe_buffers]);
+			ret = clEnqueueAcquireGLObjects((cl_command_queue)openclContext->command_queue, 1, (const cl_mem*)&openclContext->fringe_opencl_resources[1], 0, NULL, &event[i*num_fringe_buffers]);
+			ret = clEnqueueAcquireGLObjects((cl_command_queue)openclContext->command_queue, 1, (const cl_mem*)&openclContext->fringe_opencl_resources[2], 0, NULL, &event[i*num_fringe_buffers]);
 
 			ret = clEnqueueNDRangeKernel((cl_command_queue)openclContext->command_queue, (cl_kernel)openclContext->kernel, 2, NULL,
 				(const size_t*)openclContext->fringe_context->algorithm_options.cache.opencl_global_workgroup_size, (const size_t*)openclContext->fringe_context->algorithm_options.opencl_local_workgroup_size, 1, &event[i*num_fringe_buffers], &event[i*num_fringe_buffers+1]);
 
 			ret = clEnqueueReleaseGLObjects((cl_command_queue)openclContext->command_queue, 1, (const cl_mem*)&openclContext->stereogram_rgba_opencl_resource, 0, NULL, NULL);
-			ret = clEnqueueReleaseGLObjects((cl_command_queue)openclContext->command_queue, 1, (const cl_mem*)&openclContext->fringe_opencl_resources[i], 1, &event[i*num_fringe_buffers+1], &event[i*num_fringe_buffers+2]);
+			ret = clEnqueueReleaseGLObjects((cl_command_queue)openclContext->command_queue, 1, (const cl_mem*)&openclContext->fringe_opencl_resources[0], 1, &event[i*num_fringe_buffers + 1], &event[i*num_fringe_buffers + 2]);
+			ret = clEnqueueReleaseGLObjects((cl_command_queue)openclContext->command_queue, 1, (const cl_mem*)&openclContext->fringe_opencl_resources[1], 1, &event[i*num_fringe_buffers + 1], &event[i*num_fringe_buffers + 2]);
+			ret = clEnqueueReleaseGLObjects((cl_command_queue)openclContext->command_queue, 1, (const cl_mem*)&openclContext->fringe_opencl_resources[2], 1, &event[i*num_fringe_buffers + 1], &event[i*num_fringe_buffers + 2]);
 			ret = clEnqueueReleaseGLObjects((cl_command_queue)openclContext->command_queue, 1, (const cl_mem*)&openclContext->stereogram_depth_opencl_resource, 0, NULL, NULL);
 		}
 

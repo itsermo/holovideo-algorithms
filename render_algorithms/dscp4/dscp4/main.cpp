@@ -43,8 +43,19 @@ char _getch(void);
 int _kbhit(void);
 #endif
 
+#include <math.h>
+
 int main(int argc, const char* argv[])
 {
+
+	int x = 599;
+	int y = 467;
+
+	int frame_buf = (y % 18);
+	int hololine = floor(y / 18);
+	int frameline = (float)x / (3552 / 592);
+	int wafel = x - frameline * 3552 / 592;
+	
 
 	int logLevel = DSCP4_DEFAULT_VERBOSITY;
 
