@@ -13,6 +13,7 @@ extern "C" {
 		void * stereogram_rgba_opencl_resource;
 		void * stereogram_depth_opencl_resource;
 		void ** fringe_opencl_resources;
+		void * framebuffer_opencl_output;
 		void * cl_context;
 		unsigned int num_gpus;
 		void * gpu_properties;

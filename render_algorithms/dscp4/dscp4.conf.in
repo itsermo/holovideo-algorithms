@@ -70,7 +70,7 @@ num_views_y = 1
 
 ; the horizontal resolution of a scanline (how many wafels per scanline), in wafels
 ; (must be divisible by 4)
-num_wafels = 693
+num_wafels = 600
 
 ; the vertical resolution (number of scanlines total), in scanlines
 ; (must be divisible by 4)

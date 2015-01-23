@@ -268,3 +268,149 @@ __kernel void computeFringe2(
 		write_imagef(fringe_buffer_out, coords, val);
 	}
 }
+
+__kernel void computeFringeTestBuffer(
+	__global unsigned char* framebuffer_out,
+	__read_only image2d_t viewset_color_in,
+	__global __read_only float* viewset_depth_in,
+	uint num_wafels_per_scanline,
+	uint num_scanlines,
+	uint viewset_res_x,
+	uint viewset_res_y,
+	uint viewset_num_tiles_x,
+	uint viewset_num_tiles_y,
+	uint framebuffer_res_x,
+	uint framebuffer_res_y,
+	__local unsigned char* wafel_buffer,
+	__local float* wafel_position
+	)
+{
+	int x = get_global_id(0);
+	int y = get_global_id(1);
+
+	const int framebuffer_size = framebuffer_res_x * framebuffer_res_y * 4;
+
+	if (x < num_wafels_per_scanline && y < num_scanlines)
+	{
+
+		for (uint color_chan = 0; color_chan < 3; color_chan++)
+		{
+			x = get_global_id(0);
+			y = get_global_id(1);
+
+			float wafel = 0.f;
+			//float k = (color_chan == 0 ? K_R : color_chan == 1 ? K_G : K_B);
+			//float up_const = (color_chan == 0 ? UPCONVERT_CONST_R : color_chan == 1 ? UPCONVERT_CONST_G : UPCONVERT_CONST_B);
+
+			for (uint vy = 0; vy < viewset_num_tiles_y; vy++)
+			{
+
+				for (uint vx = 0; vx < viewset_num_tiles_x; vx++)
+				{
+					float d = (viewset_depth_in[y * viewset_res_x + x] - 0.5) * Z_SPAN + Z_OFFSET;
+					float4 c = read_imagef(viewset_color_in, sampler, (int2)(x, y));
+
+					for(int i = 0; i < 3; i++)
+					{
+						framebuffer_out[i*framebuffer_size + y*framebuffer_res_x * 4 + 4 * x] = floor(c.x * 255.f);
+						framebuffer_out[i*framebuffer_size + y*framebuffer_res_x * 4 + 4 * x + 1] = floor(c.y * 255.f);
+						framebuffer_out[i*framebuffer_size + y*framebuffer_res_x * 4 + 4 * x + 2] = floor(c.z * 255.f);
+						framebuffer_out[i*framebuffer_size + y*framebuffer_res_x * 4 + 4 * x + 3] = 255;
+					//framebuffer_out[y*framebuffer_res_x * 3 + x + 3] = 0;
+					}
+					x += num_wafels_per_scanline;
+				}
+
+				x = get_global_id(0);
+				y += num_scanlines;
+
+			}
+		}
+
+	}
+}
+
+__kernel void computeFringe3(
+	__global unsigned char* framebuffer_out,
+	__read_only image2d_t viewset_color_in,
+	__global __read_only float* viewset_depth_in,
+	uint num_wafels_per_scanline,
+	uint num_scanlines,
+	uint viewset_res_x,
+	uint viewset_res_y,
+	uint viewset_num_tiles_x,
+	uint viewset_num_tiles_y,
+	uint framebuffer_res_x,
+	uint framebuffer_res_y,
+	__local unsigned char* wafel_buffer,
+	__local float* wafel_position
+	)
+{
+	int x = get_global_id(0);
+	int y = get_global_id(1);
+
+	const int framebuffer_size = framebuffer_res_x * framebuffer_res_y * 4;
+
+	if (x < num_wafels_per_scanline && y < num_scanlines)
+	{
+
+		for (int i = 0; i < PIXELS_PER_WAFEL; i++)
+		{
+			wafel_position[i] = (-ceil((float)num_wafels_per_scanline/2.f) + i) * PIXEL_PITCH + x;
+		}
+
+		for (uint color_chan = 0; color_chan < 3; color_chan++)
+		{
+			x = get_global_id(0);
+			y = get_global_id(1);
+
+			float wafel = 0.f;
+			float k = (color_chan == 0 ? K_R : color_chan == 1 ? K_G : K_B);
+			float up_const = (color_chan == 0 ? UPCONVERT_CONST_R : color_chan == 1 ? UPCONVERT_CONST_G : UPCONVERT_CONST_B);
+
+			for (uint vy = 0; vy < viewset_num_tiles_y; vy++)
+			{
+				for (uint vx = 0; vx < viewset_num_tiles_x; vx++)
+				{
+					float d = (viewset_depth_in[y * viewset_res_x + x] - 0.5) * Z_SPAN + Z_OFFSET;
+					float4 color = read_imagef(viewset_color_in, sampler, (int2)(x, y));
+					float c = 255.f*(color_chan == 0 ? color.x : color_chan == 1 ? color.y : color.z);
+
+					//framebuffer_out[y*framebuffer_res_x * 4 + 4 * x] = floor(color.x * 255.f);
+					//framebuffer_out[y*framebuffer_res_x * 4 + 4 * x + 1] = floor(color.y * 255.f);
+					//framebuffer_out[y*framebuffer_res_x * 4 + 4 * x + 2] = floor(color.z * 255.f);
+					//framebuffer_out[y*framebuffer_res_x * 4 + 4 * x + 3] = 255;
+
+					for (int i = 0; i < PIXELS_PER_WAFEL; i++)
+					{
+						wafel_buffer[i] += c * cos(k * sqrt(pow((float)((int)wafel_position[i] - (int)x), (float)2) + pow(d, (float)2)) - d + wafel_position[i] * up_const);
+					}
+
+					x += num_wafels_per_scanline;
+				}
+
+				x = get_global_id(0);
+				y += num_scanlines;
+
+			}
+		}
+
+
+		int2 coords = (int2)(get_global_id(0), get_global_id(1));
+
+		int wafel_num = get_global_id(0) * get_global_id(1);
+
+		int which_frame_buf = (coords.y % NUM_HOLO_CHANNELS);
+		int hololine = coords.y / NUM_HOLO_CHANNELS;
+		int frameline = (float)coords.x / (framebuffer_res_x / PIXELS_PER_WAFEL);
+		int wafel = coords.x - frameline * framebuffer_res_x / PIXELS_PER_WAFEL;
+
+		framebuffer_out[y*framebuffer_res_x * 4 + 4 * x] = 255;
+
+		for (int i = 0; i < PIXELS_PER_WAFEL; i++)
+		{
+			framebuffer_out[wafel_num*PIXELS_PER_WAFEL + 4 * i + which_frame_buf / 6] = wafel_buffer[i];
+		}
+
+	}
+}
