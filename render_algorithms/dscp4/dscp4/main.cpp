@@ -504,7 +504,7 @@ int main(int argc, const char* argv[])
 			std::this_thread::sleep_for(std::chrono::milliseconds(10));
 	}
 
-	dscp4_RemoveMesh(renderContext, "Mesh 0");
+	//dscp4_RemoveMesh(renderContext, "Mesh 0");
 
 	dscp4_DeinitRenderer(renderContext);
 

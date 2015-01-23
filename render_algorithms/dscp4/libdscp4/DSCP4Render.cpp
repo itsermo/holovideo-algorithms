@@ -261,7 +261,7 @@ bool DSCP4Render::initWindow(SDL_Window*& window, SDL_GLContext& glContext, int 
 		break;
 	case DSCP4_RENDER_MODE_STEREOGRAM_VIEWING:
 		windowWidth_[thisWindowNum] *= 0.8f;
-		windowHeight_[thisWindowNum] = windowWidth_[thisWindowNum] * (float)fringeContext_.algorithm_options.cache.stereogram_res_x / (float)fringeContext_.algorithm_options.cache.fringe_buffer_res_y;
+		windowHeight_[thisWindowNum] = windowWidth_[thisWindowNum] * (float)fringeContext_.algorithm_options.cache.stereogram_res_y / (float)fringeContext_.algorithm_options.cache.stereogram_res_x;
 		x = (bounds.w - windowWidth_[thisWindowNum]) / 2;
 		y = (bounds.h - windowHeight_[thisWindowNum]) / 2;
 		//LOG4CXX_DEBUG(logger_, "Creating SDL OpenGL Window " << thisWindowNum << ": " << windowWidth_[thisWindowNum] << "x" << windowHeight_[thisWindowNum] << " @ " << "{" << bounds.x + 80 << "," << bounds.y + 80 << "}")
