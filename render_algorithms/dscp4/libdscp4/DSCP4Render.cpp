@@ -281,10 +281,11 @@ bool DSCP4Render::initWindow(SDL_Window*& window, SDL_GLContext& glContext, int 
 #endif
 	case DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE:
 #ifdef _DEBUG
-		x += windowHeight_[thisWindowNum] * 0.03f;
-		y += windowWidth_[thisWindowNum] * 0.03f;
-		windowHeight_[thisWindowNum] *= 0.8f;
-		windowWidth_[thisWindowNum] = windowHeight_[thisWindowNum] * (float)fringeContext_.algorithm_options.cache.fringe_buffer_res_x / (float)fringeContext_.algorithm_options.cache.fringe_buffer_res_y;
+
+		windowWidth_[thisWindowNum] *= 0.3f;
+		windowHeight_[thisWindowNum] = windowWidth_[thisWindowNum] * (float)fringeContext_.algorithm_options.cache.fringe_buffer_res_y / (float)fringeContext_.algorithm_options.cache.fringe_buffer_res_x;
+		x += (bounds.w/3 - windowWidth_[thisWindowNum]);
+		y += windowHeight_[thisWindowNum] * 0.08f;
 #else
 		SDL_ShowCursor(SDL_DISABLE);
 		flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
@@ -542,9 +543,9 @@ void DSCP4Render::renderLoop()
 	// Init windows, for stereogram and model viewing
 	// this is only 1 window, for aerial it is
 	// number of displays, and for holovideo it is number of GPUs
-	for (unsigned int i = 0; i < numWindows_; i++)
+	for (unsigned int i = numWindows_; i > 0; i--)
 	{
-		initWindow(windows_[i], glContexts_[i], i);
+		initWindow(windows_[i-1], glContexts_[i-1], i-1);
 
 		// Add ambient and diffuse lighting to every scene
 		glLightfv(GL_LIGHT0, GL_AMBIENT, glm::value_ptr(lighting_.ambientColor));

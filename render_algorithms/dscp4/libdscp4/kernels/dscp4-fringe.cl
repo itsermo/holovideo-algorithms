@@ -20,6 +20,7 @@ CLK_NORMALIZED_COORDS_FALSE
 #define Z_OFFSET 0.f
 #define PIXELS_PER_WAFEL 592
 #define THETA 30.f*M_PI/180.f
+//#define THETA 0.f
 #define UPCONVERT_CONST_R (sin(THETA) + 2 * M_PI / K_R * PIXELS_PER_HOLOLINE * TEMPORAL_UPCONVERT_R / (PIXEL_CLOCK_RATE * HOLOGRAM_PLANE_WIDTH))
 #define UPCONVERT_CONST_G (sin(THETA) + 2 * M_PI / K_G * PIXELS_PER_HOLOLINE * TEMPORAL_UPCONVERT_G / (PIXEL_CLOCK_RATE * HOLOGRAM_PLANE_WIDTH))
 #define UPCONVERT_CONST_B (sin(THETA) + 2 * M_PI / K_B * PIXELS_PER_HOLOLINE * TEMPORAL_UPCONVERT_B / (PIXEL_CLOCK_RATE * HOLOGRAM_PLANE_WIDTH))
@@ -403,10 +404,11 @@ __kernel void computeFringe3(
 		int which_frame_buf = (coords.y % NUM_HOLO_CHANNELS);
 		int which_hololine = coords.y / NUM_HOLO_CHANNELS;
 		int which_frameline = (float)coords.x / (framebuffer_res_x / PIXELS_PER_WAFEL);
+		int which_wafel = coords.x - (which_frameline * (framebuffer_res_x / PIXELS_PER_WAFEL));
 
 		for (int i = 0; i < PIXELS_PER_WAFEL; i++)
 		{
-			framebuffer_out[which_frame_buf / 3 * framebuffer_res_x * 2600 * 4 + which_hololine * (100 * framebuffer_res_x * 4) + PIXELS_PER_WAFEL * 4 * coords.x + which_hololine % 3 + 4 * i] = wafel_buffer[i];
+			framebuffer_out[which_frame_buf / 3 * framebuffer_res_x * 2600 * 4 + which_hololine * (100 * framebuffer_res_x * 4) + PIXELS_PER_WAFEL * 4 * coords.x + which_frame_buf % 3 + 4 * i] = wafel_buffer[i];
 		}
 		
 	}
