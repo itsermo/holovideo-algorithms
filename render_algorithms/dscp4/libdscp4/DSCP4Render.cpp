@@ -184,7 +184,11 @@ bool DSCP4Render::init()
 		numWindows_ = 1;
 		break;
 	case DSCP4_RENDER_MODE_AERIAL_DISPLAY:
+#ifdef _DEBUG
+		numWindows_ = 6;
+#else
 		numWindows_ = SDL_GetNumVideoDisplays();
+#endif
 		break;
 	case DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE:
 		numWindows_ = SDL_GetNumVideoDisplays();
@@ -232,7 +236,7 @@ bool DSCP4Render::init()
 
 bool DSCP4Render::initWindow(SDL_Window*& window, SDL_GLContext& glContext, int thisWindowNum)
 {
-	LOG4CXX_DEBUG(logger_, "Inititalizing SDL for Window " << thisWindowNum)
+	LOG4CXX_DEBUG(logger_, "Initializing SDL for Window " << thisWindowNum)
 	SDL_Rect bounds = { 0 };
 
 	// This will get the resolution of the primary window if everything else fails
@@ -240,31 +244,53 @@ bool DSCP4Render::initWindow(SDL_Window*& window, SDL_GLContext& glContext, int 
 	if (SDL_GetDisplayBounds(thisWindowNum, &bounds) == -1)
 		SDL_GetDisplayBounds(0, &bounds);
 
+	static int x = bounds.x;
+	static int y = bounds.y;
+	windowWidth_[thisWindowNum] = bounds.w;
+	windowHeight_[thisWindowNum] = bounds.h;
+
+	int flags = SDL_WINDOW_OPENGL;
+
 	switch (renderOptions_.render_mode)
 	{
 	case DSCP4_RENDER_MODE_MODEL_VIEWING:
 		windowWidth_[thisWindowNum] = fringeContext_.algorithm_options.num_wafels_per_scanline;
 		windowHeight_[thisWindowNum] = fringeContext_.algorithm_options.num_scanlines;
-		LOG4CXX_DEBUG(logger_, "Creating SDL OpenGL Window " << thisWindowNum << ": " << windowWidth_[thisWindowNum] << "x" << windowHeight_[thisWindowNum] << " @ " << "{" << bounds.x + 80 << "," << bounds.y + 80 << "}")
-		window = SDL_CreateWindow(("dscp4-" + std::to_string(thisWindowNum)).c_str(), bounds.x + 80, bounds.y + 80, windowWidth_[thisWindowNum], windowHeight_[thisWindowNum], SDL_WINDOW_OPENGL);
+		x = (bounds.w - windowWidth_[thisWindowNum]) / 2;
+		y = (bounds.h - windowHeight_[thisWindowNum]) / 2;
 		break;
 	case DSCP4_RENDER_MODE_STEREOGRAM_VIEWING:
-		windowWidth_[thisWindowNum] = fringeContext_.algorithm_options.num_wafels_per_scanline*2;
-		windowHeight_[thisWindowNum] = fringeContext_.algorithm_options.num_scanlines*2;
-		LOG4CXX_DEBUG(logger_, "Creating SDL OpenGL Window " << thisWindowNum << ": " << windowWidth_[thisWindowNum] << "x" << windowHeight_[thisWindowNum] << " @ " << "{" << bounds.x + 80 << "," << bounds.y + 80 << "}")
-		window = SDL_CreateWindow(("dscp4-" + std::to_string(thisWindowNum)).c_str(), bounds.x + 80, bounds.y + 80, windowWidth_[thisWindowNum], windowHeight_[thisWindowNum], SDL_WINDOW_OPENGL);
+		windowWidth_[thisWindowNum] *= 0.8f;
+		windowHeight_[thisWindowNum] = windowWidth_[thisWindowNum] * (float)fringeContext_.algorithm_options.cache.stereogram_res_x / (float)fringeContext_.algorithm_options.cache.fringe_buffer_res_y;
+		x = (bounds.w - windowWidth_[thisWindowNum]) / 2;
+		y = (bounds.h - windowHeight_[thisWindowNum]) / 2;
+		//LOG4CXX_DEBUG(logger_, "Creating SDL OpenGL Window " << thisWindowNum << ": " << windowWidth_[thisWindowNum] << "x" << windowHeight_[thisWindowNum] << " @ " << "{" << bounds.x + 80 << "," << bounds.y + 80 << "}")
+		//window = SDL_CreateWindow(("dscp4-" + std::to_string(thisWindowNum)).c_str(), bounds.x + 80, bounds.y + 80, windowWidth_[thisWindowNum], windowHeight_[thisWindowNum], SDL_WINDOW_OPENGL);
 		break;
 	case DSCP4_RENDER_MODE_AERIAL_DISPLAY:
+#ifdef _DEBUG
+		x += windowHeight_[thisWindowNum] * 0.03f;
+		y += windowWidth_[thisWindowNum] * 0.03f;
+		windowHeight_[thisWindowNum] *= 0.8f;
+		windowWidth_[thisWindowNum] *= 0.8f;
+		break;
+#endif
 	case DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE:
-		windowWidth_[thisWindowNum] = bounds.w;
-		windowHeight_[thisWindowNum] = bounds.h;
-		LOG4CXX_DEBUG(logger_, "Creating fullscreen SDL OpenGL Window " << thisWindowNum << ": " << bounds.w << "x" << bounds.h << " @ " << "{" << bounds.x << "," << bounds.y << "}")
-		window = SDL_CreateWindow(("dscp4-" + std::to_string(thisWindowNum)).c_str(), bounds.x, bounds.y, bounds.w, bounds.h, SDL_WINDOW_OPENGL);
+#ifdef _DEBUG
+		x += windowHeight_[thisWindowNum] * 0.03f;
+		y += windowWidth_[thisWindowNum] * 0.03f;
+		windowHeight_[thisWindowNum] *= 0.8f;
+		windowWidth_[thisWindowNum] = windowHeight_[thisWindowNum] * (float)fringeContext_.algorithm_options.cache.fringe_buffer_res_x / (float)fringeContext_.algorithm_options.cache.fringe_buffer_res_y;
+#else
 		SDL_ShowCursor(SDL_DISABLE);
+#endif
 		break;
 	default:
 		break;
 	}
+
+	LOG4CXX_DEBUG(logger_, "Creating fullscreen SDL OpenGL Window " << thisWindowNum << ": " << windowWidth_[thisWindowNum] << "x" << bounds.h << " @ " << "{" << bounds.x << "," << bounds.y << "}")
+	window = SDL_CreateWindow(("dscp4-" + std::to_string(thisWindowNum)).c_str(), x, y, windowWidth_[thisWindowNum], windowHeight_[thisWindowNum], flags);
 	
 	CHECK_SDL_RC(window == nullptr, "Could not create SDL window");
 

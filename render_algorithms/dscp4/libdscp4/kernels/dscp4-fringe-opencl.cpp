@@ -189,7 +189,7 @@ extern "C" {
 		//	context->kernel = clCreateKernel((cl_program)context->program, "computeFringe", &ret);
 
 
-		context->kernel = clCreateKernel((cl_program)context->program, "computeFringe3", &ret);
+		context->kernel = clCreateKernel((cl_program)context->program, "computeFringeTestBuffer", &ret);
 
 		CHECK_OPENCL_RC(ret, "Could not create OpenCL kernel object")
 
