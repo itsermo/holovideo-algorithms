@@ -613,13 +613,11 @@ void DSCP4Render::renderLoop()
 			case DSCP4_RENDER_MODE_MODEL_VIEWING:
 			{
 				drawForViewing();
-				SDL_GL_SwapWindow(windows_[0]);
 			}
 				break;
 			case DSCP4_RENDER_MODE_STEREOGRAM_VIEWING:
 			{
 				drawForStereogram();
-				SDL_GL_SwapWindow(windows_[0]);
 			}
 				break;
 			case DSCP4_RENDER_MODE_AERIAL_DISPLAY:
@@ -632,26 +630,23 @@ void DSCP4Render::renderLoop()
 				drawForAerialDisplay();
 
 		#endif
-				for (unsigned int i = 0; i < numWindows_; i++)
-				{
-					SDL_GL_MakeCurrent(windows_[i], glContexts_[i]);
-					SDL_GL_SwapWindow(windows_[i]);
-				}
+
 			}
-				break;
+			break;
 
 			case DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE:
 			{
 				drawForFringe();
-				for (unsigned int i = 0; i < numWindows_; i++)
-				{
-					SDL_GL_MakeCurrent(windows_[i], glContexts_[i]);
-					SDL_GL_SwapWindow(windows_[i]);
-				}
 			}
 				break;
 			default:
 				break;
+			}
+
+			for (unsigned int i = 0; i < numWindows_; i++)
+			{
+				SDL_GL_MakeCurrent(windows_[i], glContexts_[i]);
+				SDL_GL_SwapWindow(windows_[i]);
 			}
 
 #ifdef DSCP4_ENABLE_TRACE_LOG
@@ -902,7 +897,7 @@ void DSCP4Render::drawForAerialDisplay()
 		const float ratio = (float)windowWidth_[i] / (float)windowHeight_[i];
 		
 		projectionMatrix_ = glm::mat4();
-		projectionMatrix_ *= glm::perspective(fringeContext_.algorithm_options.fov_y * DEG_TO_RAD, ratio, zNear_, zFar_);
+		projectionMatrix_ *= glm::perspective(fringeContext_.algorithm_options.fov_y * DEG_TO_RAD, ratio, 3.0f, 5.f);
 
 		glLoadMatrixf(glm::value_ptr(projectionMatrix_));
 
@@ -941,7 +936,6 @@ void DSCP4Render::drawForAerialDisplay()
 		glEnable(GL_LIGHT0);
 
 		drawAllMeshes();
-		//drawCube();
 
 		glDisable(GL_LIGHT0);
 		glDisable(GL_DEPTH_TEST);
