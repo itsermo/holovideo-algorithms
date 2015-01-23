@@ -393,6 +393,8 @@ __kernel void computeFringe3(
 				y += num_scanlines;
 
 			}
+
+
 		}
 
 
@@ -405,11 +407,10 @@ __kernel void computeFringe3(
 		int frameline = (float)coords.x / (framebuffer_res_x / PIXELS_PER_WAFEL);
 		int wafel = coords.x - frameline * framebuffer_res_x / PIXELS_PER_WAFEL;
 
-		framebuffer_out[y*framebuffer_res_x * 4 + 4 * x] = 255;
-
 		for (int i = 0; i < PIXELS_PER_WAFEL; i++)
 		{
-			framebuffer_out[wafel_num*PIXELS_PER_WAFEL + 4 * i + which_frame_buf / 6] = wafel_buffer[i];
+			framebuffer_out[which_frame_buf / 3 * framebuffer_res_x * framebuffer_res_y / 2 * 4 + hololine * (100 * framebuffer_res_x * 4) + PIXELS_PER_WAFEL * 4 * coords.x + hololine % 3 + 4 * i] = wafel_buffer[i];
+			//framebuffer_out[wafel_num * PIXELS_PER_WAFEL + i*4 + (hololine % 3)] = wafel_buffer[i];
 		}
 
 	}
