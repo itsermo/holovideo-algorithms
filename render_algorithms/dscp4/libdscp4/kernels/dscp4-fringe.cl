@@ -335,14 +335,14 @@ __kernel void computeFringe3(
 	__global unsigned char* framebuffer_out,
 	__read_only image2d_t viewset_color_in,
 	__global __read_only float* viewset_depth_in,
-	uint num_wafels_per_scanline,
-	uint num_scanlines,
-	uint viewset_res_x,
-	uint viewset_res_y,
-	uint viewset_num_tiles_x,
-	uint viewset_num_tiles_y,
-	uint framebuffer_res_x,
-	uint framebuffer_res_y,
+	const uint num_wafels_per_scanline,
+	const uint num_scanlines,
+	const uint viewset_res_x,
+	const uint viewset_res_y,
+	const uint viewset_num_tiles_x,
+	const uint viewset_num_tiles_y,
+	const uint framebuffer_res_x,
+	const uint framebuffer_res_y,
 	__local unsigned char* wafel_buffer,
 	__local float* wafel_position
 	)
@@ -350,10 +350,9 @@ __kernel void computeFringe3(
 	int x = get_global_id(0);
 	int y = get_global_id(1);
 
-	const int framebuffer_size = framebuffer_res_x * framebuffer_res_y * 4;
-
 	if (x < num_wafels_per_scanline && y < num_scanlines)
 	{
+		const int framebuffer_size = framebuffer_res_x * framebuffer_res_y * 4;
 
 		for (int i = 0; i < PIXELS_PER_WAFEL; i++)
 		{
@@ -377,10 +376,10 @@ __kernel void computeFringe3(
 					float4 color = read_imagef(viewset_color_in, sampler, (int2)(x, y));
 					float c = 255.f*(color_chan == 0 ? color.x : color_chan == 1 ? color.y : color.z);
 
-					//framebuffer_out[y*framebuffer_res_x * 4 + 4 * x] = floor(color.x * 255.f);
-					//framebuffer_out[y*framebuffer_res_x * 4 + 4 * x + 1] = floor(color.y * 255.f);
-					//framebuffer_out[y*framebuffer_res_x * 4 + 4 * x + 2] = floor(color.z * 255.f);
-					//framebuffer_out[y*framebuffer_res_x * 4 + 4 * x + 3] = 255;
+					//framebuffer_out[color_chan*framebuffer_res_x * 2600 * 4 + y*framebuffer_res_x * 4 + 4 * x] = floor(color.x * 255.f);
+					//framebuffer_out[color_chan*framebuffer_res_x * 2600 * 4 + y * framebuffer_res_x * 4 + 4 * x + 1] = floor(color.y * 255.f);
+					//framebuffer_out[color_chan*framebuffer_res_x * 2600 * 4 + y * framebuffer_res_x * 4 + 4 * x + 2] = floor(color.z * 255.f);
+					//framebuffer_out[color_chan*framebuffer_res_x * 2600 * 4 + y * framebuffer_res_x * 4 + 4 * x + 3] = 255;
 
 					for (int i = 0; i < PIXELS_PER_WAFEL; i++)
 					{
