@@ -93,7 +93,6 @@ DSCP4Render::DSCP4Render(render_options_t renderOptions,
 	zNear_(DSCP4_RENDER_DEFAULT_ZNEAR),
 	zFar_(DSCP4_RENDER_DEFAULT_ZFAR),
 	renderOptions_(renderOptions),
-	isFullScreen_(false),
 	lightingShader_(nullptr),
 	projectionMatrix_(),
 	viewMatrix_(),
@@ -103,6 +102,7 @@ DSCP4Render::DSCP4Render(render_options_t renderOptions,
 	cameraChanged_(false),
 	lightingChanged_(false),
 	meshChanged_(false),
+	isFullScreen_(false),
 	drawMode_(DSCP4_DRAW_MODE_COLOR),
 	fringeContext_({ algorithmOptions, displayOptions, nullptr, 0,0,0, 0, 0, 0, 0, 0, nullptr, nullptr })
 {
@@ -276,7 +276,8 @@ bool DSCP4Render::initWindow(SDL_Window*& window, SDL_GLContext& glContext, int 
 		break;
 #else
 		SDL_ShowCursor(SDL_DISABLE);
-		flags |= SDL_WINDOW_BORDERLESS;
+		flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
+		isFullScreen_ = true;
 #endif
 	case DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE:
 #ifdef _DEBUG
@@ -286,7 +287,8 @@ bool DSCP4Render::initWindow(SDL_Window*& window, SDL_GLContext& glContext, int 
 		windowWidth_[thisWindowNum] = windowHeight_[thisWindowNum] * (float)fringeContext_.algorithm_options.cache.fringe_buffer_res_x / (float)fringeContext_.algorithm_options.cache.fringe_buffer_res_y;
 #else
 		SDL_ShowCursor(SDL_DISABLE);
-		flags |= SDL_WINDOW_BORDERLESS;
+		flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
+		isFullScreen = true;
 #endif
 		break;
 	default:
@@ -795,7 +797,7 @@ void DSCP4Render::generateView()
 	glBindFramebuffer(GL_FRAMEBUFFER, fringeContext_.view_gl_fbo);
 	glDrawBuffer(GL_COLOR_ATTACHMENT0);
 
-	const float ratio = (float)windowWidth_[0] / (float)windowHeight_[0];
+	const float ratio = (float)fringeContext_.algorithm_options.num_wafels_per_scanline / (float)fringeContext_.algorithm_options.num_scanlines;
 	{
 		std::lock_guard<std::mutex> lgc(cameraMutex_);
 		glMatrixMode(GL_PROJECTION);
@@ -1359,6 +1361,10 @@ int DSCP4Render::inputStateChanged(SDL_Event* event)
 
 #endif
 			}
+				break;
+			
+			case SDL_Scancode::SDL_SCANCODE_F:
+				setFullScreen(!isFullScreen());
 				break;
 			default:
 				break;
@@ -2246,3 +2252,68 @@ void DSCP4Render::saveScreenshotPNG()
 
 }
 #endif
+
+void DSCP4Render::setFullScreen(bool fullscreen)
+{
+	if (fullscreen != isFullScreen_.load())
+	{
+		for (unsigned int w = 0; w < numWindows_; w++)
+		{
+			SDL_Rect bounds = { 0 };
+			if (SDL_GetDisplayBounds(w, &bounds) == -1)
+				SDL_GetDisplayBounds(0, &bounds);
+
+			int x = bounds.x;
+			int y = bounds.y;
+
+			if (fullscreen)
+			{
+				windowWidth_[w] = bounds.w;
+				windowHeight_[w] = bounds.h;
+			}
+			else
+			{
+				switch (renderOptions_.render_mode)
+				{
+				case DSCP4_RENDER_MODE_MODEL_VIEWING:
+					windowWidth_[w] = fringeContext_.algorithm_options.num_wafels_per_scanline;
+					windowHeight_[w] = fringeContext_.algorithm_options.num_scanlines;
+					x = (bounds.w - windowWidth_[w]) / 2;
+					y = (bounds.h - windowHeight_[w]) / 2;
+					break;
+				case DSCP4_RENDER_MODE_STEREOGRAM_VIEWING:
+					windowWidth_[w] *= 0.8f;
+					windowHeight_[w] = windowWidth_[w] * (float)fringeContext_.algorithm_options.cache.stereogram_res_y / (float)fringeContext_.algorithm_options.cache.stereogram_res_x;
+					x = (bounds.w - windowWidth_[w]) / 2;
+					y = (bounds.h - windowHeight_[w]) / 2;
+					break;
+				case DSCP4_RENDER_MODE_AERIAL_DISPLAY:
+					x += windowHeight_[w] * 0.03f;
+					y += windowWidth_[w] * 0.03f;
+					windowHeight_[w] *= 0.8f;
+					windowWidth_[w] *= 0.8f;
+					break;
+				case DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE:
+					x += windowHeight_[w] * 0.03f;
+					y += windowWidth_[w] * 0.03f;
+					windowHeight_[w] *= 0.8f;
+					windowWidth_[w] = windowHeight_[w] * (float)fringeContext_.algorithm_options.cache.fringe_buffer_res_x / (float)fringeContext_.algorithm_options.cache.fringe_buffer_res_y;
+					break;
+				default:
+					break;
+
+				}
+			}
+
+			
+
+			SDL_SetWindowFullscreen(windows_[w], fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
+
+			Update();
+
+		}
+
+		isFullScreen_.store(fullscreen);
+
+	}
+}

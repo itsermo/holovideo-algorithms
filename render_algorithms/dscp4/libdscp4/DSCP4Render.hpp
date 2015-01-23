@@ -128,6 +128,9 @@ namespace dscp4
 		// Force frame to redraw
 		void Update() { cameraChanged_ = true; }
 
+		bool isFullScreen() { return isFullScreen_.load(); }
+		void setFullScreen(bool fullscreen);
+
 	private:
 
 		// for testing
@@ -231,6 +234,8 @@ namespace dscp4
 		float zNear_;
 		float zFar_;
 
+		std::atomic<bool> isFullScreen_;
+
 		std::mutex meshMutex_;
 		std::mutex lightingMutex_;
 		std::mutex cameraMutex_;
@@ -254,7 +259,6 @@ namespace dscp4
 
 		unsigned int numWindows_;
 
-		bool isFullScreen_;
 		unsigned int *windowWidth_, *windowHeight_;
 
 		SDL_Window **windows_;
