@@ -274,6 +274,9 @@ bool DSCP4Render::initWindow(SDL_Window*& window, SDL_GLContext& glContext, int 
 		windowHeight_[thisWindowNum] *= 0.8f;
 		windowWidth_[thisWindowNum] *= 0.8f;
 		break;
+#else
+		SDL_ShowCursor(SDL_DISABLE);
+		flags |= SDL_WINDOW_BORDERLESS;
 #endif
 	case DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE:
 #ifdef _DEBUG
@@ -283,6 +286,7 @@ bool DSCP4Render::initWindow(SDL_Window*& window, SDL_GLContext& glContext, int 
 		windowWidth_[thisWindowNum] = windowHeight_[thisWindowNum] * (float)fringeContext_.algorithm_options.cache.fringe_buffer_res_x / (float)fringeContext_.algorithm_options.cache.fringe_buffer_res_y;
 #else
 		SDL_ShowCursor(SDL_DISABLE);
+		flags |= SDL_WINDOW_BORDERLESS;
 #endif
 		break;
 	default:
@@ -1254,12 +1258,16 @@ glm::mat4 DSCP4Render::buildOrthoXPerspYProjMat(
 
 int DSCP4Render::inputStateChanged(SDL_Event* event)
 {
-	if (event->key.type == SDL_KEYDOWN)
+	if (event->type == SDL_WINDOWEVENT)
+	{
+		if (event->window.event == SDL_WINDOWEVENT_RESTORED)
+			Update();
+	}
+	else if (event->key.type == SDL_KEYDOWN)
 	{
 
 		if (event->key.keysym.mod == SDL_Keymod::KMOD_LSHIFT)
 		{
-
 			switch (event->key.keysym.scancode)
 			{
 			case  SDL_Scancode::SDL_SCANCODE_W:
@@ -1342,6 +1350,7 @@ int DSCP4Render::inputStateChanged(SDL_Event* event)
 #ifdef DSCP4_HAVE_PNG
 
 #ifdef DSCP4_ENABLE_TRACE_LOG
+				LOG4CXX_INFO(logger_, "Dumping framebuffer screenshots...")
 				auto duration = measureTime<>(std::bind(&DSCP4Render::saveScreenshotPNG, this));
 				LOG4CXX_TRACE(logger_, "Saving screenshot(s) in total took " << duration << " ms (" << 1.f / duration * 1000 << " fps)")
 #else
@@ -1361,24 +1370,33 @@ int DSCP4Render::inputStateChanged(SDL_Event* event)
 			{
 			case  SDL_Scancode::SDL_SCANCODE_UP:
 				rotateAngleX_.store(rotateAngleX_ + 10.f);
+				Update();
 				break;
 			case  SDL_Scancode::SDL_SCANCODE_DOWN:
 				rotateAngleX_.store(rotateAngleX_ - 10.f);
+				Update();
 				break;
 			case  SDL_Scancode::SDL_SCANCODE_LEFT:
 				if (spinOn_)
 					rotateIncrement_.store(rotateIncrement_ - .2f);
 				else
+				{
 					rotateAngleY_.store(rotateAngleY_ + 10.f);
+					Update();
+				}
 				break;
 			case SDL_Scancode::SDL_SCANCODE_RIGHT:
 				if (spinOn_)
 					rotateIncrement_.store(rotateIncrement_ + 0.2f);
 				else
+				{
 					rotateAngleY_.store(rotateAngleY_ - 10.f);
+					Update();
+				}
 				break;
 			case  SDL_Scancode::SDL_SCANCODE_R:
 				spinOn_.store(!spinOn_);
+				Update();
 				break;
 			case SDL_Scancode::SDL_SCANCODE_LEFTBRACKET:
 				//q += 0.01f;
@@ -1400,12 +1418,12 @@ int DSCP4Render::inputStateChanged(SDL_Event* event)
 					drawMode_ = DSCP4_DRAW_MODE_DEPTH;
 				else
 					drawMode_ = DSCP4_DRAW_MODE_COLOR;
+				Update();
 				break;
 			default:
 				break;
 			}
 
-			Update();
 		}
 	}
 
