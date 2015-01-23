@@ -45,7 +45,7 @@ option(WITH_CUDA "Enables CUDA compute building" ${CUDA_FOUND})
 option(WITH_LIBLOG4CXX "Uses Log4Cxx library for logging status and error messages" ${LIBLOG4CXX_FOUND})
 option(WITH_TRACE_LOG "Enables trace log to resolve code performance and behavior, such as showing FPS calculations in the log. Requires liblog4cxx" OFF)
 option(WITH_OPENCL "Enables OpenCL compute building" ${OPENCL_FOUND})
-option(WITH_PNG "Enables screenshot functionality (saving render buffer to PNG)" ${LIBPNG_FOUND})
+option(WITH_PNG "Enables screenshot functionality (saving render buffer to PNG)" ${PNG_FOUND})
 
 if(NOT WITH_CUDA AND NOT WITH_OPENCL)
 	message(WARNING "You haven't enabled support for OpenCL or CUDA, use the -DWITH_CUDA=YES and/or -DWITH_OPENCL=YES, otherwise you will not be able to compute holograms.")

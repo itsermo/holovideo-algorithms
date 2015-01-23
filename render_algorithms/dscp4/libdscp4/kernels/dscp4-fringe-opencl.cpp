@@ -174,7 +174,7 @@ extern "C" {
 		if (ret == CL_BUILD_PROGRAM_FAILURE)
 		{
 			size_t len;
-			clGetProgramBuildInfo((cl_program)context->program, deviceID, CL_PROGRAM_BUILD_LOG, NULL, NULL, &len);
+			clGetProgramBuildInfo((cl_program)context->program, deviceID, CL_PROGRAM_BUILD_LOG, 0, NULL, &len);
 
 			char * log = new char[len];
 			clGetProgramBuildInfo((cl_program)context->program, deviceID, CL_PROGRAM_BUILD_LOG, len, log, &len);
