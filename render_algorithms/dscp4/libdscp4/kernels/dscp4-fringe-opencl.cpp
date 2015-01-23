@@ -193,8 +193,21 @@ extern "C" {
 
 		CHECK_OPENCL_RC(ret, "Could not create OpenCL kernel object")
 
-			context->framebuffer_opencl_output = clCreateBuffer((cl_context)context->cl_context, CL_MEM_READ_WRITE | CL_MEM_ALLOC_HOST_PTR, context->fringe_context->algorithm_options.cache.fringe_buffer_res_x * context->fringe_context->algorithm_options.cache.fringe_buffer_res_y * 4 * 3, NULL, &ret);
+		unsigned char * wowBuffer = new unsigned char[context->fringe_context->algorithm_options.cache.fringe_buffer_res_x * 2600 * 4 * 6];
+		
+		for (int i = 0; i < context->fringe_context->algorithm_options.cache.fringe_buffer_res_x * 2600 * 6; i++)
+		{
+			wowBuffer[i * 4] = 0;
+			wowBuffer[i * 4 + 1] = 0;
+			wowBuffer[i * 4 + 2] = 0;
+			wowBuffer[i*4 + 3] = 255;
+		}
+
+
+		context->framebuffer_opencl_output = clCreateBuffer((cl_context)context->cl_context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, context->fringe_context->algorithm_options.cache.fringe_buffer_res_x * 2600 * 4 * 6, wowBuffer, &ret);
 		CHECK_OPENCL_RC(ret, "Could not create OpenCL output buffer")
+
+		delete[] wowBuffer;
 
 		ret = clSetKernelArg((cl_kernel)context->kernel, 0, sizeof(cl_mem), &(context->framebuffer_opencl_output));
 
@@ -263,8 +276,8 @@ extern "C" {
 	{
 		//const unsigned int num_fringe_buffers = openclContext->fringe_context->algorithm_options.cache.num_fringe_buffers;
 
-		const size_t dst_origin[3] = { 0, 0, 0 };
-		const size_t region[3] = { openclContext->fringe_context->algorithm_options.cache.fringe_buffer_res_x, openclContext->fringe_context->algorithm_options.cache.fringe_buffer_res_y, 1 };
+		
+		const size_t region[3] = { openclContext->fringe_context->algorithm_options.cache.fringe_buffer_res_x, openclContext->fringe_context->algorithm_options.cache.fringe_buffer_res_y / 2, 1 };
 		const size_t outputBufferSize = openclContext->fringe_context->algorithm_options.cache.fringe_buffer_res_x * openclContext->fringe_context->algorithm_options.cache.fringe_buffer_res_y * 4;
 		
 		const unsigned int num_fringe_buffers = 1;
@@ -289,12 +302,16 @@ extern "C" {
 			ret = clEnqueueNDRangeKernel((cl_command_queue)openclContext->command_queue, (cl_kernel)openclContext->kernel, 2, NULL,
 				(const size_t*)openclContext->fringe_context->algorithm_options.cache.opencl_global_workgroup_size, (const size_t*)openclContext->fringe_context->algorithm_options.opencl_local_workgroup_size, 1, &event[i*num_fringe_buffers], &event[i*num_fringe_buffers+1]);
 
-			for (int j = 0; j < 3; j++)
+			for (int j = 0; j < 6; j++)
 			{
+				int which_gpu = j % 3;
+
+				size_t dst_origin[3] = { 0, j < 3  ? 0 : openclContext->fringe_context->algorithm_options.cache.fringe_buffer_res_y / 2, 0 };
+
 				ret = clEnqueueCopyBufferToImage((cl_command_queue)openclContext->command_queue,
 					(cl_mem)openclContext->framebuffer_opencl_output,
-					(cl_mem)openclContext->fringe_opencl_resources[j],
-					j * outputBufferSize, dst_origin, region, 1, &event[i*num_fringe_buffers + 1], &event[i*num_fringe_buffers + 2]);
+					(cl_mem)openclContext->fringe_opencl_resources[which_gpu],
+					j * 3552 * 2600 * 4, dst_origin, region, 1, &event[i*num_fringe_buffers + 1], &event[i*num_fringe_buffers + 2]);
 			}
 
 			ret = clEnqueueReleaseGLObjects((cl_command_queue)openclContext->command_queue, 1, (const cl_mem*)&openclContext->stereogram_rgba_opencl_resource, 0, NULL, NULL);
