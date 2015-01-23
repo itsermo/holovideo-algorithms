@@ -189,13 +189,13 @@ extern "C" {
 		//	context->kernel = clCreateKernel((cl_program)context->program, "computeFringe", &ret);
 
 
-		context->kernel = clCreateKernel((cl_program)context->program, "computeFringeTestBuffer", &ret);
+		context->kernel = clCreateKernel((cl_program)context->program, "computeFringe3", &ret);
 
 		CHECK_OPENCL_RC(ret, "Could not create OpenCL kernel object")
 
 		unsigned char * wowBuffer = new unsigned char[context->fringe_context->algorithm_options.cache.fringe_buffer_res_x * 2600 * 4 * 6];
 		
-		for (int i = 0; i < context->fringe_context->algorithm_options.cache.fringe_buffer_res_x * 2600 * 6; i++)
+		for (unsigned int i = 0; i < context->fringe_context->algorithm_options.cache.fringe_buffer_res_x * 2600 * 6; i++)
 		{
 			wowBuffer[i * 4] = 0;
 			wowBuffer[i * 4 + 1] = 0;
