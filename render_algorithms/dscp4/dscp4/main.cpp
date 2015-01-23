@@ -287,6 +287,13 @@ int main(int argc, const char* argv[])
 		algorithmOptions.num_scanlines = options.getNumScanlines();
 		algorithmOptions.fov_x = options.getFovX();
 		algorithmOptions.fov_y = options.getFovY();
+		algorithmOptions.reference_beam_angle = options.getReferenceBeamAngle();
+		algorithmOptions.temporal_upconvert_red = options.getTemporalUpconvertRed();
+		algorithmOptions.temporal_upconvert_green = options.getTemporalUpconvertGreen();
+		algorithmOptions.temporal_upconvert_blue = options.getTemporalUpconvertBlue();
+		algorithmOptions.wavelength_red = options.getWavelengthRed();
+		algorithmOptions.wavelength_green = options.getWavelengthGreen();
+		algorithmOptions.wavelength_blue = options.getWavelengthBlue();
 
 		if (options.getComputeMethod() == "opencl")
 		{
@@ -353,6 +360,11 @@ int main(int argc, const char* argv[])
 		displayOptions.num_heads_per_gpu = options.getNumHeadsPerGPU();
 		displayOptions.head_res_x = options.getHeadResX();
 		displayOptions.head_res_y = options.getHeadResY();
+		displayOptions.head_res_x_spec = options.getHeadResXSpec();
+		displayOptions.head_res_y_spec = options.getHeadResYSpec();
+		displayOptions.num_samples_per_hololine = options.getNumSamplesPerHololine();
+		displayOptions.hologram_plane_width = options.getHologramPlaneWidth();
+		displayOptions.pixel_clock_rate = options.getPixelClockRate();
 	}
 	catch (std::exception& e)
 	{

@@ -56,7 +56,14 @@ DSCP4Render::DSCP4Render() :
 						DSCP4_DEFAULT_ALGORITHM_NUM_SCANLINES,
 						DSCP4_DEFAULT_ALGORITHM_FOV_X,
 						DSCP4_DEFAULT_ALGORITHM_FOV_Y,
-						DSCP4_DEFAULT_COMPUTE_METHOD,
+						DSCP4_DEFAULT_ALGORITHM_REF_BEAM_ANGLE,
+						DSCP4_DEFAULT_ALGORITHM_TEMP_UPCONVERT_R,
+						DSCP4_DEFAULT_ALGORITHM_TEMP_UPCONVERT_G,
+						DSCP4_DEFAULT_ALGORITHM_TEMP_UPCONVERT_B,
+						DSCP4_DEFAULT_ALGORITHM_WAVELENGTH_R,
+						DSCP4_DEFAULT_ALGORITHM_WAVELENGTH_G,
+						DSCP4_DEFAULT_ALGORITHM_WAVELENGTH_B,
+						DSCP4_DEFAULT_ALGORITHM_COMPUTE_METHOD,
 						DSCP4_DEFAULT_ALGORITHM_OPENCL_KERNEL_FILENAME,
 						{ DSCP4_DEFAULT_ALGORITHM_OPENCL_WORKSIZE_X ,
 						DSCP4_DEFAULT_ALGORITHM_OPENCL_WORKSIZE_Y},
@@ -68,7 +75,13 @@ DSCP4Render::DSCP4Render() :
 						DSCP4_DEFAULT_DISPLAY_NUM_HEADS,
 						DSCP4_DEFAULT_DISPLAY_NUM_HEADS_PER_GPU,
 						DSCP4_DEFAULT_DISPLAY_HEAD_RES_X,
-						DSCP4_DEFAULT_DISPLAY_HEAD_RES_Y},
+						DSCP4_DEFAULT_DISPLAY_HEAD_RES_Y,
+						DSCP4_DEFAULT_DISPLAY_HEAD_RES_X_SPEC,
+						DSCP4_DEFAULT_DISPLAY_HEAD_RES_Y_SPEC,
+						DSCP4_DEFAULT_DISPLAY_NUM_AOM_CHANNELS,
+						DSCP4_DEFAULT_DISPLAY_NUM_SAMPLES_PER_HOLOLINE,
+						DSCP4_DEFAULT_DISPLAY_HOLOGRAM_PLANE_WIDTH
+						},
 						DSCP4_DEFAULT_LOG_VERBOSITY)
 {
 	
@@ -2020,6 +2033,50 @@ void DSCP4Render::updateAlgorithmOptionsCache()
 	fringeContext_.algorithm_options.cache.stereogram_res_y =
 		fringeContext_.algorithm_options.cache.stereogram_num_tiles_y
 		* fringeContext_.algorithm_options.num_scanlines;
+
+	fringeContext_.algorithm_options.cache.reference_beam_angle_rad =
+		fringeContext_.algorithm_options.reference_beam_angle * M_PI / 180.f;
+
+	fringeContext_.algorithm_options.cache.num_samples_per_wafel =
+		fringeContext_.display_options.num_samples_per_hololine /
+		fringeContext_.algorithm_options.num_wafels_per_scanline;
+
+	fringeContext_.algorithm_options.cache.k_r =
+		2 * M_PI / fringeContext_.algorithm_options.wavelength_red;
+
+	fringeContext_.algorithm_options.cache.k_g =
+		2 * M_PI / fringeContext_.algorithm_options.wavelength_green;
+
+	fringeContext_.algorithm_options.cache.k_b =
+		2 * M_PI / fringeContext_.algorithm_options.wavelength_blue;
+
+	fringeContext_.algorithm_options.cache.upconvert_const_r =
+		sin(fringeContext_.algorithm_options.cache.reference_beam_angle_rad)
+		+ 2
+		* M_PI / fringeContext_.algorithm_options.cache.k_r
+		* fringeContext_.display_options.num_samples_per_hololine
+		* fringeContext_.algorithm_options.temporal_upconvert_red
+		/ static_cast<float>((fringeContext_.display_options.pixel_clock_rate * fringeContext_.display_options.hologram_plane_width));
+
+	fringeContext_.algorithm_options.cache.upconvert_const_g =
+		sin(fringeContext_.algorithm_options.cache.reference_beam_angle_rad)
+		+ 2
+		* M_PI / fringeContext_.algorithm_options.cache.k_g
+		* fringeContext_.display_options.num_samples_per_hololine
+		* fringeContext_.algorithm_options.temporal_upconvert_green
+		/ static_cast<float>((fringeContext_.display_options.pixel_clock_rate * fringeContext_.display_options.hologram_plane_width));
+
+	fringeContext_.algorithm_options.cache.upconvert_const_b =
+		sin(fringeContext_.algorithm_options.cache.reference_beam_angle_rad)
+		+ 2
+		* M_PI / fringeContext_.algorithm_options.cache.k_b
+		* fringeContext_.display_options.num_samples_per_hololine
+		* fringeContext_.algorithm_options.temporal_upconvert_blue
+		/ static_cast<float>((fringeContext_.display_options.pixel_clock_rate * fringeContext_.display_options.hologram_plane_width));
+
+	fringeContext_.algorithm_options.cache.wafel_pitch =
+		fringeContext_.display_options.hologram_plane_width
+		/ fringeContext_.display_options.num_samples_per_hololine;
 
 
 #ifdef DSCP4_HAVE_OPENCL

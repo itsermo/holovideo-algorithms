@@ -81,17 +81,31 @@ fov_x = 30.0
 fov_y = 30.0
 
 ; chooses the fringe compute method, valid options are "cuda" or "opencl"
+; if compiled with support for both, this value will be "opencl" by default
 compute_method = ${DEFAULT_COMPUTE_METHOD}
 
 ; opencl algorithm options
 opencl_kernel_filename = dscp4-fringe.cl
-opencl_local_workgroup_size_x = 64
-opencl_local_workgroup_size_y = 8
+opencl_local_workgroup_size_x = 32
+opencl_local_workgroup_size_y = 4
 
 ; cuda algorithm options
 ; block dimension is the number of threads per block in X or Y
 cuda_block_dimension_x = 8
 cuda_block_dimension_y = 4
+
+; angle of the reference beam, in degrees
+reference_beam_angle = 30.0
+
+; SSB modulation constants
+temporal_upconvert_red   = 225000000
+temporal_upconvert_green = 290000000
+temporal_upconvert_blue  = 350000000
+
+; wavelength of laser light, in meters
+wavelength_red   = 0.000000633
+wavelength_green = 0.000000532
+wavelength_blue  = 0.000000445
 
 [display]
 ; friendly name of the display
@@ -104,7 +118,25 @@ num_heads = 6
 num_heads_per_gpu = 2
 
 ; the horizontal modeline resolution per DVI/VGA/DisplayPort output, in pixels
-head_x = 3552
+head_res_x = 3552
 
 ; the vertical modeline resolution per DVI/VGA/DisplayPort output, in pixels
-head_y = 2476
+head_res_y = 2476
+
+; the architecture spec for MK IV is same as horiz modeline res
+head_res_x_spec = 3552
+
+; the architecture spec for MK IV is 2600, where buffer is truncated to 2476
+head_res_y_spec = 2600
+
+; the number of channels on the AOM device
+num_aom_channels = 18
+
+;number of samples (formerly pixels) in a hololine
+num_samples_per_hololine = 355200
+
+; width, in meters of the hologram plane
+hologram_plane_width = 0.15
+
+; the rate of the pixel clock in Hz
+pixel_clock_rate = 400000000

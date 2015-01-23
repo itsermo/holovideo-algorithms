@@ -56,6 +56,11 @@ algorithmOptions_("Algorithm options")
 		;
 #endif
 
+	algorithmOptions_.add_options()
+		("reference-beam-angle,r",
+		boost::program_options::value<float>(),
+		"the reference beam for computing the hologram (in degrees)");
+
 	renderOptions_.add_options()
 		("autoscale,a",
 		boost::program_options::value<bool>()->default_value(DSCP4_RENDER_DEFAULT_AUTOSCALE),

@@ -47,7 +47,7 @@ public:
 	bool getWantHelp() { return vm_.count("help") == 0 ? false : true; }
 
 #ifdef DSCP4_HAVE_LOG4CXX
-		unsigned int getVerbosity() { return traverseOption<unsigned int>("verbosity", "general.verbosity"); }
+	unsigned int getVerbosity() { return traverseOption<unsigned int>("verbosity", "general.verbosity"); }
 #endif
 
 	// General options
@@ -91,12 +91,26 @@ public:
 	size_t getOpenCLKernelWorksizeY() { return static_cast<size_t>(traverseOption<unsigned int>("opencl-worksize-y", "algorithm.opencl_local_workgroup_size_y")); }
 #endif
 
+	float getReferenceBeamAngle() { return traverseOption<float>("reference-beam-angle", "algorithm.reference_beam_angle"); }
+	int getTemporalUpconvertRed() { return pt_.get<int>("algorithm.temporal_upconvert_red"); }
+	int getTemporalUpconvertGreen() { return pt_.get<int>("algorithm.temporal_upconvert_green"); }
+	int getTemporalUpconvertBlue() { return pt_.get<int>("algorithm.temporal_upconvert_blue"); }
+	float getWavelengthRed() { return pt_.get<float>("algorithm.wavelength_red"); }
+	float getWavelengthGreen() { return pt_.get<float>("algorithm.wavelength_green"); }
+	float getWavelengthBlue() { return pt_.get<float>("algorithm.wavelength_blue"); }
+
 	//Display options
 	std::string getDisplayName() { return pt_.get<std::string>("display.display_name"); }
 	unsigned int getNumHeads() { return pt_.get<unsigned int>("display.num_heads"); }
 	unsigned int getNumHeadsPerGPU() { return pt_.get<unsigned int>("display.num_heads_per_gpu"); }
-	unsigned int getHeadResX() { return pt_.get<unsigned int>("display.head_x"); }
-	unsigned int getHeadResY(){ return pt_.get<unsigned int>("display.head_y"); }
+	unsigned int getHeadResX() { return pt_.get<unsigned int>("display.head_res_x"); }
+	unsigned int getHeadResY(){ return pt_.get<unsigned int>("display.head_res_y"); }
+	unsigned int getHeadResXSpec() { return pt_.get<unsigned int>("display.head_res_x_spec"); }
+	unsigned int getHeadResYSpec() { return pt_.get<unsigned int>("display.head_res_y_spec"); }
+	unsigned int getNumAOMChannels() { return pt_.get<unsigned int>("display.num_aom_channels"); }
+	unsigned int getNumSamplesPerHololine() { return pt_.get<unsigned int>("display.num_samples_per_hololine"); }
+	float getHologramPlaneWidth() { return pt_.get<float>("display.hologram_plane_width"); }
+	unsigned int getPixelClockRate() { return pt_.get<unsigned int>("display.pixel_clock_rate"); }
 
 private:
 	// looks for option on the cmd line first, if no cmd line options,

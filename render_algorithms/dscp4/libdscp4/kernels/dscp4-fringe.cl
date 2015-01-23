@@ -6,9 +6,9 @@ CLK_NORMALIZED_COORDS_FALSE
 #ifndef M_PI
 #define M_PI 3.14159265358979323846264338327950288f
 #endif
-#define K_R 2 * M_PI / 0.0000000633f
-#define K_G 2 * M_PI / 0.0000000532f
-#define K_B 2 * M_PI / 0.0000000445f
+#define K_R 2 * M_PI / 0.000000633f
+#define K_G 2 * M_PI / 0.000000532f
+#define K_B 2 * M_PI / 0.000000445f
 #define PIXELS_PER_HOLOLINE 355200
 #define PIXEL_CLOCK_RATE 400000000
 #define HOLOGRAM_PLANE_WIDTH 0.15f
@@ -80,8 +80,9 @@ __kernel void computeFringe(
 
 					for (int i = 0; i < PIXELS_PER_WAFEL; i++)
 					{ 
-						wafel_buffer[i] += c * cos(k * sqrt( pow((float)((int)wafel_position[i] - (int)coords.x), (float)2) + pow(d,(float)2)) - d + wafel_position[i] * up_const);
+						wafel_buffer[i] += c/16 * cos(k * sqrt( pow((float)((int)wafel_position[i] - (int)coords.x), (float)2) + pow(d,(float)2)) - d + wafel_position[i] * up_const);
 					}
+
 					////Attention to RGBA order
 					//float4 val;
 					//float d = viewSet_depth_in[coords.y * viewSet_res_x + coords.x];
@@ -383,7 +384,7 @@ __kernel void computeFringe3(
 
 					for (int i = 0; i < PIXELS_PER_WAFEL; i++)
 					{
-						wafel_buffer[i] += c * cos(k * sqrt(pow((float)((int)wafel_position[i] - (int)x), (float)2) + pow(d, (float)2)) - d + wafel_position[i] * up_const);
+						wafel_buffer[i] += c / 16 * cos(k * sqrt(pow((float)((int)wafel_position[i] - (int)x), (float)2) + pow(d, (float)2)) - d + wafel_position[i] * up_const);
 					}
 
 					x += num_wafels_per_scanline;

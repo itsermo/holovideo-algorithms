@@ -4,8 +4,13 @@
 // These are some default values you can reference, which are
 // only called by the default constructor of C++ DSCP4Render class
 //
-// Changing these will only affect the default constructor,
+// Changing these will only affect the default DSCP4Render class constructor,
 // DSCP4 program will load and overwrite these values from dscp4.conf file
+//
+// These will ONLY BE USED in the case that there is NO dscp4.conf file present,
+// and/or no values passed to the command line
+//
+// In other words, if you are using the DSCP4 program, changing these will not do anything
 #ifdef WIN32
 #define DSCP4_DEFAULT_RENDER_SHADERS_PATH 			"C:\\Program Files\\dscp4\\share\\dscp4\\shaders"
 #define DSCP4_DEFAULT_RENDER_KERNELS_PATH			"C:\\Program Files\\dscp4\\share\\dscp4\\kernels"
@@ -18,28 +23,43 @@
 #define DSCP4_DEFAULT_RENDER_SHADER_FILENAME_PREFIX	"pointlight"
 #define DSCP4_DEFAULT_RENDER_SHADER_MODEL			DSCP4_SHADER_MODEL_FLAT
 #define DSCP4_DEFAULT_RENDER_RENDER_MODE 			DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE
-#define DSCP4_DEFAULT_RENDER_LIGHT_POS_X 			-0.7f
-#define DSCP4_DEFAULT_RENDER_LIGHT_POS_Y 			0.7f
-#define DSCP4_DEFAULT_RENDER_LIGHT_POS_Z 			0.5f
+#define DSCP4_DEFAULT_RENDER_LIGHT_POS_X 			-4.0f
+#define DSCP4_DEFAULT_RENDER_LIGHT_POS_Y 			4.0f
+#define DSCP4_DEFAULT_RENDER_LIGHT_POS_Z 			2.0f
 #define DSCP4_DEFAULT_RENDER_AUTOSCALE_ENABLED 		true
+#define DSCP4_DEFAULT_ALGORITHM_OPENCL_KERNEL_FILENAME	"dscp4-fringe.cl"
+#define DSCP4_DEFAULT_ALGORITHM_COMPUTE_METHOD		DSCP4_COMPUTE_METHOD_CUDA
 #define DSCP4_DEFAULT_ALGORITHM_NUM_VIEWS_X 		16
 #define DSCP4_DEFAULT_ALGORITHM_NUM_VIEWS_Y 		1
 #define DSCP4_DEFAULT_ALGORITHM_NUM_WAFELS 			693
 #define DSCP4_DEFAULT_ALGORITHM_NUM_SCANLINES 		460
 #define DSCP4_DEFAULT_ALGORITHM_FOV_X 				30.f
 #define DSCP4_DEFAULT_ALGORITHM_FOV_Y 				30.f
+#define DSCP4_DEFAULT_ALGORITHM_OPENCL_WORKSIZE_X	32
+#define DSCP4_DEFAULT_ALGORITHM_OPENCL_WORKSIZE_Y	4
+#define DSCP4_DEFAULT_ALGORITHM_CUDA_BLOCK_DIM_X	8
+#define DSCP4_DEFAULT_ALGORITHM_CUDA_BLOCK_DIM_Y	8
+#define DSCP4_DEFAULT_ALGORITHM_REF_BEAM_ANGLE		30.f
+#define DSCP4_DEFAULT_ALGORITHM_TEMP_UPCONVERT_R	225000000
+#define DSCP4_DEFAULT_ALGORITHM_TEMP_UPCONVERT_G	290000000
+#define DSCP4_DEFAULT_ALGORITHM_TEMP_UPCONVERT_B	350000000
+#define DSCP4_DEFAULT_ALGORITHM_WAVELENGTH_R		0.0000000633
+#define DSCP4_DEFAULT_ALGORITHM_WAVELENGTH_G		0.0000000532
+#define DSCP4_DEFAULT_ALGORITHM_WAVELENGTH_B		0.0000000445
 #define DSCP4_DEFAULT_DISPLAY_NAME					"MIT Mark IV"
 #define DSCP4_DEFAULT_DISPLAY_NUM_HEADS				6
 #define DSCP4_DEFAULT_DISPLAY_NUM_HEADS_PER_GPU		2
 #define DSCP4_DEFAULT_DISPLAY_HEAD_RES_X			3552
 #define DSCP4_DEFAULT_DISPLAY_HEAD_RES_Y			2476
+#define DSCP4_DEFAULT_DISPLAY_HEAD_RES_X_SPEC		3552
+#define DSCP4_DEFAULT_DISPLAY_HEAD_RES_Y_SPEC		2476
 #define DSCP4_DEFAULT_LOG_VERBOSITY					3
-#define DSCP4_DEFAULT_COMPUTE_METHOD				DSCP4_COMPUTE_METHOD_CUDA
-#define DSCP4_DEFAULT_ALGORITHM_OPENCL_KERNEL_FILENAME	"dscp4-fringe.cl"
-#define DSCP4_DEFAULT_ALGORITHM_OPENCL_WORKSIZE_X	64
-#define DSCP4_DEFAULT_ALGORITHM_OPENCL_WORKSIZE_Y	64
-#define DSCP4_DEFAULT_ALGORITHM_CUDA_BLOCK_DIM_X	8
-#define DSCP4_DEFAULT_ALGORITHM_CUDA_BLOCK_DIM_Y	4
+#define DSCP4_DEFAULT_DISPLAY_HOLOGRAM_PLANE_WIDTH	0.15f
+#define DSCP4_DEFAULT_DISPLAY_NUM_SAMPLES_PER_HOLOLINE 355200
+#define DSCP4_DEFAULT_DISPLAY_NUM_AOM_CHANNELS		18
+#define DSCP4_DEFAULT_DISPLAY_PIXEL_CLOCK_RATE		400000000
+
+
 
 #ifndef __cplusplus
 #include <stdbool.h>
@@ -180,12 +200,42 @@ extern "C"{
 		// number of blocks is a function of the hologram frame dimensions
 		// and the block dimensions
 		unsigned int cuda_number_of_blocks[2];
+
+		// number of bytes in a hololine / num_wafels_per_scanline
+		unsigned int num_samples_per_wafel;
+
+		// reference beam, in radians
+		float reference_beam_angle_rad;
+
+		// the pitch of one byte of a wafel (hologram plane width/bytes_per_hololine)
+		float wafel_pitch;
+
+		// the k constant for each color
+		float k_r;
+		float k_g;
+		float k_b;
+
+		// the upconvert constant values for r,g,b SSB
+		float upconvert_const_r;
+		float upconvert_const_g;
+		float upconvert_const_b;
+
 	} algorithm_cache_t;
 
 	typedef struct
 	{
 		unsigned int num_views_x, num_views_y, num_wafels_per_scanline, num_scanlines;
 		float fov_x, fov_y;
+		float reference_beam_angle;
+
+		unsigned int temporal_upconvert_red;
+		unsigned int temporal_upconvert_green;
+		unsigned int temporal_upconvert_blue;
+
+		float wavelength_red;
+		float wavelength_green;
+		float wavelength_blue;
+
 		compute_method_t compute_method;
 		const char * opencl_kernel_filename;
 		size_t opencl_local_workgroup_size[2];
@@ -195,8 +245,38 @@ extern "C"{
 
 	typedef struct
 	{
+		// friendly name of the display
 		const char * name;
-		unsigned int num_heads, num_heads_per_gpu, head_res_x, head_res_y;
+
+		// the number of display ports (DVI/VGA/DP/etc.)
+		unsigned int num_heads;
+
+		// the number of heads per gpu
+		unsigned int num_heads_per_gpu;
+		
+		// the horizontal modeline resolution of a single head, as determined by OS
+		unsigned int head_res_x;
+			
+		// the vertical modeline resolution of a single head, as determined by OS
+		unsigned int head_res_y;
+		
+		// the horizontal resolution as determined by the display spec
+		unsigned int head_res_x_spec;
+		
+		// the vertical resolution as determined by the display spec
+		unsigned int head_res_y_spec; 
+		
+		// the number of channels on the AOM device
+		unsigned int num_aom_channels;
+
+		// the number of samples in one hololine (formerly called "pixels per hololine")		
+		unsigned int num_samples_per_hololine;
+		
+		// the hologram plane width in meters
+		float hologram_plane_width;
+
+		// the display pixel clock rate in Hz
+		unsigned int pixel_clock_rate;
 	} display_options_t;
 
 	typedef struct
