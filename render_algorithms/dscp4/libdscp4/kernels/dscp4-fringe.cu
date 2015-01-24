@@ -13,7 +13,6 @@
 #include <math.h>
 
 texture<uchar4, cudaTextureType2D, cudaReadModeNormalizedFloat> viewset_color_in;
-texture<uchar4, cudaTextureType2D, cudaReadModeNormalizedFloat> * framebuffer_tex_out;
 
 __global__ void computeFringe(
 	unsigned char* framebuffer_out,
@@ -71,15 +70,15 @@ dscp4_fringe_cuda_context_t* dscp4_fringe_cuda_CreateContext(dscp4_fringe_contex
 	if (error != cudaSuccess)
 		printf("ERROR Could not register viewset OpenGL RGBA texture\n");
 
-	error = cudaGraphicsGLRegisterBuffer(&cudaContext->stereogram_depth_cuda_resource, cudaContext->fringe_context->stereogram_gl_depth_buf_in, cudaGraphicsRegisterFlagsReadOnly);
+	error = cudaGraphicsGLRegisterBuffer(&cudaContext->stereogram_depth_cuda_resource, cudaContext->fringe_context->stereogram_gl_depth_pbo_in, cudaGraphicsRegisterFlagsReadOnly);
 	if (error != cudaSuccess)
 		printf("ERROR Could not register viewset OpenGL DEPTH texture with CUDA\n");
 
 	cudaContext->fringe_cuda_resources = (struct cudaGraphicsResource**)malloc(sizeof(void*)*cudaContext->fringe_context->algorithm_options.cache.num_fringe_buffers);
 
-	error = cudaMalloc((void**)&framebuffer_tex_out, sizeof(framebuffer_tex_out) * cudaContext->fringe_context->algorithm_options.cache.num_fringe_buffers);
-	if (error)
-		printf("ERROR Could not alloc CUDA framebuffer textures\n");
+	//error = cudaMalloc((void**)&framebuffer_tex_out, sizeof(framebuffer_tex_out) * cudaContext->fringe_context->algorithm_options.cache.num_fringe_buffers);
+	//if (error)
+	//	printf("ERROR Could not alloc CUDA framebuffer textures\n");
 
 	for (unsigned int i = 0; i < cudaContext->fringe_context->algorithm_options.cache.num_fringe_buffers; i++)
 	{
@@ -106,7 +105,7 @@ void dscp4_fringe_cuda_DestroyContext(dscp4_fringe_cuda_context_t** cudaContext)
 	cudaFree((*cudaContext)->wafel_positions);
 	cudaFree((*cudaContext)->spec_buffer);
 
-	cudaFree(framebuffer_tex_out);
+	//cudaFree(framebuffer_tex_out);
 
 	for (unsigned int i = 0; i < (*cudaContext)->fringe_context->display_options.num_heads / 2; i++)
 	{
@@ -198,9 +197,9 @@ void dscp4_fringe_cuda_ComputeFringe(dscp4_fringe_cuda_context_t* cudaContext)
 		if (error != cudaSuccess)
 			printf("ERROR Getting framebuffer %i CUDA array\n", i);
 
-		error = cudaBindTextureToArray(&framebuffer_tex_out[i], framebufferArrays[i], &rgbaTexDesc);
-		if (error != cudaSuccess)
-			printf("ERROR Binding framebuffer texture %i  to CUDA array\n", i);
+		//error = cudaBindTextureToArray(&framebuffer_tex_out[i], framebufferArrays[i], &rgbaTexDesc);
+		//if (error != cudaSuccess)
+		//	printf("ERROR Binding framebuffer texture %i  to CUDA array\n", i);
 
 	}
 
@@ -272,7 +271,7 @@ void dscp4_fringe_cuda_ComputeFringe(dscp4_fringe_cuda_context_t* cudaContext)
 
 	for (unsigned int i = 0; i < cudaContext->fringe_context->algorithm_options.cache.num_fringe_buffers; i++)
 	{
-		cudaUnbindTexture(framebuffer_tex_out[i]);
+		//cudaUnbindTexture(framebuffer_tex_out[i]);
 		error = cudaGraphicsUnmapResources(1, (cudaGraphicsResource_t*)(&cudaContext->fringe_cuda_resources[i]), 0);
 		if(error != cudaSuccess)
 			printf("ERROR Unmapping CUDA fringe buffer %i resource\n", i);

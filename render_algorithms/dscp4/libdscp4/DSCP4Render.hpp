@@ -211,7 +211,7 @@ namespace dscp4
 		// Copies the stereogram data to a PBO
 		// This is done after generating views, meant for passing
 		// to CUDA/OpenCL kernel for processing
-		void copyStereogramToPBOs();
+		void copyStereogramDepthToPBO();
 
 		// Will init/deinit OpenCL/CUDA
 		void initComputeMethod();
