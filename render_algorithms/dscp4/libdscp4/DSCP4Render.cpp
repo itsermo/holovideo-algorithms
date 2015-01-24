@@ -269,14 +269,14 @@ bool DSCP4Render::initWindow(SDL_Window*& window, SDL_GLContext& glContext, int 
 	case DSCP4_RENDER_MODE_MODEL_VIEWING:
 		windowWidth_[thisWindowNum] = fringeContext_.algorithm_options.num_wafels_per_scanline;
 		windowHeight_[thisWindowNum] = fringeContext_.algorithm_options.num_scanlines;
-		x = (bounds.w - windowWidth_[thisWindowNum]) / 2;
-		y = (bounds.h - windowHeight_[thisWindowNum]) / 2;
+		x = abs((int)(bounds.w - windowWidth_[thisWindowNum])) / 2;
+		y = abs((int)(bounds.h - windowHeight_[thisWindowNum])) / 2;
 		break;
 	case DSCP4_RENDER_MODE_STEREOGRAM_VIEWING:
-		windowWidth_[thisWindowNum] *= 0.8f;
+		windowWidth_[thisWindowNum] *= 0.5f;
 		windowHeight_[thisWindowNum] = windowWidth_[thisWindowNum] * (float)fringeContext_.algorithm_options.cache.stereogram_res_y / (float)fringeContext_.algorithm_options.cache.stereogram_res_x;
-		x = (bounds.w - windowWidth_[thisWindowNum]) / 2;
-		y = (bounds.h - windowHeight_[thisWindowNum]) / 2;
+		x = abs((int)(bounds.w - windowWidth_[thisWindowNum])) / 2;
+		y = abs((int)(bounds.h - windowHeight_[thisWindowNum])) / 2;
 		//LOG4CXX_DEBUG(logger_, "Creating SDL OpenGL Window " << thisWindowNum << ": " << windowWidth_[thisWindowNum] << "x" << windowHeight_[thisWindowNum] << " @ " << "{" << bounds.x + 80 << "," << bounds.y + 80 << "}")
 		//window = SDL_CreateWindow(("dscp4-" + std::to_string(thisWindowNum)).c_str(), bounds.x + 80, bounds.y + 80, windowWidth_[thisWindowNum], windowHeight_[thisWindowNum], SDL_WINDOW_OPENGL);
 		break;
@@ -310,7 +310,7 @@ bool DSCP4Render::initWindow(SDL_Window*& window, SDL_GLContext& glContext, int 
 	}
 
 	LOG4CXX_DEBUG(logger_, "Creating fullscreen SDL OpenGL Window " << thisWindowNum << ": " << windowWidth_[thisWindowNum] << "x" << bounds.h << " @ " << "{" << bounds.x << "," << bounds.y << "}")
-	window = SDL_CreateWindow(("dscp4-" + std::to_string(thisWindowNum)).c_str(), x, y, windowWidth_[thisWindowNum], windowHeight_[thisWindowNum], flags);
+	window = SDL_CreateWindow(("edu.mit.media.obmg.dscp4-" + std::to_string(thisWindowNum)).c_str(), x, y, windowWidth_[thisWindowNum], windowHeight_[thisWindowNum], flags);
 	
 	CHECK_SDL_RC(window == nullptr, "Could not create SDL window");
 
@@ -2074,7 +2074,7 @@ void DSCP4Render::updateAlgorithmOptionsCache()
 		* fringeContext_.algorithm_options.temporal_upconvert_blue
 		/ static_cast<float>((fringeContext_.display_options.pixel_clock_rate * fringeContext_.display_options.hologram_plane_width));
 
-	fringeContext_.algorithm_options.cache.wafel_pitch =
+	fringeContext_.algorithm_options.cache.sample_pitch =
 		fringeContext_.display_options.hologram_plane_width
 		/ fringeContext_.display_options.num_samples_per_hololine;
 
@@ -2123,6 +2123,9 @@ void DSCP4Render::updateAlgorithmOptionsCache()
 	}
 
 #endif
+
+	fringeContext_.algorithm_options.cache.z_offset = 0.f;
+	fringeContext_.algorithm_options.cache.z_span = 0.5f;
 
 }
 

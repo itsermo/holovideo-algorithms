@@ -365,6 +365,7 @@ int main(int argc, const char* argv[])
 		displayOptions.num_samples_per_hololine = options.getNumSamplesPerHololine();
 		displayOptions.hologram_plane_width = options.getHologramPlaneWidth();
 		displayOptions.pixel_clock_rate = options.getPixelClockRate();
+		displayOptions.num_aom_channels = options.getNumAOMChannels();
 	}
 	catch (std::exception& e)
 	{

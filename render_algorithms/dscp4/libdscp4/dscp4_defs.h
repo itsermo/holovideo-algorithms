@@ -208,7 +208,7 @@ extern "C"{
 		float reference_beam_angle_rad;
 
 		// the pitch of one byte of a wafel (hologram plane width/bytes_per_hololine)
-		float wafel_pitch;
+		float sample_pitch;
 
 		// the k constant for each color
 		float k_r;
@@ -219,6 +219,10 @@ extern "C"{
 		float upconvert_const_r;
 		float upconvert_const_g;
 		float upconvert_const_b;
+
+		// the model Z shift
+		float z_span;
+		float z_offset;
 
 	} algorithm_cache_t;
 
