@@ -35,7 +35,7 @@ __global__ void computeFringe(
 	const float UPCONVERT_CONST_G,
 	const float UPCONVERT_CONST_B,
 	const unsigned int NUM_SAMPLES_PER_WAFEL,
-	const unsigned int SAMPLE_PITCH,
+	const float SAMPLE_PITCH,
 	const float Z_SPAN,
 	const float Z_OFFSET,
 	const unsigned int NUM_AOM_CHANNELS,
@@ -271,7 +271,7 @@ __global__ void computeFringe(
 	const float UPCONVERT_CONST_G,
 	const float UPCONVERT_CONST_B,
 	const unsigned int NUM_SAMPLES_PER_WAFEL,
-	const unsigned int SAMPLE_PITCH,
+	const float SAMPLE_PITCH,
 	const float Z_SPAN,
 	const float Z_OFFSET,
 	const unsigned int NUM_AOM_CHANNELS,
@@ -296,8 +296,8 @@ __global__ void computeFringe(
 
 		for (unsigned int color_chan = 0; color_chan < 3; color_chan++)
 		{
-			int x = (blockIdx.x * blockDim.x) + threadIdx.x;
-			int y = (blockIdx.y * blockDim.y) + threadIdx.y;
+			x = (blockIdx.x * blockDim.x) + threadIdx.x;
+			y = (blockIdx.y * blockDim.y) + threadIdx.y;
 
 			float k = (color_chan == 0 ? K_R : color_chan == 1 ? K_G : K_B);
 			float up_const = (color_chan == 0 ? UPCONVERT_CONST_R : color_chan == 1 ? UPCONVERT_CONST_G : UPCONVERT_CONST_B);
@@ -312,7 +312,7 @@ __global__ void computeFringe(
 
 					for (int i = 0; i < NUM_SAMPLES_PER_WAFEL; i++)
 					{
-						wafel_buffer[wafel_offset + i] += c / num_views * cos(k * sqrt(pow((float)((int)wafel_position[i] - (int)x), (float)2) + pow(d, (float)2)) - d + wafel_position[i] * up_const);
+						wafel_buffer[wafel_offset + i] += c / num_views * cos(k * sqrt(pow((float)((int)wafel_position[wafel_offset + i] - (int)x), (float)2) + pow(d, (float)2)) - d + wafel_position[wafel_offset+i] * up_const);
 					}
 					//framebuffer_out[(y * framebuffer_res_x * 4) + (x * 4)] = viewset_depth_in[y * viewset_res_x + x] * 255.f;
 					//framebuffer_out[(y * framebuffer_res_x * 4) + (x * 4 + 1)] = 0;
@@ -329,8 +329,8 @@ __global__ void computeFringe(
 
 		int which_frame_buf = (y % NUM_AOM_CHANNELS);
 		int which_hololine = y / NUM_AOM_CHANNELS;
-		int which_frameline = (float)x / (framebuffer_res_x / NUM_SAMPLES_PER_WAFEL);
-		int which_wafel = x - (which_frameline * (framebuffer_res_x / NUM_SAMPLES_PER_WAFEL));
+//		int which_frameline = (float)x / (framebuffer_res_x / NUM_SAMPLES_PER_WAFEL);
+//		int which_wafel = x - (which_frameline * (framebuffer_res_x / NUM_SAMPLES_PER_WAFEL));
 
 		for (int i = 0; i < NUM_SAMPLES_PER_WAFEL; i++)
 		{

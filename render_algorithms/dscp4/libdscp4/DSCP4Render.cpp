@@ -302,7 +302,7 @@ bool DSCP4Render::initWindow(SDL_Window*& window, SDL_GLContext& glContext, int 
 #else
 		SDL_ShowCursor(SDL_DISABLE);
 		flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
-		isFullScreen = true;
+		isFullScreen_ = true;
 #endif
 		break;
 	default:
@@ -1698,15 +1698,15 @@ void DSCP4Render::copyStereogramToPBOs()
 	glBindFramebuffer(GL_FRAMEBUFFER, fringeContext_.stereogram_gl_fbo);
 	glReadBuffer(GL_COLOR_ATTACHMENT0);
 	// OpenCL can read RGBA texture directly from framebuffer, so we don't need to create PBO object
-	if (fringeContext_.algorithm_options.compute_method == DSCP4_COMPUTE_METHOD_CUDA)
-	{
-		//copy RGBA from stereogram views
-		glBindBuffer(GL_PIXEL_PACK_BUFFER, fringeContext_.stereogram_gl_rgba_buf_in);
-		glReadPixels(0, 0,
-			fringeContext_.algorithm_options.cache.stereogram_res_x,
-			fringeContext_.algorithm_options.cache.stereogram_res_y,
-			GL_RGBA, GL_UNSIGNED_BYTE, 0);
-	}
+	//if (fringeContext_.algorithm_options.compute_method == DSCP4_COMPUTE_METHOD_CUDA)
+	//{
+	//	//copy RGBA from stereogram views
+	//	glBindBuffer(GL_PIXEL_PACK_BUFFER, fringeContext_.stereogram_gl_rgba_buf_in);
+	//	glReadPixels(0, 0,
+	//		fringeContext_.algorithm_options.cache.stereogram_res_x,
+	//		fringeContext_.algorithm_options.cache.stereogram_res_y,
+	//		GL_RGBA, GL_UNSIGNED_BYTE, 0);
+	//}
 
 	// If we compile with OpenCL support, check to see if OpenCL supports
 	// depth texture extensions.  If not, then we need to copy depth texture
@@ -2076,7 +2076,7 @@ void DSCP4Render::updateAlgorithmOptionsCache()
 
 	fringeContext_.algorithm_options.cache.sample_pitch =
 		fringeContext_.display_options.hologram_plane_width
-		/ fringeContext_.display_options.num_samples_per_hololine;
+		/ (float)fringeContext_.display_options.num_samples_per_hololine;
 
 
 #ifdef DSCP4_HAVE_OPENCL

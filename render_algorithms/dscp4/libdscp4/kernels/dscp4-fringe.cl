@@ -234,7 +234,7 @@ __kernel void computeFringeVar(
 	const float UPCONVERT_CONST_G,
 	const float UPCONVERT_CONST_B,
 	const unsigned int NUM_SAMPLES_PER_WAFEL,
-	const unsigned int SAMPLE_PITCH,
+	const float SAMPLE_PITCH,
 	const float Z_SPAN,
 	const float Z_OFFSET,
 	const unsigned int NUM_AOM_CHANNELS,
@@ -292,7 +292,7 @@ __kernel void computeFringeVar(
 		int which_frame_buf = (coords.y % NUM_AOM_CHANNELS);
 		int which_hololine = coords.y / NUM_AOM_CHANNELS;
 		int which_frameline = (float)coords.x / (framebuffer_res_x / NUM_SAMPLES_PER_WAFEL);
-		int which_wafel = coords.x - (which_frameline * (framebuffer_res_x / NUM_SAMPLES_PER_WAFEL));
+//		int which_wafel = coords.x - (which_frameline * (framebuffer_res_x / NUM_SAMPLES_PER_WAFEL));
 
 		for (int i = 0; i < NUM_SAMPLES_PER_WAFEL; i++)
 		{
