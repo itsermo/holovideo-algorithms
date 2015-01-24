@@ -320,8 +320,8 @@ extern "C" {
 
 			for (unsigned int j = 0; j < openclContext->fringe_context->display_options.num_heads; j++)
 			{
-				int numGPUS = openclContext->fringe_context->display_options.num_heads / openclContext->fringe_context->display_options.num_heads_per_gpu;
-				int which_gpu = j % numGPUS;
+				unsigned int numGPUS = openclContext->fringe_context->display_options.num_heads / openclContext->fringe_context->display_options.num_heads_per_gpu;
+				unsigned int which_gpu = j % numGPUS;
 
 				size_t dst_origin[3] = { 0, j < numGPUS ? 0 : openclContext->fringe_context->algorithm_options.cache.fringe_buffer_res_y / 2, 0 };
 
