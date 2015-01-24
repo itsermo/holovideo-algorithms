@@ -54,7 +54,7 @@ dscp4_fringe_cuda_context_t* dscp4_fringe_cuda_CreateContext(dscp4_fringe_contex
 	
 	if (error != cudaSuccess)
 	{
-		printf("ERROR Could not get CUDA device count -- Are there any CUDA devices present?");
+		printf("ERROR Could not get CUDA device count -- Are there any CUDA devices present?\n");
 		free(cudaContext);
 		return NULL;
 	}
@@ -69,29 +69,29 @@ dscp4_fringe_cuda_context_t* dscp4_fringe_cuda_CreateContext(dscp4_fringe_contex
 
 	error = cudaGraphicsGLRegisterImage(&cudaContext->stereogram_rgba_cuda_resource, cudaContext->fringe_context->stereogram_gl_fbo_color, GL_TEXTURE_2D, cudaGraphicsRegisterFlagsReadOnly);
 	if (error != cudaSuccess)
-		printf("ERROR Could not register viewset OpenGL RGBA texture");
+		printf("ERROR Could not register viewset OpenGL RGBA texture\n");
 
 	error = cudaGraphicsGLRegisterBuffer(&cudaContext->stereogram_depth_cuda_resource, cudaContext->fringe_context->stereogram_gl_depth_buf_in, cudaGraphicsRegisterFlagsReadOnly);
 	if (error != cudaSuccess)
-		printf("ERROR Could not register viewset OpenGL DEPTH texture with CUDA");
+		printf("ERROR Could not register viewset OpenGL DEPTH texture with CUDA\n");
 
 	cudaContext->fringe_cuda_resources = (struct cudaGraphicsResource**)malloc(sizeof(void*)*cudaContext->fringe_context->algorithm_options.cache.num_fringe_buffers);
 
-	error = cudaMalloc((void**)framebuffer_tex_out, sizeof(framebuffer_tex_out) * cudaContext->fringe_context->algorithm_options.cache.num_fringe_buffers);
+	error = cudaMalloc((void**)&framebuffer_tex_out, sizeof(framebuffer_tex_out) * cudaContext->fringe_context->algorithm_options.cache.num_fringe_buffers);
 	if (error)
-		printf("ERROR Could not alloc CUDA framebuffer textures");
+		printf("ERROR Could not alloc CUDA framebuffer textures\n");
 
 	for (unsigned int i = 0; i < cudaContext->fringe_context->algorithm_options.cache.num_fringe_buffers; i++)
 	{
 		//error = cudaGraphicsGLRegisterBuffer(&cudaContext->fringe_cuda_resources[i], cudaContext->fringe_context->fringe_gl_buf_out[i], cudaGraphicsRegisterFlagsWriteDiscard);
 		error = cudaGraphicsGLRegisterImage(&cudaContext->fringe_cuda_resources[i], cudaContext->fringe_context->fringe_gl_tex_out[i], GL_TEXTURE_2D, cudaGraphicsRegisterFlagsWriteDiscard);
 		if (error)
-			printf("ERROR Could not register CUDA image framebuffer texture objects");
+			printf("ERROR Could not register CUDA image framebuffer texture objects\n");
 	}
 
 	error = cudaMalloc(&cudaContext->spec_buffer, cudaContext->fringe_context->display_options.head_res_x_spec * cudaContext->fringe_context->display_options.head_res_y_spec * cudaContext->fringe_context->display_options.num_heads * 4);
 	if (error != cudaSuccess)
-		printf("ERROR Could not alloc CUDA megabuffer");
+		printf("ERROR Could not alloc CUDA megabuffer\n");
 
 	error = cudaMalloc(&cudaContext->wafel_buffers, cudaContext->fringe_context->algorithm_options.cache.num_samples_per_wafel * cudaContext->fringe_context->algorithm_options.num_wafels_per_scanline * cudaContext->fringe_context->algorithm_options.num_scanlines * sizeof(unsigned char));
 	error = cudaMalloc(&cudaContext->wafel_positions, cudaContext->fringe_context->algorithm_options.cache.num_samples_per_wafel * cudaContext->fringe_context->algorithm_options.num_wafels_per_scanline * cudaContext->fringe_context->algorithm_options.num_scanlines * sizeof(float));
@@ -176,7 +176,7 @@ void dscp4_fringe_cuda_ComputeFringe(dscp4_fringe_cuda_context_t* cudaContext)
 	//output = (void**)malloc(sizeof(void*)* cudaContext->fringe_context->algorithm_options.cache.num_fringe_buffers);
 	//outputSizes = (size_t*)malloc(sizeof(size_t)* cudaContext->fringe_context->algorithm_options.cache.num_fringe_buffers);
 
-	cudaMalloc((void**)framebufferArrays, sizeof(cudaArray_t)* cudaContext->fringe_context->algorithm_options.cache.num_fringe_buffers);
+	framebufferArrays = (cudaArray_t*)malloc(sizeof(cudaArray_t)* cudaContext->fringe_context->algorithm_options.cache.num_fringe_buffers);
 
 	for (unsigned int i = 0; i < cudaContext->fringe_context->algorithm_options.cache.num_fringe_buffers; i++)
 	{
@@ -188,6 +188,11 @@ void dscp4_fringe_cuda_ComputeFringe(dscp4_fringe_cuda_context_t* cudaContext)
 		//error = cudaGraphicsResourceGetMappedPointer(&output[i], &outputSizes[i], cudaContext->fringe_cuda_resources[i]);
 		//if (error != cudaSuccess)
 		//	printf("ERROR Getting fringe texture buffer %i CUDA mapped pointer\n", i);
+
+
+		error = cudaGraphicsMapResources(1, &cudaContext->fringe_cuda_resources[i], 0);
+		if (error != cudaSuccess)
+			printf("ERROR Mapping framebuffer %i CUDA graphics resource\n", i);
 
 		error = cudaGraphicsSubResourceGetMappedArray(&framebufferArrays[i], cudaContext->fringe_cuda_resources[i],0,0);
 		if (error != cudaSuccess)
@@ -247,9 +252,22 @@ void dscp4_fringe_cuda_ComputeFringe(dscp4_fringe_cuda_context_t* cudaContext)
 
 	//write texture outputs here
 
-	for (unsigned int i = 0; i < cudaContext->fringe_context->display_options.num_heads; i++)
+	for (unsigned int j = 0; j < cudaContext->fringe_context->display_options.num_heads; j++)
 	{
-		cudaMemcpyToArray(framebufferArrays[i], 0, 0, cudaContext->spec_buffer, cudaContext->fringe_context->algorithm_options.cache.fringe_buffer_res_x * cudaContext->fringe_context->algorithm_options.cache.fringe_buffer_res_y *4, cudaMemcpyDeviceToDevice);
+		unsigned int num_gpus = cudaContext->fringe_context->display_options.num_heads / cudaContext->fringe_context->display_options.num_heads_per_gpu;
+		unsigned int which_gpu = j % num_gpus;
+
+		size_t height_offset = j < num_gpus ? 0 : cudaContext->fringe_context->display_options.head_res_y;
+
+		size_t offset = j*cudaContext->fringe_context->display_options.head_res_x * cudaContext->fringe_context->display_options.head_res_y_spec * 4;
+
+		error = cudaMemcpyToArray(
+			framebufferArrays[which_gpu],
+			0,
+			height_offset,
+			cudaContext->spec_buffer + offset,
+			cudaContext->fringe_context->display_options.head_res_x * cudaContext->fringe_context->display_options.head_res_y * 4,
+			cudaMemcpyDeviceToDevice);
 	}
 
 	for (unsigned int i = 0; i < cudaContext->fringe_context->algorithm_options.cache.num_fringe_buffers; i++)
