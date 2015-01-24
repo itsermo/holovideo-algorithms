@@ -247,6 +247,8 @@ __kernel void computeFringeVar(
 
 	if (x < num_wafels_per_scanline && y < num_scanlines)
 	{
+		const float num_views = (viewset_num_tiles_x * viewset_num_tiles_y);
+
 		for (int i = 0; i < NUM_SAMPLES_PER_WAFEL; i++)
 		{
 			wafel_position[i] = (-ceil((float)num_wafels_per_scanline / 2.f) + i) * SAMPLE_PITCH + x;
@@ -276,7 +278,7 @@ __kernel void computeFringeVar(
 
 					for (int i = 0; i < NUM_SAMPLES_PER_WAFEL; i++)
 					{
-						wafel_buffer[i] += c / 16 * cos(k * sqrt(pow((float)((int)wafel_position[i] - (int)x), (float)2) + pow(d, (float)2)) - d + wafel_position[i] * up_const);
+						wafel_buffer[i] += c / num_views * cos(k * sqrt(pow((float)((int)wafel_position[i] - (int)x), (float)2) + pow(d, (float)2)) - d + wafel_position[i] * up_const);
 					}
 					x += num_wafels_per_scanline;
 				}
