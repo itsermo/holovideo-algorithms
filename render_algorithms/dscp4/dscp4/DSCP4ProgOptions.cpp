@@ -6,7 +6,8 @@ DSCP4ProgramOptions::DSCP4ProgramOptions() :
 generalOptions_("General options"),
 inputOptions_("Input options"),
 renderOptions_("Render options"),
-algorithmOptions_("Algorithm options")
+algorithmOptions_("Algorithm options"),
+displayOptions_("Display options")
 {	
 	generalOptions_.add_options()
 #ifdef DSCP4_HAVE_LOG4CXX
@@ -72,7 +73,14 @@ algorithmOptions_("Algorithm options")
 		boost::program_options::value<std::string>(),
 		"sets the render mode. valid options are 'viewing', 'stereogram', 'aerial', and 'holovideo'");
 
-	allOptions_.add(generalOptions_).add(inputOptions_).add(algorithmOptions_).add(renderOptions_);
+#if defined(__linux__) || defined (DSCP4_HAVE_X11)
+	displayOptions_.add_options()
+				("display-env,d",
+				boost::program_options::value<std::string>()->default_value(":0"),
+				"sets the display environment variable for X11 window output");
+#endif
+
+	allOptions_.add(generalOptions_).add(inputOptions_).add(algorithmOptions_).add(renderOptions_).add(displayOptions_);
 }
 
 DSCP4ProgramOptions::~DSCP4ProgramOptions()

@@ -67,6 +67,7 @@ int main(int argc, const char* argv[])
 	render_options_t renderOptions = { 0 };
 	algorithm_options_t algorithmOptions = { 0 };
 	display_options_t displayOptions = { 0 };
+	std::string displayX11EnvVar;
 	std::string displayName;
 	std::string shadersPath;
 	std::string kernelsPath;
@@ -366,6 +367,12 @@ int main(int argc, const char* argv[])
 		displayOptions.hologram_plane_width = options.getHologramPlaneWidth();
 		displayOptions.pixel_clock_rate = options.getPixelClockRate();
 		displayOptions.num_aom_channels = options.getNumAOMChannels();
+
+#if defined(__linux__) || defined (DSCP4_HAVE_X11)
+		displayX11EnvVar = options.getX11DisplayEnvironmentVar();
+		displayOptions.x11_env_var = displayX11EnvVar.c_str();
+#endif
+
 	}
 	catch (std::exception& e)
 	{

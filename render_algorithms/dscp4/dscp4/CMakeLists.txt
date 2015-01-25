@@ -16,6 +16,10 @@ if(WITH_LIBLOG4CXX)
 	include_directories(${LIBLOG4CXX_INCLUDE_DIRS})
 endif()
 
+if(X11_FOUND)
+	add_definitions(-DDSCP4_HAVE_X11)
+endif()
+
 file(GLOB DSCP4_SRC
 	"*.hpp"
 	"*.cpp"

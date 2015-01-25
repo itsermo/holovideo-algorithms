@@ -112,6 +112,10 @@ public:
 	float getHologramPlaneWidth() { return pt_.get<float>("display.hologram_plane_width"); }
 	unsigned int getPixelClockRate() { return pt_.get<unsigned int>("display.pixel_clock_rate"); }
 
+#if defined(__linux__) || defined (DSCP4_HAVE_X11)
+	std::string getX11DisplayEnvironmentVar() { return vm_["display-env"].as<std::string>(); }
+#endif
+
 private:
 	// looks for option on the cmd line first, if no cmd line options,
 	// then return conf file option
@@ -135,6 +139,7 @@ private:
 	boost::program_options::options_description inputOptions_;
 	boost::program_options::options_description renderOptions_;
 	boost::program_options::options_description algorithmOptions_;
+	boost::program_options::options_description displayOptions_;
 
 #ifdef DSCP4_HAVE_LOG4CXX
 	log4cxx::LoggerPtr logger_ = log4cxx::Logger::getLogger("edu.mit.media.obmg.holovideo.dscp4");

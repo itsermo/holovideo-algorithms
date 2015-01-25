@@ -47,6 +47,7 @@
 #define DSCP4_DEFAULT_ALGORITHM_WAVELENGTH_G		0.0000000532
 #define DSCP4_DEFAULT_ALGORITHM_WAVELENGTH_B		0.0000000445
 #define DSCP4_DEFAULT_DISPLAY_NAME					"MIT Mark IV"
+#define DSCP4_DEFAULT_DISPLAY_X11_ENV_VAR			":0"
 #define DSCP4_DEFAULT_DISPLAY_NUM_HEADS				6
 #define DSCP4_DEFAULT_DISPLAY_NUM_HEADS_PER_GPU		2
 #define DSCP4_DEFAULT_DISPLAY_HEAD_RES_X			3552
@@ -251,6 +252,9 @@ extern "C"{
 	{
 		// friendly name of the display
 		const char * name;
+
+		// the environment variable for X11 display (usually :0)
+		const char* x11_env_var;
 
 		// the number of display ports (DVI/VGA/DP/etc.)
 		unsigned int num_heads;

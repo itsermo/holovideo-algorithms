@@ -4,6 +4,10 @@
 #include <iostream>
 #include <iomanip>
 
+#ifdef __LINUX__
+#include <stdlib.h>
+#endif
+
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
@@ -72,6 +76,7 @@ DSCP4Render::DSCP4Render() :
 						algorithm_cache_t() },
 					display_options_t {
 						DSCP4_DEFAULT_DISPLAY_NAME,
+						DSCP4_DEFAULT_DISPLAY_X11_ENV_VAR,
 						DSCP4_DEFAULT_DISPLAY_NUM_HEADS,
 						DSCP4_DEFAULT_DISPLAY_NUM_HEADS_PER_GPU,
 						DSCP4_DEFAULT_DISPLAY_HEAD_RES_X,
@@ -167,12 +172,6 @@ DSCP4Render::DSCP4Render(render_options_t renderOptions,
 		LOG4CXX_WARN(logger_, "No shader path location specified, using current working path: " << boost::filesystem::current_path().string())
 			renderOptions_.shaders_path = (char*)boost::filesystem::current_path().string().c_str();
 	}
-
-//#ifdef DSCP4_HAVE_CUDA
-//	char * helloWorldCudaStr = dscp4_fringe_cuda_HelloWorld();
-//	LOG4CXX_INFO(logger_, "CUDA--If CUDA is working, this should say 'World!', not 'Hello ': " << helloWorldCudaStr)
-//#endif
-
 }
 
 DSCP4Render::~DSCP4Render()
@@ -183,6 +182,15 @@ DSCP4Render::~DSCP4Render()
 bool DSCP4Render::init()
 {
 	LOG4CXX_INFO(logger_, "Initializing DSCP4...")
+
+#if defined(__linux__) || defined(DSCP4_HAVE_X11)
+	LOG4CXX_INFO(logger_, "Using X11 display " << fringeContext_.display_options.x11_env_var)
+	int ret = setenv("DISPLAY", fringeContext_.display_options.x11_env_var, 1);
+	if(ret !=0)
+	{
+		LOG4CXX_ERROR(logger_,"Could not set the display environment variable for X11")
+	}
+#endif
 
 	LOG4CXX_INFO(logger_, "Initializing SDL with video subsystem")
 	CHECK_SDL_RC(SDL_Init(SDL_INIT_VIDEO) < 0, "Could not initialize SDL")
@@ -225,7 +233,7 @@ bool DSCP4Render::init()
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+	//SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 
 	SDL_GL_SetSwapInterval(1);
 
@@ -325,7 +333,7 @@ bool DSCP4Render::initWindow(SDL_Window*& window, SDL_GLContext& glContext, int 
 	glContext = SDL_GL_CreateContext(window);
 
 	LOG4CXX_DEBUG(logger_, "Initializing GLEW")
-	
+
 	GLenum err = glewInit();
 	if (err != GLEW_OK)
 	{

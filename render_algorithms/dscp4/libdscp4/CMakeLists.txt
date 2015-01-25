@@ -17,6 +17,7 @@ include_directories(${GLM_INCLUDE_DIRS})
 add_definitions(-DGLM_FORCE_RADIANS)
 
 if(X11_FOUND)
+	add_definitions(-DDSCP4_HAVE_X11)
 	include_directories(${X11_INCLUDE_DIR})
 endif()
 
