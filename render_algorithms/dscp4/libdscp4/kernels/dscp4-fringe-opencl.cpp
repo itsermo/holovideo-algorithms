@@ -18,8 +18,14 @@
 #include <math.h>
 #include <stdio.h>
 
+#ifndef __APPLE__
 #include <CL/cl.h>
 #include <CL/cl_gl.h>
+#else
+#include <OpenCL/cl.h>
+#include <OpenCL/cl_gl.h>
+#include <OpenCL/cl_gl_ext.h>
+#endif
 
 #if WIN32
 #include <Windows.h>
@@ -28,7 +34,14 @@
 #include <GL/glx.h>
 #endif
 
+#ifndef __APPLE__
 #include <GL/gl.h>
+#else
+#include <OpenGL/gl.h>
+#include <OpenGL/CGLTypes.h>
+#include <OpenGL/CGLDevice.h>
+#include <OpenGL/CGLCurrent.h>
+#endif
 
 #ifdef DSCP4_HAVE_LOG4CXX
 static log4cxx::LoggerPtr DSCP4_OPENCL_LOGGER = log4cxx::Logger::getLogger("edu.mit.media.obmg.holovideo.dscp4.opencl");
@@ -132,8 +145,8 @@ extern "C" {
 			0
 		};
 #elif defined(__APPLE__)
-		CGLContextObj glContext = CGLGetCurrentContext();
-		CGLShareGroupObj shareGroup = CGLGetShareGroup(glContext);
+		CGLContextObj glContextApple = CGLGetCurrentContext();
+		CGLShareGroupObj shareGroup = CGLGetShareGroup(glContextApple);
 		cl_context_properties properties[] = {
 			CL_CONTEXT_PROPERTY_USE_CGL_SHAREGROUP_APPLE,
 			(cl_context_properties)shareGroup,

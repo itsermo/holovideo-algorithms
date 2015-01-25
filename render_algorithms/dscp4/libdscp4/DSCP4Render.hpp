@@ -20,9 +20,16 @@
 
 #include <glm/glm.hpp>
 
+//glew not necessary in apple
+#ifndef __APPLE__
 #include <GL/glew.h>
 #include <GL/gl.h>
 #include <GL/glu.h>
+#else
+
+#include <OpenGL/gl.h>
+#include <OpenGL/gl3.h>
+#endif
 
 #ifdef DSCP4_HAVE_CUDA
 #include <kernels/dscp4-fringe-cuda.h>

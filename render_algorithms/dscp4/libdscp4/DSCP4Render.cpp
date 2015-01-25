@@ -12,6 +12,8 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #ifdef DSCP4_HAVE_PNG
+#define png_infopp_NULL (png_infopp)NULL
+#define int_p_NULL (int*)NULL
 #include <boost/gil/gil_all.hpp>
 #include <boost/gil/extension/io/png_io.hpp>
 #endif
@@ -233,7 +235,8 @@ bool DSCP4Render::init()
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-	//SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
 
 	SDL_GL_SetSwapInterval(1);
 
@@ -332,13 +335,14 @@ bool DSCP4Render::initWindow(SDL_Window*& window, SDL_GLContext& glContext, int 
 
 	glContext = SDL_GL_CreateContext(window);
 
+#ifndef __APPLE__
 	LOG4CXX_DEBUG(logger_, "Initializing GLEW")
-
 	GLenum err = glewInit();
 	if (err != GLEW_OK)
 	{
 		LOG4CXX_ERROR(logger_, "Could not initialize GLEW: " << glewGetString(err))
 	}
+#endif
 
 	SDL_GL_MakeCurrent(window, glContext);
 
@@ -689,7 +693,10 @@ void DSCP4Render::renderLoop()
 
 	poll:
 		if(SDL_PollEvent(&event))
+        {
 			inputStateChanged(&event);
+        }
+        
 	}
 
 	initLock.lock();
