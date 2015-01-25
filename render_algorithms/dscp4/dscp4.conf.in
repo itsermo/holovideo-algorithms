@@ -20,7 +20,7 @@
 install_prefix = ${CMAKE_INSTALL_PREFIX}
 
 ; the path location of the dscp4 binary
-bin_path = ${DSCP4_BIN_INSTALL_PATH}
+bin_path = ${DSCP4_APP_BIN_INSTALL_PATH}
 
 ; the path location of the dscp4 lib
 lib_path = ${DSCP4_LIB_INSTALL_PATH}
@@ -30,6 +30,9 @@ shaders_path = ${SHADERS_INSTALL_PATH}
 
 ; the path where to look for 3d object files
 models_path = ${MODELS_INSTALL_PATH}
+
+; the path where assets are stored (icons, misc. files)
+assets_path = ${ASSETS_INSTALL_PATH}
 
 ; the path where to look for CUDA/OpenCL programs
 kernels_path = ${KERNELS_INSTALL_PATH}

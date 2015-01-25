@@ -256,9 +256,13 @@ bool DSCP4Render::initWindow(SDL_Window*& window, SDL_GLContext& glContext, int 
 	// Useful for opening up 3 windows during hologram mode to test everything
 	if (SDL_GetDisplayBounds(thisWindowNum, &bounds) == -1)
 		SDL_GetDisplayBounds(0, &bounds);
-
+#ifdef _DEBUG
 	static int x = bounds.x;
 	static int y = bounds.y;
+#else
+	int x = bounds.x;
+	int y = bounds.y;
+#endif
 	windowWidth_[thisWindowNum] = bounds.w;
 	windowHeight_[thisWindowNum] = bounds.h;
 
