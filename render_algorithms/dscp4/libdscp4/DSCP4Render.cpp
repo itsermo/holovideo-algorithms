@@ -289,7 +289,7 @@ bool DSCP4Render::initWindow(SDL_Window*& window, SDL_GLContext& glContext, int 
 		break;
 #else
 		SDL_ShowCursor(SDL_DISABLE);
-		flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
+		flags |= SDL_WINDOW_BORDERLESS;
 		isFullScreen_ = true;
 #endif
 	case DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE:
@@ -301,7 +301,7 @@ bool DSCP4Render::initWindow(SDL_Window*& window, SDL_GLContext& glContext, int 
 		y += windowHeight_[thisWindowNum] * 0.08f;
 #else
 		SDL_ShowCursor(SDL_DISABLE);
-		flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
+		flags |= SDL_WINDOW_BORDERLESS;
 		isFullScreen_ = true;
 #endif
 		break;
@@ -2339,11 +2339,17 @@ void DSCP4Render::setFullScreen(bool fullscreen)
 					break;
 
 				}
+
+
 			}
 
-			
+			SDL_GL_MakeCurrent(windows_[w], glContexts_[w]);
 
-			SDL_SetWindowFullscreen(windows_[w], fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
+			SDL_SetWindowBordered(windows_[w], fullscreen ? SDL_FALSE : SDL_TRUE);
+			//SDL_SetWindowFullscreen(windows_[w], fullscreen ? SDL_WINDOW_BOR : 0);
+			
+			SDL_SetWindowSize(windows_[w], windowWidth_[w], windowHeight_[w]);
+			SDL_SetWindowPosition(windows_[w], x, y);
 
 			Update();
 

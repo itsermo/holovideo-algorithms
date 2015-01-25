@@ -42,6 +42,14 @@ __global__ void computeFringe(
 	const unsigned int NUM_BUFFERS
 	);
 
+__global__ void fillWafelPositionsBuffer(
+	float * wafel_positions,
+	const unsigned int NUM_WAFELS_PER_SCANLINE,
+	const unsigned int NUM_SCANLINES,
+	const unsigned int NUM_SAMPLES_PER_WAFEL,
+	const float SAMPLE_PITCH
+	);
+
 dscp4_fringe_cuda_context_t* dscp4_fringe_cuda_CreateContext(dscp4_fringe_context_t* fringeContext)
 {
 	cudaError_t error = cudaSuccess;
@@ -92,8 +100,27 @@ dscp4_fringe_cuda_context_t* dscp4_fringe_cuda_CreateContext(dscp4_fringe_contex
 	if (error != cudaSuccess)
 		printf("ERROR Could not alloc CUDA megabuffer\n");
 
-	error = cudaMalloc(&cudaContext->wafel_buffers, cudaContext->fringe_context->algorithm_options.cache.num_samples_per_wafel * cudaContext->fringe_context->algorithm_options.num_wafels_per_scanline * cudaContext->fringe_context->algorithm_options.num_scanlines * sizeof(unsigned char));
-	error = cudaMalloc(&cudaContext->wafel_positions, cudaContext->fringe_context->algorithm_options.cache.num_samples_per_wafel * cudaContext->fringe_context->algorithm_options.num_wafels_per_scanline * cudaContext->fringe_context->algorithm_options.num_scanlines * sizeof(float));
+	const size_t wafelBufferLength = cudaContext->fringe_context->algorithm_options.cache.num_samples_per_wafel * cudaContext->fringe_context->algorithm_options.num_wafels_per_scanline * cudaContext->fringe_context->algorithm_options.num_scanlines;
+
+	error = cudaMalloc(&cudaContext->wafel_buffers, wafelBufferLength * sizeof(unsigned char));
+	error = cudaMalloc(&cudaContext->wafel_positions, wafelBufferLength * sizeof(float));
+	
+	dim3 threadsPerBlock(
+		cudaContext->fringe_context->algorithm_options.cuda_block_dimensions[0],
+		cudaContext->fringe_context->algorithm_options.cuda_block_dimensions[1]
+		);
+	dim3 numBlocks(
+		cudaContext->fringe_context->algorithm_options.cache.cuda_number_of_blocks[0],
+		cudaContext->fringe_context->algorithm_options.cache.cuda_number_of_blocks[1]
+		);
+
+	fillWafelPositionsBuffer << <numBlocks, threadsPerBlock >> >(
+		cudaContext->wafel_positions,
+		cudaContext->fringe_context->algorithm_options.num_wafels_per_scanline,
+		cudaContext->fringe_context->algorithm_options.num_scanlines,
+		cudaContext->fringe_context->algorithm_options.cache.num_samples_per_wafel,
+		cudaContext->fringe_context->algorithm_options.cache.sample_pitch
+		);
 
 	return cudaContext;
 };
@@ -292,6 +319,28 @@ void dscp4_fringe_cuda_ComputeFringe(dscp4_fringe_cuda_context_t* cudaContext)
 	free(framebufferArrays);
 };
 
+__global__ void fillWafelPositionsBuffer(
+	float * wafel_positions,
+	const unsigned int NUM_WAFELS_PER_SCANLINE,
+	const unsigned int NUM_SCANLINES,
+	const unsigned int NUM_SAMPLES_PER_WAFEL,
+	const float SAMPLE_PITCH
+	)
+{
+
+	const unsigned int x = (blockIdx.x * blockDim.x) + threadIdx.x;
+	const unsigned int y = (blockIdx.y * blockDim.y) + threadIdx.y;
+	unsigned int offset = y * NUM_WAFELS_PER_SCANLINE + x*NUM_SAMPLES_PER_WAFEL;
+
+	if (x < NUM_WAFELS_PER_SCANLINE && y < NUM_SCANLINES)
+	{
+		for (int i = 0; i < NUM_SAMPLES_PER_WAFEL; i++)
+		{
+			wafel_positions[offset + i] = (-(float)ceil((double)(NUM_WAFELS_PER_SCANLINE / 2.f)) + i) * SAMPLE_PITCH + x;
+		}
+	}
+}
+
 __global__ void computeFringe(
 	unsigned char* framebuffer_out,
 	const float* viewset_depth_in,
@@ -327,13 +376,13 @@ __global__ void computeFringe(
 	if (x < num_wafels_per_scanline && y < num_scanlines)
 	{
 		// offset of wafel samples/position buffer
-		const unsigned int wafel_offset = x*y*NUM_SAMPLES_PER_WAFEL;
+		const unsigned int wafel_offset = y*num_scanlines + x*NUM_SAMPLES_PER_WAFEL;
 		const float num_views = (viewset_num_tiles_x * viewset_num_tiles_y);
 
-		for (int i = 0; i < NUM_SAMPLES_PER_WAFEL; i++)
-		{
-			wafel_position[i + wafel_offset] = (-(float)ceil((double)(num_wafels_per_scanline / 2.f)) + i) * SAMPLE_PITCH + x;
-		}
+		//for (int i = 0; i < NUM_SAMPLES_PER_WAFEL; i++)
+		//{
+		//	wafel_position[wafel_offset + i] = (-(float)ceil((double)(num_wafels_per_scanline / 2.f)) + i) * SAMPLE_PITCH + x;
+		//}
 
 		for (unsigned int color_chan = 0; color_chan < 3; color_chan++)
 		{
@@ -353,11 +402,12 @@ __global__ void computeFringe(
 
 					for (int i = 0; i < NUM_SAMPLES_PER_WAFEL; i++)
 					{
-						wafel_buffer[wafel_offset + i] += c / num_views * cos(k * sqrt(pow((float)((int)wafel_position[wafel_offset + i] - (int)x), (float)2) + pow(d, (float)2)) - d + wafel_position[wafel_offset+i] * up_const);
+						wafel_buffer[wafel_offset + i] += c / num_views * cos(k * (float)sqrt(pow((double)((double)wafel_position[wafel_offset + i] - (double)x), (double)2) + pow((double)d, (double)2)) - d + wafel_position[wafel_offset+i] * up_const);
 					}
 					//framebuffer_out[(y * framebuffer_res_x * 4) + (x * 4)] = viewset_depth_in[y * viewset_res_x + x] * 255.f;
 					//framebuffer_out[(y * framebuffer_res_x * 4) + (x * 4 + 1)] = 0;
 					//framebuffer_out[(y * framebuffer_res_x * 4) + (x * 4 + 2)] = 0;
+
 					x += num_wafels_per_scanline;
 				}
 				x = (blockIdx.x * blockDim.x) + threadIdx.x;
