@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=${PROJECT_NAME}
+Type=Application
+Exec=${DSCP4_APP_BIN_INSTALL_PATH}/${DSCP4_APP_BIN}
+Terminal=true
+Icon=${ASSETS_INSTALL_PATH}/dscp4-icon.xpm
+Comment=Diffraction-specific panoramagram holographic computation algorithm for MIT Mark IV display
+NoDisplay=false
+Categories=Math;Science;Engineering;Education;
+Name[en]=${PROJECT_NAME}
