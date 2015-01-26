@@ -217,9 +217,9 @@ extern "C"{
 		float k_b;
 
 		// the upconvert constant values for r,g,b SSB
-		float upconvert_const_r;
-		float upconvert_const_g;
-		float upconvert_const_b;
+		double upconvert_const_r;
+		double upconvert_const_g;
+		double upconvert_const_b;
 
 		// the model Z shift
 		float z_span;

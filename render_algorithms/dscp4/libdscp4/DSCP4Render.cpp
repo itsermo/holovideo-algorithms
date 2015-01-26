@@ -1682,7 +1682,7 @@ void DSCP4Render::initFringeTextures()
 
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
@@ -2045,28 +2045,16 @@ void DSCP4Render::updateAlgorithmOptionsCache()
 		2 * M_PI / fringeContext_.algorithm_options.wavelength_blue;
 
 	fringeContext_.algorithm_options.cache.upconvert_const_r =
-		sin(fringeContext_.algorithm_options.cache.reference_beam_angle_rad)
-		+ 2
-		* M_PI / fringeContext_.algorithm_options.cache.k_r
-		* fringeContext_.display_options.num_samples_per_hololine
-		* fringeContext_.algorithm_options.temporal_upconvert_red
-		/ static_cast<float>((fringeContext_.display_options.pixel_clock_rate * fringeContext_.display_options.hologram_plane_width));
+		(double)((double)fringeContext_.display_options.num_samples_per_hololine * (double)fringeContext_.algorithm_options.temporal_upconvert_red) / 
+		(double)((double)fringeContext_.display_options.pixel_clock_rate * (double)fringeContext_.display_options.hologram_plane_width);
 
 	fringeContext_.algorithm_options.cache.upconvert_const_g =
-		sin(fringeContext_.algorithm_options.cache.reference_beam_angle_rad)
-		+ 2
-		* M_PI / fringeContext_.algorithm_options.cache.k_g
-		* fringeContext_.display_options.num_samples_per_hololine
-		* fringeContext_.algorithm_options.temporal_upconvert_green
-		/ static_cast<float>((fringeContext_.display_options.pixel_clock_rate * fringeContext_.display_options.hologram_plane_width));
+		(double)((double)fringeContext_.display_options.num_samples_per_hololine * (double)fringeContext_.algorithm_options.temporal_upconvert_green)
+		/ (double)((double)fringeContext_.display_options.pixel_clock_rate * (double)fringeContext_.display_options.hologram_plane_width);
 
 	fringeContext_.algorithm_options.cache.upconvert_const_b =
-		sin(fringeContext_.algorithm_options.cache.reference_beam_angle_rad)
-		+ 2
-		* M_PI / fringeContext_.algorithm_options.cache.k_b
-		* fringeContext_.display_options.num_samples_per_hololine
-		* fringeContext_.algorithm_options.temporal_upconvert_blue
-		/ static_cast<float>((fringeContext_.display_options.pixel_clock_rate * fringeContext_.display_options.hologram_plane_width));
+		(double)((double)fringeContext_.display_options.num_samples_per_hololine * (double)fringeContext_.algorithm_options.temporal_upconvert_blue)
+		/ (double)((double)fringeContext_.display_options.pixel_clock_rate * (double)fringeContext_.display_options.hologram_plane_width);
 
 	fringeContext_.algorithm_options.cache.sample_pitch =
 		fringeContext_.display_options.hologram_plane_width
@@ -2282,12 +2270,21 @@ void DSCP4Render::saveScreenshotPNG()
 			auto duration = measureTime<>([&](){
 #endif
 
+			glFinish();
+
 			glBindTexture(GL_TEXTURE_2D, fringeContext_.fringe_gl_tex_out[i]);
 			glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, fringeBuffer);
 
+			auto fringeBufferNoAlpha = new unsigned char[fringeContext_.algorithm_options.cache.fringe_buffer_res_x * fringeContext_.algorithm_options.cache.fringe_buffer_res_y * 3];
+
 			auto fringeImage = boost::gil::interleaved_view(fringeContext_.algorithm_options.cache.fringe_buffer_res_x, fringeContext_.algorithm_options.cache.fringe_buffer_res_y, (boost::gil::rgba8_pixel_t*)fringeBuffer, fringeContext_.algorithm_options.cache.fringe_buffer_res_x * 4);
-			boost::gil::png_write_view(fringeFilename.c_str(), boost::gil::flipped_up_down_view(fringeImage));
 			
+			auto fringeImageNoAlpha = boost::gil::interleaved_view(fringeContext_.algorithm_options.cache.fringe_buffer_res_x, fringeContext_.algorithm_options.cache.fringe_buffer_res_y, (boost::gil::rgb8_pixel_t*)fringeBufferNoAlpha, fringeContext_.algorithm_options.cache.fringe_buffer_res_x * 3);
+			boost::gil::copy_and_convert_pixels(fringeImage, fringeImageNoAlpha);
+
+			boost::gil::png_write_view(fringeFilename.c_str(), fringeImage);
+
+
 			LOG4CXX_INFO(logger_, "Saved hologram fringe pattern buffer " << i + 1 << " of " << fringeContext_.algorithm_options.cache.num_fringe_buffers << " to '" << (boost::filesystem::current_path() / fringeFilename).string() << "'")
 
 #ifdef DSCP4_ENABLE_TRACE_LOG
