@@ -25,8 +25,6 @@ __global__ void computeFringe(
 	const unsigned int viewset_num_tiles_y,
 	const unsigned int framebuffer_res_x,
 	const unsigned int framebuffer_res_y,
-	unsigned char* wafel_buffer,
-	float* wafel_position,
 	const float K_R,
 	const float K_G,
 	const float K_B,
@@ -43,10 +41,6 @@ __global__ void computeFringe(
 	);
 
 __global__ void fillWafelPositionsBuffer(
-	float * wafel_positions,
-	unsigned char * wafel_buffers,
-	const unsigned int NUM_WAFELS_PER_SCANLINE,
-	const unsigned int NUM_SCANLINES,
 	const unsigned int NUM_SAMPLES_PER_WAFEL,
 	const float SAMPLE_PITCH
 	);
@@ -115,11 +109,7 @@ dscp4_fringe_cuda_context_t* dscp4_fringe_cuda_CreateContext(dscp4_fringe_contex
 		cudaContext->fringe_context->algorithm_options.cache.cuda_number_of_blocks[1]
 		);
 
-	fillWafelPositionsBuffer << <numBlocks, threadsPerBlock >> >(
-		cudaContext->wafel_positions,
-		cudaContext->wafel_buffers,
-		cudaContext->fringe_context->algorithm_options.num_wafels_per_scanline,
-		cudaContext->fringe_context->algorithm_options.num_scanlines,
+	fillWafelPositionsBuffer <<<numBlocks, threadsPerBlock, 592 * 4>> >(
 		cudaContext->fringe_context->algorithm_options.cache.num_samples_per_wafel,
 		cudaContext->fringe_context->algorithm_options.cache.sample_pitch
 		);
@@ -247,7 +237,7 @@ void dscp4_fringe_cuda_ComputeFringe(dscp4_fringe_cuda_context_t* cudaContext)
 			cudaContext->fringe_context->algorithm_options.cache.cuda_number_of_blocks[1]
 			);
 
-		computeFringe << <numBlocks, threadsPerBlock >> >(
+		computeFringe << <numBlocks, threadsPerBlock, 592 * 4 >> >(
 			(unsigned char*)cudaContext->spec_buffer,
 			(const float*)viewsetDepthArray,
 			cudaContext->fringe_context->algorithm_options.num_wafels_per_scanline,
@@ -258,8 +248,6 @@ void dscp4_fringe_cuda_ComputeFringe(dscp4_fringe_cuda_context_t* cudaContext)
 			cudaContext->fringe_context->algorithm_options.cache.stereogram_num_tiles_y,
 			cudaContext->fringe_context->algorithm_options.cache.fringe_buffer_res_x,
 			cudaContext->fringe_context->algorithm_options.cache.fringe_buffer_res_y,
-			cudaContext->wafel_buffers,
-			cudaContext->wafel_positions,
 			cudaContext->fringe_context->algorithm_options.cache.k_r,
 			cudaContext->fringe_context->algorithm_options.cache.k_g,
 			cudaContext->fringe_context->algorithm_options.cache.k_b,
@@ -322,26 +310,14 @@ void dscp4_fringe_cuda_ComputeFringe(dscp4_fringe_cuda_context_t* cudaContext)
 };
 
 __global__ void fillWafelPositionsBuffer(
-	float * wafel_positions,
-	unsigned char * wafel_buffers,
-	const unsigned int NUM_WAFELS_PER_SCANLINE,
-	const unsigned int NUM_SCANLINES,
 	const unsigned int NUM_SAMPLES_PER_WAFEL,
 	const float SAMPLE_PITCH
 	)
 {
-
-	const unsigned int x = (blockIdx.x * blockDim.x) + threadIdx.x;
-	const unsigned int y = (blockIdx.y * blockDim.y) + threadIdx.y;
-	unsigned int offset = y * NUM_WAFELS_PER_SCANLINE + x*NUM_SAMPLES_PER_WAFEL;
-
-	if (x < NUM_WAFELS_PER_SCANLINE && y < NUM_SCANLINES)
+	extern __shared__ float wafel_position[];
+	for (int i = 0; i < NUM_SAMPLES_PER_WAFEL; i++)
 	{
-		for (int i = 0; i < NUM_SAMPLES_PER_WAFEL; i++)
-		{
-			wafel_positions[offset + i] = (-(float)ceil((double)(NUM_WAFELS_PER_SCANLINE / 2.f)) + i) * SAMPLE_PITCH + x;
-			wafel_buffers[offset + i] = 0;
-		}
+		wafel_position[i] = -(float)NUM_SAMPLES_PER_WAFEL * SAMPLE_PITCH / 2.f + i*(float)SAMPLE_PITCH;
 	}
 }
 
@@ -356,8 +332,6 @@ __global__ void computeFringe(
 	const unsigned int viewset_num_tiles_y,
 	const unsigned int framebuffer_res_x,
 	const unsigned int framebuffer_res_y,
-	unsigned char* _wafel_buffer,
-	float* _wafel_position,
 	const float K_R,
 	const float K_G,
 	const float K_B,
@@ -376,21 +350,21 @@ __global__ void computeFringe(
 
 	const int global_x = (blockIdx.x * blockDim.x) + threadIdx.x;
 	const int global_y = (blockIdx.y * blockDim.y) + threadIdx.y;
+	
+	extern __shared__ float wafel_position[];
 
-	int x = global_x;
-	int y = global_y;
-
-	if (x < num_wafels_per_scanline && y < num_scanlines)
+	if (global_x < num_wafels_per_scanline && global_y < num_scanlines)
 	{
-		// offset of wafel samples/position buffer
-		const unsigned int num_views = (viewset_num_tiles_x * viewset_num_tiles_y);
-		float wafel_position[592];
+		int x = global_x;
+		int y = global_y;
 
 		for (int i = 0; i < NUM_SAMPLES_PER_WAFEL; i++)
 		{
 			wafel_position[i] = -(float)NUM_SAMPLES_PER_WAFEL * SAMPLE_PITCH / 2.f + i*(float)SAMPLE_PITCH;
 		}
-
+		// offset of wafel samples/position buffer
+		const unsigned int num_views = (viewset_num_tiles_x * viewset_num_tiles_y);
+		
 		unsigned char wafel_buffer[592];
 		for (int i = 0; i < NUM_SAMPLES_PER_WAFEL; i++)
 		{
