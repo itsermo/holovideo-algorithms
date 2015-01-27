@@ -1657,20 +1657,6 @@ void DSCP4Render::initFringeTextures()
 		blah[i] = i % 255;
 	}
 
-	//if (fringeContext_.algorithm_options.compute_method == DSCP4_COMPUTE_METHOD_CUDA)
-	//{
-	//	fringeContext_.fringe_gl_buf_out = new GLuint[numWindows_];
-
-	//	glGenBuffers(fringeContext_.algorithm_options.cache.num_fringe_buffers, fringeContext_.fringe_gl_buf_out);
-
-	//	for (unsigned int i = 0; i < fringeContext_.algorithm_options.cache.num_fringe_buffers; i++)
-	//	{
-	//		glBindBuffer(GL_ARRAY_BUFFER, fringeContext_.fringe_gl_buf_out[i]);
-	//		glBufferData(GL_ARRAY_BUFFER, fringeContext_.algorithm_options.cache.fringe_buffer_res_x * fringeContext_.algorithm_options.cache.fringe_buffer_res_y * sizeof(GLbyte)* 4, blah, GL_DYNAMIC_DRAW);
-	//		glBindBuffer(GL_ARRAY_BUFFER, 0);
-	//	}
-	//}
-
 	for (size_t i = 0; i < fringeContext_.algorithm_options.cache.num_fringe_buffers; i++)
 	{
 		glBindTexture(GL_TEXTURE_2D, fringeContext_.fringe_gl_tex_out[i]);
@@ -1682,7 +1668,7 @@ void DSCP4Render::initFringeTextures()
 
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
@@ -1775,30 +1761,6 @@ void DSCP4Render::drawFringeTextures()
 		glDisable(GL_LIGHTING);
 
 		glBindTexture(GL_TEXTURE_2D, fringeContext_.fringe_gl_tex_out[i]);
-
-		//if (fringeContext_.algorithm_options.compute_method == DSCP4_COMPUTE_METHOD_CUDA)
-		//{
-		//	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, fringeContext_.fringe_gl_buf_out[i]);
-		//	
-		//	#ifdef DSCP4_ENABLE_TRACE_LOG
-		//			auto duration = measureTime<>([&](){
-		//				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
-		//					fringeContext_.algorithm_options.cache.fringe_buffer_res_x,
-		//					fringeContext_.algorithm_options.cache.fringe_buffer_res_y,
-		//					0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
-		//			});
-		//			LOG4CXX_TRACE(logger_, "Copying hologram fringe result " << i << " to texture took " << duration << " ms (" << 1.f / duration * 1000 << " fps)")
-		//	#else
-		//			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
-		//				fringeContext_.algorithm_options.cache.fringe_buffer_res_x,
-		//				fringeContext_.algorithm_options.cache.fringe_buffer_res_y,
-		//				0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
-		//	#endif
-
-		//	//glBindBuffer(GL_PIXEL_UNPACK_BUFFER, fringeContext_.stereogram_gl_rgba_buf_in);
-
-		//	//glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 4*fringeContext_.algorithm_options.num_wafels_per_scanline, 4*fringeContext_.algorithm_options.num_scanlines, GL_RGBA, GL_UNSIGNED_BYTE,0);
-		//}
 
 		glEnableClientState(GL_VERTEX_ARRAY);
 		glVertexPointer(3, GL_FLOAT, 0, Vertices);
@@ -2045,14 +2007,20 @@ void DSCP4Render::updateAlgorithmOptionsCache()
 		2 * M_PI / fringeContext_.algorithm_options.wavelength_blue;
 
 	fringeContext_.algorithm_options.cache.upconvert_const_r =
+		//sin(fringeContext_.algorithm_options.cache.reference_beam_angle_rad)
+		//+ fringeContext_.algorithm_options.cache.k_r *
 		(double)((double)fringeContext_.display_options.num_samples_per_hololine * (double)fringeContext_.algorithm_options.temporal_upconvert_red) / 
 		(double)((double)fringeContext_.display_options.pixel_clock_rate * (double)fringeContext_.display_options.hologram_plane_width);
 
 	fringeContext_.algorithm_options.cache.upconvert_const_g =
+		//sin(fringeContext_.algorithm_options.cache.reference_beam_angle_rad)
+		//+ fringeContext_.algorithm_options.cache.k_b *
 		(double)((double)fringeContext_.display_options.num_samples_per_hololine * (double)fringeContext_.algorithm_options.temporal_upconvert_green)
 		/ (double)((double)fringeContext_.display_options.pixel_clock_rate * (double)fringeContext_.display_options.hologram_plane_width);
 
 	fringeContext_.algorithm_options.cache.upconvert_const_b =
+		//sin(fringeContext_.algorithm_options.cache.reference_beam_angle_rad)
+		//+ fringeContext_.algorithm_options.cache.k_g *
 		(double)((double)fringeContext_.display_options.num_samples_per_hololine * (double)fringeContext_.algorithm_options.temporal_upconvert_blue)
 		/ (double)((double)fringeContext_.display_options.pixel_clock_rate * (double)fringeContext_.display_options.hologram_plane_width);
 

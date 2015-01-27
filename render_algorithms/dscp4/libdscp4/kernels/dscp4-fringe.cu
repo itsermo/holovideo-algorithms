@@ -25,6 +25,7 @@ __global__ void computeFringe(
 	const unsigned int viewset_num_tiles_y,
 	const unsigned int framebuffer_res_x,
 	const unsigned int framebuffer_res_y,
+	const float REF_BEAM_ANGLE_RAD,
 	const float K_R,
 	const float K_G,
 	const float K_B,
@@ -248,6 +249,7 @@ void dscp4_fringe_cuda_ComputeFringe(dscp4_fringe_cuda_context_t* cudaContext)
 			cudaContext->fringe_context->algorithm_options.cache.stereogram_num_tiles_y,
 			cudaContext->fringe_context->algorithm_options.cache.fringe_buffer_res_x,
 			cudaContext->fringe_context->algorithm_options.cache.fringe_buffer_res_y,
+			cudaContext->fringe_context->algorithm_options.cache.reference_beam_angle_rad,
 			cudaContext->fringe_context->algorithm_options.cache.k_r,
 			cudaContext->fringe_context->algorithm_options.cache.k_g,
 			cudaContext->fringe_context->algorithm_options.cache.k_b,
@@ -332,6 +334,7 @@ __global__ void computeFringe(
 	const unsigned int viewset_num_tiles_y,
 	const unsigned int framebuffer_res_x,
 	const unsigned int framebuffer_res_y,
+	const float REF_BEAM_ANGLE_RAD,
 	const float K_R,
 	const float K_G,
 	const float K_B,
@@ -358,43 +361,39 @@ __global__ void computeFringe(
 		int x = global_x;
 		int y = global_y;
 		
-		unsigned char wafel_buffer[592];
+		unsigned char wafel_buffer[1024];
 		for (int i = 0; i < NUM_SAMPLES_PER_WAFEL; i++)
 		{
-			wafel_position[i] = -(float)NUM_SAMPLES_PER_WAFEL * SAMPLE_PITCH / 2.f + i*(float)SAMPLE_PITCH;
+			wafel_position[i] = -(float)NUM_SAMPLES_PER_WAFEL * SAMPLE_PITCH * 0.5f + i*(float)SAMPLE_PITCH;
 			wafel_buffer[i] = 0;
 		}
+
 		// offset of wafel samples/position buffer
 		const unsigned int num_views = (viewset_num_tiles_x * viewset_num_tiles_y);
-		
-		//for (int i = 0; i < NUM_SAMPLES_PER_WAFEL; i++)
-		//{
-		//	
-		//}
 
 		for (unsigned int color_chan = 0; color_chan < 3; color_chan++)
 		{
 			x = global_x;
 			y = global_y;
 
-			float k = (color_chan == 0 ? K_R : color_chan == 1 ? K_G : K_B);
-			double spatial_up_const = (color_chan == 0 ? SPATIAL_UPCONVERT_CONST_R : color_chan == 1 ? SPATIAL_UPCONVERT_CONST_G : SPATIAL_UPCONVERT_CONST_B);
+			const float k = (color_chan == 0 ? K_R : color_chan == 1 ? K_G : K_B);
+			const double spatial_upconvert_const = (color_chan == 0 ? SPATIAL_UPCONVERT_CONST_R : color_chan == 1 ? SPATIAL_UPCONVERT_CONST_G : SPATIAL_UPCONVERT_CONST_B);
 
 			for (unsigned int vy = 0, idx = 0; vy < viewset_num_tiles_y; vy++)
 			{
 				for (unsigned int vx = 0; vx < viewset_num_tiles_x; vx++, idx++)
 				{
 					// Check later
-					float d = (viewset_depth_in[y * viewset_res_x + x] - 0.5f) * Z_SPAN + Z_OFFSET;
-					float temp_x = d * tan(30.f * 3.141592654f / 180.f * (idx - num_views / 2)) + NUM_SAMPLES_PER_WAFEL * SAMPLE_PITCH / 2;
-					float4 color = tex2D(viewset_color_in, x, y);
-					unsigned char c = (color_chan == 0 ? 255.f*color.x : color_chan == 1 ? 255.f*color.y : 255.f*color.z);
+					const float d = (viewset_depth_in[y * viewset_res_x + x] - 0.5f) * Z_SPAN + Z_OFFSET;
+					const float temp_x = d * tan(REF_BEAM_ANGLE_RAD * (idx - num_views / 2)) + NUM_SAMPLES_PER_WAFEL * SAMPLE_PITCH *0.5f;
+					const float4 color = tex2D(viewset_color_in, x, y);
+					const unsigned char c = (color_chan == 0 ? 255.f*color.x : color_chan == 1 ? 255.f*color.y : 255.f*color.z);
 
 					if (c != 0)
 						for (int i = 0; i < NUM_SAMPLES_PER_WAFEL; i++)
 						{
-							double mycos = cos(k * sqrt((wafel_position[i] - temp_x)*(wafel_position[i] - temp_x) + d*d) - d + (global_x * NUM_SAMPLES_PER_WAFEL * SAMPLE_PITCH + temp_x) * (sin(30.f*3.141592654 / 180.f) + 2.f * 3.141592654 / k * spatial_up_const));
-							wafel_buffer[i] += (unsigned char)((double)c * (mycos + 1.f)*0.5f);
+							double mycos = cos(k * sqrt((wafel_position[i] - temp_x)*(wafel_position[i] - temp_x) + d*d) - d + (global_x * NUM_SAMPLES_PER_WAFEL * SAMPLE_PITCH + temp_x) * (sin(REF_BEAM_ANGLE_RAD) + 2.f * 3.141592654 / k * spatial_upconvert_const));
+							wafel_buffer[i] += (unsigned char)(c * (mycos + 1.f)*0.5f);
 						}
 
 					x += num_wafels_per_scanline;
