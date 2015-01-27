@@ -215,13 +215,13 @@ bool DSCP4Render::init()
 		break;
 	case DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE:
 		numWindows_ = SDL_GetNumVideoDisplays();
-		if (numWindows_ != fringeContext_.display_options.num_heads / 2)
+		if (numWindows_ != fringeContext_.display_options.num_heads / fringeContext_.display_options.num_heads_per_gpu)
 		{
 			LOG4CXX_ERROR(logger_, "The X11 setup is not correct, you do not have 2 heads per GPU window")
 			
 			//for debugging, open up multiple windows
 			LOG4CXX_WARN(logger_, "Opening up the right amount of windows for debugging algorithm")
-			numWindows_ = fringeContext_.display_options.num_heads / 2;
+			numWindows_ = fringeContext_.display_options.num_heads / fringeContext_.display_options.num_heads_per_gpu;
 		}
 		break;
 	default:
@@ -778,6 +778,10 @@ void DSCP4Render::generateStereogram()
 		const float q = (i - fringeContext_.algorithm_options.num_views_x * 0.5f) / static_cast<float>(fringeContext_.algorithm_options.num_views_x) * fringeContext_.algorithm_options.fov_y * DEG_TO_RAD;
 
 		projectionMatrix_ = buildOrthoXPerspYProjMat(-ratio, ratio, -1.0f, 1.0f, zNear_, zFar_, q);
+
+		// Flip the image upside down because holovideo expects top-left to be zero
+		if (renderOptions_.render_mode == DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE)
+			projectionMatrix_ = glm::scale(projectionMatrix_, glm::vec3(1, -1, 1));
 
 		glLoadMatrixf(glm::value_ptr(projectionMatrix_));
 
