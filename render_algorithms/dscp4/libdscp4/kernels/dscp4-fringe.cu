@@ -361,6 +361,7 @@ __global__ void computeFringe(
 		int x = global_x;
 		int y = global_y;
 		
+
 		unsigned char wafel_buffer[1024];
 		for (int i = 0; i < NUM_SAMPLES_PER_WAFEL; i++)
 		{
@@ -392,7 +393,7 @@ __global__ void computeFringe(
 					if (c != 0)
 						for (int i = 0; i < NUM_SAMPLES_PER_WAFEL; i++)
 						{
-							double mycos = cos(k * sqrt((wafel_position[i] - temp_x)*(wafel_position[i] - temp_x) + d*d) - d + (global_x * NUM_SAMPLES_PER_WAFEL * SAMPLE_PITCH + temp_x) * (sin(REF_BEAM_ANGLE_RAD) + 2.f * 3.141592654 / k * spatial_upconvert_const));
+							double mycos = __cosf(k * sqrtf(pow(wafel_position[i] - temp_x,2) + pow(d,2)) - d + (global_x * NUM_SAMPLES_PER_WAFEL * SAMPLE_PITCH + temp_x) * (__sinf(REF_BEAM_ANGLE_RAD) + 2.f * 3.141592654 / k * spatial_upconvert_const));
 							wafel_buffer[i] += (unsigned char)(c * (mycos + 1.f)*0.5f);
 						}
 
