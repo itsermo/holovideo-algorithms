@@ -248,9 +248,9 @@ extern "C" {
 		ret = clSetKernelArg((cl_kernel)context->kernel, 13, sizeof(cl_float), &context->fringe_context->algorithm_options.cache.k_r);
 		ret = clSetKernelArg((cl_kernel)context->kernel, 14, sizeof(cl_float), &context->fringe_context->algorithm_options.cache.k_g);
 		ret = clSetKernelArg((cl_kernel)context->kernel, 15, sizeof(cl_float), &context->fringe_context->algorithm_options.cache.k_b);
-		ret = clSetKernelArg((cl_kernel)context->kernel, 16, sizeof(cl_float), &context->fringe_context->algorithm_options.cache.upconvert_const_r);
-		ret = clSetKernelArg((cl_kernel)context->kernel, 17, sizeof(cl_float), &context->fringe_context->algorithm_options.cache.upconvert_const_g);
-		ret = clSetKernelArg((cl_kernel)context->kernel, 18, sizeof(cl_float), &context->fringe_context->algorithm_options.cache.upconvert_const_b);
+		ret = clSetKernelArg((cl_kernel)context->kernel, 16, sizeof(cl_double), &context->fringe_context->algorithm_options.cache.upconvert_const_r);
+		ret = clSetKernelArg((cl_kernel)context->kernel, 17, sizeof(cl_double), &context->fringe_context->algorithm_options.cache.upconvert_const_g);
+		ret = clSetKernelArg((cl_kernel)context->kernel, 18, sizeof(cl_double), &context->fringe_context->algorithm_options.cache.upconvert_const_b);
 		ret = clSetKernelArg((cl_kernel)context->kernel, 19, sizeof(cl_uint), &context->fringe_context->algorithm_options.cache.num_samples_per_wafel);
 		ret = clSetKernelArg((cl_kernel)context->kernel, 20, sizeof(cl_float), &context->fringe_context->algorithm_options.cache.sample_pitch);
 		ret = clSetKernelArg((cl_kernel)context->kernel, 21, sizeof(cl_float), &context->fringe_context->algorithm_options.cache.z_span);
