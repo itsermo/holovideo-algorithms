@@ -3,9 +3,9 @@
 cmake_minimum_required(VERSION 2.8.12)
 cmake_policy(SET CMP0020 NEW)
 
-set(PROJECT "dscp4-qt")
+set(DSCP4_APP_QT_BIN "dscp4-qt")
 
-project(${PROJECT})
+project(${DSCP4_APP_QT_BIN})
 
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -55,7 +55,7 @@ if (APPLE)
     set_source_files_properties(AppIcon.icns PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
 endif ()
 
-add_executable(${PROJECT} MACOSX_BUNDLE
+add_executable(${DSCP4_APP_QT_BIN} MACOSX_BUNDLE
     ${SOURCE_FILES}
     ${UI_HEADERS}
     ${UI_FILES}
@@ -70,19 +70,28 @@ set(MACOSX_BUNDLE_COPYRIGHT "Copyright (c) MIT")
 set(MACOSX_BUNDLE_GUI_IDENTIFIER "edu.mit.media.obmg.dscp4")
 set(MACOSX_BUNDLE_ICON_FILE AppIcon.icns)
 
-qt5_use_modules(${PROJECT} Widgets)
+qt5_use_modules(${DSCP4_APP_QT_BIN} Widgets)
 
-target_link_libraries(${PROJECT} dscp4-lib ${Boost_LIBRARIES} ${assimp_LIBRARIES})
+target_link_libraries(${DSCP4_APP_QT_BIN} dscp4-lib ${Boost_LIBRARIES} ${assimp_LIBRARIES})
 
 if(WITH_LIBLOG4CXX)
-	target_link_libraries(${PROJECT} ${LIBLOG4CXX_LIBRARIES})
+	target_link_libraries(${DSCP4_APP_QT_BIN} ${LIBLOG4CXX_LIBRARIES})
 endif()
 
 if (MSVC)
-    set_target_properties(${PROJECT} PROPERTIES
+    set_target_properties(${DSCP4_APP_QT_BIN} PROPERTIES
         WIN32_EXECUTABLE YES
         LINK_FLAGS "/ENTRY:mainCRTStartup"
     )
 endif ()
 
+file(GLOB RES_FILES
+	"res/*.xpm"
+	"res/*.png"
+)
+
+install(TARGETS ${DSCP4_APP_QT_BIN} DESTINATION bin)
+install(FILES ${RES_FILES} DESTINATION share/dscp4/assets)
+
+set(DSCP4_APP_QT_BIN_INSTALL_PATH "${CMAKE_INSTALL_PREFIX}/bin" PARENT_SCOPE)
 

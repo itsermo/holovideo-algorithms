@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=${PROJECT_NAME}-qt
+Type=Application
+Exec=${DSCP4_APP_QT_BIN_INSTALL_PATH}/${DSCP4_APP_QT_BIN}
+Terminal=false
+Icon=${ASSETS_INSTALL_PATH}/dscp4-qt-icon.xpm
+Comment=Diffraction-specific panoramagram holographic computation algorithm for MIT Mark IV display
+NoDisplay=false
+Categories=Math;Science;Engineering;Education;
+Name[en]=${PROJECT_NAME}-qt
