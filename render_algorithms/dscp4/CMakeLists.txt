@@ -37,9 +37,11 @@ find_package(OpenCL)
 find_package(Log4Cxx)
 find_package(X11)
 find_package(PNG)
+find_package(qt5)
 
 option(BOOST_DISABLE_AUTOLINK "Defines BOOST_ALL_NO_LIB macro to turn off boost auto linking" ${WIN32})
-option(BUILD_DSCP4_APP "Builds the executable application for testing the DSCP4 algorithm library (libdscp4)" ON)
+option(BUILD_DSCP4_APP "Builds the command-line executable application for testing the DSCP4 algorithm library (libdscp4)" ON)
+option(BUILD_DSCP4_QT_APP "Builds the QT GUI application for testing the DSCP4 algorithm library(libdscp4)" ON)
 option(BUILD_DSCP4_STATIC "Builds the DSCP4 lib as a static lib" ${WIN32})
 option(WITH_CUDA "Enables CUDA compute building" ${CUDA_FOUND})
 option(WITH_LIBLOG4CXX "Uses Log4Cxx library for logging status and error messages" ${LIBLOG4CXX_FOUND})
@@ -99,6 +101,10 @@ if(${BUILD_DSCP4_APP})
 else()
 	set(DSCP4_APP_BIN_INSTALL_PATH "NOT_INSTALLED")
 	set(MODELS_INSTALL_PATH "NOT_INSTALLED")
+endif()
+
+if(${BUILD_DSCP4_QT_APP})
+	add_subdirectory(dscp4-qt)
 endif()
 
 #Need to define windows version macro for various reasons

@@ -13,6 +13,23 @@ set(CMAKE_AUTOMOC ON)
 
 find_package(Qt5Widgets REQUIRED)
 
+find_package(Boost 1.54 COMPONENTS "system" "program_options" "filesystem" REQUIRED)
+include_directories(${Boost_INCLUDE_DIR})
+if(BOOST_DISABLE_AUTOLINK)
+	add_definitions(-DBOOST_ALL_NO_LIB)
+endif(BOOST_DISABLE_AUTOLINK)
+
+include_directories(${assimp_INCLUDE_DIRS})
+
+if(WITH_LIBLOG4CXX)
+	add_definitions(-DDSCP4_HAVE_LOG4CXX)
+	include_directories(${LIBLOG4CXX_INCLUDE_DIRS})
+endif()
+
+if(X11_FOUND)
+	add_definitions(-DDSCP4_HAVE_X11)
+endif()
+
 set(SOURCE_FILES
     src/main.cc
     src/mainwindow.h
@@ -55,9 +72,17 @@ set(MACOSX_BUNDLE_ICON_FILE AppIcon.icns)
 
 qt5_use_modules(${PROJECT} Widgets)
 
+target_link_libraries(${PROJECT} dscp4-lib ${Boost_LIBRARIES} ${assimp_LIBRARIES})
+
+if(WITH_LIBLOG4CXX)
+	target_link_libraries(${PROJECT} ${LIBLOG4CXX_LIBRARIES})
+endif()
+
 if (MSVC)
     set_target_properties(${PROJECT} PROPERTIES
         WIN32_EXECUTABLE YES
         LINK_FLAGS "/ENTRY:mainCRTStartup"
     )
 endif ()
+
+
