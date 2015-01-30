@@ -1,9 +1,7 @@
 #ifndef DSCP4_SETTINGS_H
 #define DSCP4_SETTINGS_H
-
-#include <QObject.h>
-#include <QString.h>
-
+#include <qstring.h>
+#include <qobject.h>
 #include <DSCP4ProgOptions.hpp>
 #include "../libdscp4/dscp4_defs.h"
 
