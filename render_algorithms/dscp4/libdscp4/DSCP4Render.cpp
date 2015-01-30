@@ -69,6 +69,8 @@ DSCP4Render::DSCP4Render() :
 						DSCP4_DEFAULT_ALGORITHM_WAVELENGTH_R,
 						DSCP4_DEFAULT_ALGORITHM_WAVELENGTH_G,
 						DSCP4_DEFAULT_ALGORITHM_WAVELENGTH_B,
+						DSCP4_DEFAULT_ALGORITHM_Z_NEAR,
+						DSCP4_DEFAULT_ALGORITHM_Z_FAR,
 						DSCP4_DEFAULT_ALGORITHM_COMPUTE_METHOD,
 						DSCP4_DEFAULT_ALGORITHM_OPENCL_KERNEL_FILENAME,
 						{ DSCP4_DEFAULT_ALGORITHM_OPENCL_WORKSIZE_X ,
@@ -110,8 +112,6 @@ DSCP4Render::DSCP4Render(render_options_t *renderOptions,
 	rotateAngleY_(0),
 	rotateIncrement_(1.0f),
 	spinOn_(false),
-	zNear_(DSCP4_RENDER_DEFAULT_ZNEAR),
-	zFar_(DSCP4_RENDER_DEFAULT_ZFAR),
 	renderOptions_(renderOptions),
 	lightingShader_(nullptr),
 	projectionMatrix_(),
@@ -778,7 +778,7 @@ void DSCP4Render::generateStereogram()
 		const float ratio = static_cast<float>(tile_x_res) / static_cast<float>(tile_y_res);
 		const float q = (i - fringeContext_.algorithm_options->num_views_x * 0.5f) / static_cast<float>(fringeContext_.algorithm_options->num_views_x) * fringeContext_.algorithm_options->fov_y * DEG_TO_RAD;
 
-		projectionMatrix_ = buildOrthoXPerspYProjMat(-ratio, ratio, -1.0f, 1.0f, zNear_, zFar_, q);
+		projectionMatrix_ = buildOrthoXPerspYProjMat(-ratio, ratio, -1.0f, 1.0f, fringeContext_.algorithm_options->z_near, fringeContext_.algorithm_options->z_far, q);
 
 		glLoadMatrixf(glm::value_ptr(projectionMatrix_));
 

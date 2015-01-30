@@ -83,6 +83,10 @@ num_scanlines = 468
 fov_x = 30.0
 fov_y = 30.0
 
+; near and far clipping planes
+z_near = 0.00001
+z_far = 2.25
+
 ; chooses the fringe compute method, valid options are "cuda" or "opencl"
 ; if compiled with support for both, this value will be "opencl" by default
 compute_method = ${DEFAULT_COMPUTE_METHOD}
@@ -143,3 +147,6 @@ hologram_plane_width = 0.15
 
 ; the rate of the pixel clock in Hz
 pixel_clock_rate = 400000000
+
+; the X11 display environment
+x11_display_env_arg = :0

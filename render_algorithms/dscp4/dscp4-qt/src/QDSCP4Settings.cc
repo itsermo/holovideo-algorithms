@@ -38,6 +38,16 @@ void QDSCP4Settings::populateSettings()
 	this->setAutoScaleEnabled(programOptions_.getAutoscale());
 	this->setShadeModel(programOptions_.getShadeModel() == "smooth" ? "Smooth" : programOptions_.getShadeModel() == "flat" ? "Flat" : "Off");
 	this->setShaderFileName(QString::fromStdString(programOptions_.getShaderFileName()));
+	
+	auto renderMode = programOptions_.getRenderMode();
+	if (renderMode == "viewing")
+		this->setRenderMode(DSCP4_RENDER_MODE_MODEL_VIEWING);
+	else if (renderMode == "stereogram")
+		this->setRenderMode(DSCP4_RENDER_MODE_STEREOGRAM_VIEWING);
+	else if (renderMode == "aerial")
+		this->setRenderMode(DSCP4_RENDER_MODE_AERIAL_DISPLAY);
+	else if (renderMode == "holovideo")
+		this->setRenderMode(DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE);
 
 	this->setLightPosX(programOptions_.getLightPosX());
 	this->setLightPosY(programOptions_.getLightPosY());
@@ -51,8 +61,36 @@ void QDSCP4Settings::populateSettings()
 	this->setFOVX(programOptions_.getFovX());
 	this->setFOVY(programOptions_.getFovY());
 	this->setComputeMethod(programOptions_.getComputeMethod() == "cuda" ? "CUDA" : "OpenCL");
-	this->setComputeBlockDimX(programOptions_.getComputeMethod() == "cuda" ? 32 : 32);
-	this->setComputeBlockDimY(programOptions_.getComputeMethod() == "cuda" ? 32 : 32);
+	this->setComputeBlockDimX(programOptions_.getComputeMethod() == "cuda" ?
+#ifdef DSCP4_HAVE_CUDA
+		programOptions_.getCUDABlockDimensionX()
+#else
+		32 
+#endif
+		: programOptions_.getComputeMethod() == "opencl" ?
+
+#ifdef DSCP4_HAVE_OPENCL
+		programOptions_.getOpenCLKernelWorksizeX()
+#else
+		32
+#endif
+		: 32);
+
+	this->setComputeBlockDimY(programOptions_.getComputeMethod() == "cuda" ?
+#ifdef DSCP4_HAVE_CUDA
+		programOptions_.getCUDABlockDimensionY()
+#else
+		32
+#endif
+		: programOptions_.getComputeMethod() == "opencl" ?
+
+#ifdef DSCP4_HAVE_OPENCL
+		programOptions_.getOpenCLKernelWorksizeY()
+#else
+		32
+#endif
+		: 32);
+
 	this->setOpenCLKernelFileName(QString::fromStdString("BLAHEBEE.cl"));
 	this->setRefBeamAngle_Deg((double)programOptions_.getReferenceBeamAngle());
 	this->setTemporalUpconvertRed(programOptions_.getTemporalUpconvertRed());
@@ -74,18 +112,11 @@ void QDSCP4Settings::populateSettings()
 	this->setNumSamplesPerHololine(programOptions_.getNumSamplesPerHololine());
 	this->setPixelClockRate(programOptions_.getPixelClockRate());
 	this->setHologramPlaneWidth((double)programOptions_.getHologramPlaneWidth());
-	//this->setX11EnvVar(QString::fromStdString(programOptions_.getX11EnvVar()));
-	this->setX11EnvVar(QString::fromStdString(":0"));
 
+#ifdef DSCP4_HAVE_X11
+	this->setX11EnvVar(QString::fromStdString(programOptions_.getX11DisplayEnvironmentVar()));
+#endif
+	
 	int x = 0;
 }
 
-//void QDSCP4Settings::setValue(int value)
-//{
-//
-//}
-
-//void QDSCP4Settings::valueChanged(int newValue)
-//{
-//
-//}

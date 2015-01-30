@@ -73,10 +73,10 @@ displayOptions_("Display options")
 		boost::program_options::value<std::string>(),
 		"sets the render mode. valid options are 'viewing', 'stereogram', 'aerial', and 'holovideo'");
 
-#if defined(__linux__) || defined (DSCP4_HAVE_X11)
+#ifdef DSCP4_HAVE_X11
 	displayOptions_.add_options()
 				("display-env,d",
-				boost::program_options::value<std::string>()->default_value(":0"),
+				boost::program_options::value<std::string>(),
 				"sets the display environment variable for X11 window output");
 #endif
 

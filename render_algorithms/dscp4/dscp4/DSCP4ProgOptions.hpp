@@ -78,6 +78,9 @@ public:
 	unsigned int getNumScanlines() { return pt_.get<unsigned int>("algorithm.num_scanlines"); }
 	float getFovX() { return pt_.get<float>("algorithm.fov_x"); }
 	float getFovY() { return pt_.get<float>("algorithm.fov_y"); }
+	float getZNear() { return pt_.get<float>("algorithm.z_near"); }
+	float getZFar() { return pt_.get<float>("algorithm.z_far"); }
+
 	std::string getComputeMethod() { return traverseOption<std::string>("compute-method", "algorithm.compute_method"); }
 
 #ifdef DSCP4_HAVE_CUDA
@@ -112,8 +115,8 @@ public:
 	float getHologramPlaneWidth() { return pt_.get<float>("display.hologram_plane_width"); }
 	unsigned int getPixelClockRate() { return pt_.get<unsigned int>("display.pixel_clock_rate"); }
 
-#if defined(__linux__) || defined (DSCP4_HAVE_X11)
-	std::string getX11DisplayEnvironmentVar() { return vm_["display-env"].as<std::string>(); }
+#ifdef DSCP4_HAVE_X11
+	std::string getX11DisplayEnvironmentVar() { return traverseOption<std::string>("display-env", "display.x11_display_env_arg"); }
 #endif
 
 private:

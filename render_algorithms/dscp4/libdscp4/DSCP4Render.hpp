@@ -238,8 +238,8 @@ namespace dscp4
 #endif
 
 		// Renderer projection settings
-		float zNear_;
-		float zFar_;
+		//float zNear_;
+		//float zFar_;
 
 		std::atomic<bool> isFullScreen_;
 

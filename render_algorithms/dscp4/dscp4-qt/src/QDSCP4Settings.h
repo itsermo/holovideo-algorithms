@@ -21,7 +21,8 @@ public:
 	void populateSettings();
 
 public slots:
-	void setInstallPath(QString installPath) { setValue<QString>(installPath, installPath_, std::bind(&QDSCP4Settings::installPathChanged, this, std::placeholders::_1)); }
+	void setInstallPath(QString installPath) { 
+		setValue<QString>(installPath, installPath_, std::bind(&QDSCP4Settings::installPathChanged, this, std::placeholders::_1)); 	}
 	void setBinPath(QString binPath) { setValue<QString>(binPath, binPath_, std::bind(&QDSCP4Settings::binPathChanged, this, std::placeholders::_1)); }
 	void setLibPath(QString libPath) { setValue<QString>(libPath, libPath_, std::bind(&QDSCP4Settings::libPathChanged, this, std::placeholders::_1)); }
 	void setModelsPath(QString modelsPath) { setValue<QString>(modelsPath, modelsPath_, std::bind(&QDSCP4Settings::modelsPathChanged, this, std::placeholders::_1)); }
@@ -52,7 +53,7 @@ public slots:
 		setValue<QString>(shaderFileName, shaderFileName_, std::bind(&QDSCP4Settings::shaderFileNameChanged, this, std::placeholders::_1)); 
 		renderOptions_->shader_filename_prefix = shaderFileName_.toUtf8().constData();
 	}
-
+	void setRenderMode(int renderMode) { setValue<render_mode_t>((render_mode_t)renderMode, renderOptions_->render_mode, std::bind(&QDSCP4Settings::renderModeChanged, this, std::placeholders::_1)); }
 	void setLightPosX(double lightPosX) { setValue<float>(lightPosX, renderOptions_->light_pos_x, std::bind(&QDSCP4Settings::lightPosXChanged, this, std::placeholders::_1)); }
 	void setLightPosY(double lightPosY) { setValue<float>(lightPosY, renderOptions_->light_pos_y, std::bind(&QDSCP4Settings::lightPosYChanged, this, std::placeholders::_1)); }
 	void setLightPosZ(double lightPosZ) { setValue<float>(lightPosZ, renderOptions_->light_pos_z, std::bind(&QDSCP4Settings::lightPosZChanged, this, std::placeholders::_1)); }
@@ -109,9 +110,9 @@ public slots:
 	void setTemporalUpconvertRed(int temporalUpconvertRed)  { setValue<unsigned int>(temporalUpconvertRed, algorithmOptions_->temporal_upconvert_red, std::bind(&QDSCP4Settings::temporalUpconvertRedChanged, this, std::placeholders::_1)); }
 	void setTemporalUpconvertGreen(int temporalUpconvertGreen) { setValue<unsigned int>(temporalUpconvertGreen, algorithmOptions_->temporal_upconvert_green, std::bind(&QDSCP4Settings::temporalUpconvertGreenChanged, this, std::placeholders::_1)); }
 	void setTemporalUpconvertBlue(int temporalUpconvertBlue) { setValue<unsigned int>(temporalUpconvertBlue, algorithmOptions_->temporal_upconvert_blue, std::bind(&QDSCP4Settings::temporalUpconvertBlueChanged, this, std::placeholders::_1)); }
-	void setWavelengthRed_100nm(double wavelengthRed_100nm)  { setValue<float>((float)wavelengthRed_100nm, algorithmOptions_->wavelength_red, std::bind(&QDSCP4Settings::wavelengthRed_100nmChanged, this, std::placeholders::_1)); }
-	void setWavelengthGreen_100nm(double wavelengthGreen_100nm)  { setValue<float>((float)wavelengthGreen_100nm, algorithmOptions_->wavelength_green, std::bind(&QDSCP4Settings::wavelengthGreen_100nmChanged, this, std::placeholders::_1)); }
-	void setWavelengthBlue_100nm(double wavelengthBlue_100nm) { setValue<float>((float)wavelengthBlue_100nm, algorithmOptions_->wavelength_blue, std::bind(&QDSCP4Settings::wavelengthBlue_100nmChanged, this, std::placeholders::_1)); }
+	void setWavelengthRed_100nm(double wavelengthRed_100nm)  { setValue<float>((float)wavelengthRed_100nm / pow(10,7), algorithmOptions_->wavelength_red, std::bind(&QDSCP4Settings::wavelengthRed_100nmChanged, this, std::placeholders::_1)); }
+	void setWavelengthGreen_100nm(double wavelengthGreen_100nm)  { setValue<float>((float)wavelengthGreen_100nm / pow(10, 7), algorithmOptions_->wavelength_green, std::bind(&QDSCP4Settings::wavelengthGreen_100nmChanged, this, std::placeholders::_1)); }
+	void setWavelengthBlue_100nm(double wavelengthBlue_100nm) { setValue<float>((float)wavelengthBlue_100nm / pow(10, 7), algorithmOptions_->wavelength_blue, std::bind(&QDSCP4Settings::wavelengthBlue_100nmChanged, this, std::placeholders::_1)); }
 
 	// Display options
 	void setDisplayName(QString displayName) { 
@@ -156,7 +157,7 @@ signals:
 	void autoScaleEnabledChanged(bool newAutoScaleEnabled);
 	void shadeModelChanged(QString newShadeModel);
 	void shaderFileNameChanged(QString newShaderFileName);
-
+	void renderModeChanged(int renderMode);
 	void lightPosXChanged(double newLightPosX);
 	void lightPosYChanged(double newLightPosY);
 	void lightPosZChanged(double newLightPosZ);

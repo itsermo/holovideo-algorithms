@@ -1305,19 +1305,6 @@
         </property>
        </item>
       </widget>
-      <widget class="QLineEdit" name="shaderFileNameLineEdit">
-       <property name="geometry">
-        <rect>
-         <x>20</x>
-         <y>110</y>
-         <width>231</width>
-         <height>22</height>
-        </rect>
-       </property>
-       <property name="toolTip">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The filename of the shader (not used currently)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-       </property>
-      </widget>
       <widget class="QDoubleSpinBox" name="lightPositionXDoubleSpinBox">
        <property name="geometry">
         <rect>
@@ -1487,6 +1474,38 @@
        </property>
        <property name="alignment">
         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+      <widget class="QToolButton" name="shaderFileNameToolButton">
+       <property name="geometry">
+        <rect>
+         <x>230</x>
+         <y>110</y>
+         <width>21</width>
+         <height>22</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>...</string>
+       </property>
+      </widget>
+      <widget class="QComboBox" name="shaderFileNameComboBox">
+       <property name="geometry">
+        <rect>
+         <x>20</x>
+         <y>110</y>
+         <width>201</width>
+         <height>21</height>
+        </rect>
+       </property>
+       <property name="acceptDrops">
+        <bool>false</bool>
+       </property>
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Sets the shader filename prefix (shader must have .vert and .frag files)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <property name="editable">
+        <bool>true</bool>
        </property>
       </widget>
      </widget>
@@ -1974,9 +1993,9 @@
       <widget class="QLabel" name="computeMethodLabel">
        <property name="geometry">
         <rect>
-         <x>490</x>
+         <x>480</x>
          <y>30</y>
-         <width>101</width>
+         <width>121</width>
          <height>21</height>
         </rect>
        </property>
@@ -2082,7 +2101,7 @@
         <rect>
          <x>80</x>
          <y>90</y>
-         <width>42</width>
+         <width>51</width>
          <height>22</height>
         </rect>
        </property>
@@ -2139,7 +2158,7 @@
         <rect>
          <x>80</x>
          <y>120</y>
-         <width>42</width>
+         <width>51</width>
          <height>22</height>
         </rect>
        </property>

@@ -32,6 +32,14 @@ if(X11_FOUND)
 	add_definitions(-DDSCP4_HAVE_X11)
 endif()
 
+if(WITH_CUDA)
+	add_definitions(-DDSCP4_HAVE_CUDA)
+endif()
+
+if(WITH_OPENCL)
+	add_definitions(-DDSCP4_HAVE_OPENCL)
+endif()
+
 file(GLOB SOURCE_FILES
     src/*.cc
 	src/*.h

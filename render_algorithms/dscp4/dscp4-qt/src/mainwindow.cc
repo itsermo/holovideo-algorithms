@@ -1,6 +1,10 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+#include <boost/filesystem.hpp>
+#include <qfiledialog.h>
+
+
 MainWindow::MainWindow(QWidget *parent)
 : MainWindow(nullptr, parent)
 {
@@ -38,9 +42,10 @@ MainWindow::MainWindow(QDSCP4Settings* settings, QWidget *parent) : QMainWindow(
 	QObject::connect(ui->autoscaleModelCheckBox, SIGNAL(toggled(bool)), settings_, SLOT(setAutoScaleEnabled(bool)));
 	QObject::connect(settings_, SIGNAL(shadeModelChanged(QString)), ui->shaderModelComboBox, SLOT(setCurrentText(QString)));
 	QObject::connect(ui->shaderModelComboBox, SIGNAL(currentTextChanged(QString)), settings_, SLOT(setShadeModel(QString)));
-	QObject::connect(settings_, SIGNAL(shaderFileNameChanged(QString)), ui->shaderFileNameLineEdit, SLOT(setText(QString)));
-	QObject::connect(ui->shaderFileNameLineEdit, SIGNAL(textChanged(QString)), settings_, SLOT(setShaderFileName(QString)));
-
+	QObject::connect(settings_, SIGNAL(shaderFileNameChanged(QString)), ui->shaderFileNameComboBox, SLOT(setCurrentText(QString)));
+	QObject::connect(ui->shaderFileNameComboBox, SIGNAL(currentTextChanged(QString)), settings_, SLOT(setShaderFileName(QString)));
+	QObject::connect(settings_, SIGNAL(renderModeChanged(int)), ui->renderModeComboBox, SLOT(setCurrentIndex(int)));
+	QObject::connect(ui->renderModeComboBox, SIGNAL(currentIndexChanged(int)), settings_, SLOT(setRenderMode(int)));
 	QObject::connect(settings_, SIGNAL(lightPosXChanged(double)), ui->lightPositionXDoubleSpinBox, SLOT(setValue(double)));
 	QObject::connect(ui->lightPositionXDoubleSpinBox, SIGNAL(valueChanged(double)), settings_, SLOT(setLightPosX(double)));
 	QObject::connect(settings_, SIGNAL(lightPosYChanged(double)), ui->lightPositionYDoubleSpinBox, SLOT(setValue(double)));
@@ -50,11 +55,11 @@ MainWindow::MainWindow(QDSCP4Settings* settings, QWidget *parent) : QMainWindow(
 
 	// Algorithm options
 	QObject::connect(settings_, SIGNAL(numViewsXChanged(int)), ui->xViewsSpinBox, SLOT(setValue(int)));
-	QObject::connect(ui->xViewsSpinBox, SIGNAL(toggled(int)), settings_, SLOT(setNumViewsX(int)));
+	QObject::connect(ui->xViewsSpinBox, SIGNAL(valueChanged(int)), settings_, SLOT(setNumViewsX(int)));
 	QObject::connect(settings_, SIGNAL(numViewsYChanged(int)), ui->yViewsSpinBox, SLOT(setValue(int)));
-	QObject::connect(ui->yViewsSpinBox, SIGNAL(toggled(int)), settings_, SLOT(setNumViewsY(int)));
+	QObject::connect(ui->yViewsSpinBox, SIGNAL(valueChanged(int)), settings_, SLOT(setNumViewsY(int)));
 	QObject::connect(settings_, SIGNAL(numWafelsPerScanlineChanged(int)), ui->numWafelsSpinBox, SLOT(setValue(int)));
-	QObject::connect(ui->numWafelsSpinBox, SIGNAL(toggled(int)), settings_, SLOT(setNumWafelsPerScanline(int)));
+	QObject::connect(ui->numWafelsSpinBox, SIGNAL(valueChanged(int)), settings_, SLOT(setNumWafelsPerScanline(int)));
 	QObject::connect(settings_, SIGNAL(fovXChanged(double)), ui->xFOVDoubleSpinBox, SLOT(setValue(double)));
 	QObject::connect(ui->xFOVDoubleSpinBox, SIGNAL(valueChanged(double)), settings_, SLOT(setFOVX(double)));
 	QObject::connect(settings_, SIGNAL(fovYChanged(double)), ui->yFOVDoubleSpinBox, SLOT(setValue(double)));
@@ -112,13 +117,207 @@ MainWindow::MainWindow(QDSCP4Settings* settings, QWidget *parent) : QMainWindow(
 	QObject::connect(settings_, SIGNAL(numSamplesPerHololineChanged(int)), ui->numSamplesPerHololineSpinBox, SLOT(setValue(int)));
 	QObject::connect(ui->numSamplesPerHololineSpinBox, SIGNAL(valueChanged(int)), settings_, SLOT(setNumSamplesPerHololine(int)));
 
-
-
 	settings->populateSettings();
+
+	populateModelFiles();
+	populateKernelFiles();
+	populateShaderFiles();
+
+	QObject::connect(ui->modelsPathLineEdit, SIGNAL(editingFinished()), this, SLOT(populateModelFiles()));
+	QObject::connect(ui->kernelsPathLineEdit, SIGNAL(editingFinished()), this, SLOT(populateKernelFiles()));
+
+	QObject::connect(ui->inputFileToolButton, SIGNAL(clicked()), this, SLOT(browseAndSetInputModelFile()));
+	QObject::connect(ui->openclKernelFileToolButton, SIGNAL(clicked()), this, SLOT(browseAndSetOpenCLKernelFile()));
+	QObject::connect(ui->shaderFileNameToolButton, SIGNAL(clicked()), this, SLOT(browseAndSetShaderFileName()));
+
+	// Log
+	QObject::connect(ui->clearLogButton, SIGNAL(clicked()), ui->logTextEdit, SLOT(clear()));
+
+	ui->tabWidget->setCurrentIndex(0);
 }
 
 
 MainWindow::~MainWindow()
+{
+
+}
+
+
+void MainWindow::populateModelFiles()
+{
+	boost::filesystem::path modelsPath(ui->modelsPathLineEdit->text().toStdString());
+	boost::filesystem::directory_iterator end_iter;
+
+	QString initialSelection = ui->inputFileComboBox->currentText();
+
+	ui->inputFileComboBox->clear();
+
+	if (boost::filesystem::exists(modelsPath) && boost::filesystem::is_directory(modelsPath))
+	{
+		for (boost::filesystem::directory_iterator dir_iter(modelsPath); dir_iter != end_iter; ++dir_iter)
+		{
+			if (boost::filesystem::is_regular_file(dir_iter->status()))
+			{
+				ui->inputFileComboBox->addItem(QString::fromStdString(dir_iter->path().filename().string()));
+			}
+		}
+	}
+
+	if (ui->inputFileComboBox->findText(initialSelection) != -1)
+		ui->inputFileComboBox->setCurrentIndex(ui->inputFileComboBox->findText(initialSelection));
+
+}
+
+void MainWindow::populateKernelFiles()
+{
+	boost::filesystem::path kernelsPath(ui->kernelsPathLineEdit->text().toStdString());
+	boost::filesystem::directory_iterator end_iter;
+
+	QString initialSelection = ui->openclKernelFileComboBox->currentText();
+
+	ui->openclKernelFileComboBox->clear();
+
+	if (boost::filesystem::exists(kernelsPath) && boost::filesystem::is_directory(kernelsPath))
+	{
+		for (boost::filesystem::directory_iterator dir_iter(kernelsPath); dir_iter != end_iter; ++dir_iter)
+		{
+			if (boost::filesystem::is_regular_file(dir_iter->status()))
+			{
+				if (dir_iter->path().extension() == ".cl")
+					ui->openclKernelFileComboBox->addItem(QString::fromStdString(dir_iter->path().filename().string()));
+			}
+		}
+	}
+
+	if (ui->openclKernelFileComboBox->findText(initialSelection) != -1)
+		ui->openclKernelFileComboBox->setCurrentIndex(ui->openclKernelFileComboBox->findText(initialSelection));
+}
+
+void MainWindow::populateShaderFiles()
+{
+	boost::filesystem::path shadersPath(ui->shadersPathLineEdit->text().toStdString());
+	boost::filesystem::directory_iterator end_iter;
+
+	QString initialSelection = ui->shaderFileNameComboBox->currentText();
+
+	ui->shaderFileNameComboBox->clear();
+
+	if (boost::filesystem::exists(shadersPath) && boost::filesystem::is_directory(shadersPath))
+	{
+		for (boost::filesystem::directory_iterator dir_iter(shadersPath); dir_iter != end_iter; ++dir_iter)
+		{
+			if (boost::filesystem::is_regular_file(dir_iter->status()))
+			{
+				if (dir_iter->path().extension() == ".frag")
+					ui->shaderFileNameComboBox->addItem(QString::fromStdString(dir_iter->path().filename().stem().string()));
+			}
+		}
+	}
+
+	if (ui->shaderFileNameComboBox->findText(initialSelection) != -1)
+		ui->shaderFileNameComboBox->setCurrentIndex(ui->shaderFileNameComboBox->findText(initialSelection));
+}
+
+QString MainWindow::browseDir()
+{
+	QFileDialog dialog;
+	dialog.setFileMode(QFileDialog::Directory);
+	dialog.setOption(QFileDialog::ShowDirsOnly);
+
+	return dialog.getOpenFileName(this);
+}
+
+QString MainWindow::browseFile(const char * title, QString currentDir, const char * filter)
+{
+	return QFileDialog::getOpenFileName(this,
+		tr(title), currentDir, tr(filter));
+}
+
+void MainWindow::browseAndSetInputModelFile()
+{
+	std::string supportedExtensions;
+	assetImporter_.GetExtensionList(supportedExtensions);
+
+	QString result = browseFile("3D Object Files", "", supportedExtensions.c_str());
+
+	if (!result.isNull())
+	{
+		ui->inputFileComboBox->addItem(result);
+		ui->inputFileComboBox->setCurrentIndex(ui->inputFileComboBox->findText(result));
+	}
+}
+
+void MainWindow::browseAndSetOpenCLKernelFile()
+{
+	QString result = browseFile("OpenCL Kernel Files", "", "OpenCL Code (*.cl)");
+
+	if (!result.isNull())
+	{
+		ui->openclKernelFileComboBox->addItem(result);
+		ui->openclKernelFileComboBox->setCurrentIndex(ui->openclKernelFileComboBox->findText(result));
+	}
+}
+
+void MainWindow::browseAndSetShaderFileName()
+{
+	QString result = browseFile("OpenGL Shader File", "", "OpenGL GLSL Code (*.frag;*.vert)");
+	
+	if (!result.isNull())
+	{
+		auto name = result.splitRef(".");
+		ui->shaderFileNameComboBox->addItem(name[0].toString());
+		ui->shaderFileNameComboBox->setCurrentIndex(ui->shaderFileNameComboBox->findText(name[0].toString()));
+	}
+}
+
+void MainWindow::browseAndSetInstallPath()
+{
+	QString dir = browseDir();
+	if (!dir.isNull())
+		ui->installPathLineEdit->setText(dir);
+}
+
+void MainWindow::browseAndSetBinPath()
+{
+	QString dir = browseDir();
+	if (!dir.isNull())
+		ui->binPathLineEdit->setText(dir);
+}
+
+void MainWindow::browseAndSetModelsPath()
+{
+	QString dir = browseDir();
+	if (!dir.isNull())
+		ui->modelsPathLineEdit->setText(dir);
+}
+
+void MainWindow::browseAndSetLibPath()
+{
+	QString dir = browseDir();
+	if (!dir.isNull())
+		ui->libPathLineEdit->setText(dir);
+}
+
+void MainWindow::browseAndSetShadersPath()
+{
+	QString dir = browseDir();
+	if (!dir.isNull())
+		ui->shadersPathLineEdit->setText(dir);
+}
+
+void MainWindow::browseAndSetKernelsPath()
+{
+	QString dir = browseDir();
+	if (!dir.isNull())
+		ui->kernelsPathLineEdit->setText(dir);
+}
+
+void MainWindow::startDSCP4()
+{
+
+}
+
+void MainWindow::stopDSCP4()
 {
 
 }

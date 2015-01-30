@@ -288,6 +288,8 @@ int main(int argc, const char* argv[])
 		algorithmOptions.num_scanlines = options.getNumScanlines();
 		algorithmOptions.fov_x = options.getFovX();
 		algorithmOptions.fov_y = options.getFovY();
+		algorithmOptions.z_near = options.getZNear();
+		algorithmOptions.z_far = options.getZFar();
 		algorithmOptions.reference_beam_angle = options.getReferenceBeamAngle();
 		algorithmOptions.temporal_upconvert_red = options.getTemporalUpconvertRed();
 		algorithmOptions.temporal_upconvert_green = options.getTemporalUpconvertGreen();

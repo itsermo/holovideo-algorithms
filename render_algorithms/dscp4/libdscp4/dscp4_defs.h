@@ -35,6 +35,8 @@
 #define DSCP4_DEFAULT_ALGORITHM_NUM_SCANLINES 		460
 #define DSCP4_DEFAULT_ALGORITHM_FOV_X 				30.f
 #define DSCP4_DEFAULT_ALGORITHM_FOV_Y 				30.f
+#define DSCP4_DEFAULT_ALGORITHM_Z_NEAR 				0.00001f
+#define DSCP4_DEFAULT_ALGORITHM_Z_FAR				2.25f
 #define DSCP4_DEFAULT_ALGORITHM_OPENCL_WORKSIZE_X	32
 #define DSCP4_DEFAULT_ALGORITHM_OPENCL_WORKSIZE_Y	4
 #define DSCP4_DEFAULT_ALGORITHM_CUDA_BLOCK_DIM_X	8
@@ -240,6 +242,9 @@ extern "C"{
 		float wavelength_red;
 		float wavelength_green;
 		float wavelength_blue;
+
+		float z_near;
+		float z_far;
 
 		compute_method_t compute_method;
 		const char * opencl_kernel_filename;
