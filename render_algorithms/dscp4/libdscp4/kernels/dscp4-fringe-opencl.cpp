@@ -81,12 +81,12 @@ extern "C" {
 		std::ifstream programFileStream;
 		std::string programString;
 		
-		LOG4CXX_DEBUG(DSCP4_OPENCL_LOGGER, "Reading OpenCL kernel from " << fringeContext->algorithm_options.opencl_kernel_filename)
-		programFileStream.open(fringeContext->algorithm_options.opencl_kernel_filename);
+		LOG4CXX_DEBUG(DSCP4_OPENCL_LOGGER, "Reading OpenCL kernel from " << fringeContext->algorithm_options->opencl_kernel_filename)
+		programFileStream.open(fringeContext->algorithm_options->opencl_kernel_filename);
 
 		if (!programFileStream.is_open())
 		{
-			LOG4CXX_ERROR(DSCP4_OPENCL_LOGGER, "Could not find OpenCL kernel file " << fringeContext->algorithm_options.opencl_kernel_filename);
+			LOG4CXX_ERROR(DSCP4_OPENCL_LOGGER, "Could not find OpenCL kernel file " << fringeContext->algorithm_options->opencl_kernel_filename);
 			dscp4_fringe_opencl_DestroyContext(&context);
 			return NULL;
 		}
@@ -235,29 +235,29 @@ extern "C" {
 		ret = clSetKernelArg((cl_kernel)context->kernel, 0, sizeof(cl_mem), &(context->framebuffer_opencl_output));
 		ret = clSetKernelArg((cl_kernel)context->kernel, 1, sizeof(cl_mem), &(context->stereogram_rgba_opencl_resource));
 		ret = clSetKernelArg((cl_kernel)context->kernel, 2, sizeof(cl_mem), &(context->stereogram_depth_opencl_resource));
-		ret = clSetKernelArg((cl_kernel)context->kernel, 3, sizeof(cl_uint), &context->fringe_context->algorithm_options.num_wafels_per_scanline);
-		ret = clSetKernelArg((cl_kernel)context->kernel, 4, sizeof(cl_uint), &context->fringe_context->algorithm_options.num_scanlines);
-		ret = clSetKernelArg((cl_kernel)context->kernel, 5, sizeof(cl_uint), &context->fringe_context->algorithm_options.cache.stereogram_res_x);
-		ret = clSetKernelArg((cl_kernel)context->kernel, 6, sizeof(cl_uint), &context->fringe_context->algorithm_options.cache.stereogram_res_y);
-		ret = clSetKernelArg((cl_kernel)context->kernel, 7, sizeof(cl_uint), &context->fringe_context->algorithm_options.cache.stereogram_num_tiles_x);
-		ret = clSetKernelArg((cl_kernel)context->kernel, 8, sizeof(cl_uint), &context->fringe_context->algorithm_options.cache.stereogram_num_tiles_y);
-		ret = clSetKernelArg((cl_kernel)context->kernel, 9, sizeof(cl_uint), &context->fringe_context->algorithm_options.cache.fringe_buffer_res_x);
-		ret = clSetKernelArg((cl_kernel)context->kernel, 10, sizeof(cl_uint), &context->fringe_context->algorithm_options.cache.fringe_buffer_res_y);
-		ret = clSetKernelArg((cl_kernel)context->kernel, 11, context->fringe_context->algorithm_options.num_wafels_per_scanline*sizeof(cl_uchar), NULL);
-		ret = clSetKernelArg((cl_kernel)context->kernel, 12, context->fringe_context->algorithm_options.num_wafels_per_scanline*sizeof(cl_float), NULL);
-		ret = clSetKernelArg((cl_kernel)context->kernel, 13, sizeof(cl_float), &context->fringe_context->algorithm_options.cache.k_r);
-		ret = clSetKernelArg((cl_kernel)context->kernel, 14, sizeof(cl_float), &context->fringe_context->algorithm_options.cache.k_g);
-		ret = clSetKernelArg((cl_kernel)context->kernel, 15, sizeof(cl_float), &context->fringe_context->algorithm_options.cache.k_b);
-		ret = clSetKernelArg((cl_kernel)context->kernel, 16, sizeof(cl_float), &context->fringe_context->algorithm_options.cache.upconvert_const_r);
-		ret = clSetKernelArg((cl_kernel)context->kernel, 17, sizeof(cl_float), &context->fringe_context->algorithm_options.cache.upconvert_const_g);
-		ret = clSetKernelArg((cl_kernel)context->kernel, 18, sizeof(cl_float), &context->fringe_context->algorithm_options.cache.upconvert_const_b);
-		ret = clSetKernelArg((cl_kernel)context->kernel, 19, sizeof(cl_uint), &context->fringe_context->algorithm_options.cache.num_samples_per_wafel);
-		ret = clSetKernelArg((cl_kernel)context->kernel, 20, sizeof(cl_float), &context->fringe_context->algorithm_options.cache.sample_pitch);
-		ret = clSetKernelArg((cl_kernel)context->kernel, 21, sizeof(cl_float), &context->fringe_context->algorithm_options.cache.z_span);
-		ret = clSetKernelArg((cl_kernel)context->kernel, 22, sizeof(cl_float), &context->fringe_context->algorithm_options.cache.z_offset);
+		ret = clSetKernelArg((cl_kernel)context->kernel, 3, sizeof(cl_uint), &context->fringe_context->algorithm_options->num_wafels_per_scanline);
+		ret = clSetKernelArg((cl_kernel)context->kernel, 4, sizeof(cl_uint), &context->fringe_context->algorithm_options->num_scanlines);
+		ret = clSetKernelArg((cl_kernel)context->kernel, 5, sizeof(cl_uint), &context->fringe_context->algorithm_options->cache.stereogram_res_x);
+		ret = clSetKernelArg((cl_kernel)context->kernel, 6, sizeof(cl_uint), &context->fringe_context->algorithm_options->cache.stereogram_res_y);
+		ret = clSetKernelArg((cl_kernel)context->kernel, 7, sizeof(cl_uint), &context->fringe_context->algorithm_options->cache.stereogram_num_tiles_x);
+		ret = clSetKernelArg((cl_kernel)context->kernel, 8, sizeof(cl_uint), &context->fringe_context->algorithm_options->cache.stereogram_num_tiles_y);
+		ret = clSetKernelArg((cl_kernel)context->kernel, 9, sizeof(cl_uint), &context->fringe_context->algorithm_options->cache.fringe_buffer_res_x);
+		ret = clSetKernelArg((cl_kernel)context->kernel, 10, sizeof(cl_uint), &context->fringe_context->algorithm_options->cache.fringe_buffer_res_y);
+		ret = clSetKernelArg((cl_kernel)context->kernel, 11, context->fringe_context->algorithm_options->num_wafels_per_scanline*sizeof(cl_uchar), NULL);
+		ret = clSetKernelArg((cl_kernel)context->kernel, 12, context->fringe_context->algorithm_options->num_wafels_per_scanline*sizeof(cl_float), NULL);
+		ret = clSetKernelArg((cl_kernel)context->kernel, 13, sizeof(cl_float), &context->fringe_context->algorithm_options->cache.k_r);
+		ret = clSetKernelArg((cl_kernel)context->kernel, 14, sizeof(cl_float), &context->fringe_context->algorithm_options->cache.k_g);
+		ret = clSetKernelArg((cl_kernel)context->kernel, 15, sizeof(cl_float), &context->fringe_context->algorithm_options->cache.k_b);
+		ret = clSetKernelArg((cl_kernel)context->kernel, 16, sizeof(cl_float), &context->fringe_context->algorithm_options->cache.upconvert_const_r);
+		ret = clSetKernelArg((cl_kernel)context->kernel, 17, sizeof(cl_float), &context->fringe_context->algorithm_options->cache.upconvert_const_g);
+		ret = clSetKernelArg((cl_kernel)context->kernel, 18, sizeof(cl_float), &context->fringe_context->algorithm_options->cache.upconvert_const_b);
+		ret = clSetKernelArg((cl_kernel)context->kernel, 19, sizeof(cl_uint), &context->fringe_context->algorithm_options->cache.num_samples_per_wafel);
+		ret = clSetKernelArg((cl_kernel)context->kernel, 20, sizeof(cl_float), &context->fringe_context->algorithm_options->cache.sample_pitch);
+		ret = clSetKernelArg((cl_kernel)context->kernel, 21, sizeof(cl_float), &context->fringe_context->algorithm_options->cache.z_span);
+		ret = clSetKernelArg((cl_kernel)context->kernel, 22, sizeof(cl_float), &context->fringe_context->algorithm_options->cache.z_offset);
 		ret = clSetKernelArg((cl_kernel)context->kernel, 23, sizeof(cl_uint), &context->fringe_context->display_options.num_aom_channels);
 		ret = clSetKernelArg((cl_kernel)context->kernel, 24, sizeof(cl_uint), &context->fringe_context->display_options.head_res_y_spec);
-		ret = clSetKernelArg((cl_kernel)context->kernel, 25, sizeof(cl_uint), &context->fringe_context->algorithm_options.cache.num_fringe_buffers);
+		ret = clSetKernelArg((cl_kernel)context->kernel, 25, sizeof(cl_uint), &context->fringe_context->algorithm_options->cache.num_fringe_buffers);
 
 		return context;
 	}
@@ -309,8 +309,8 @@ extern "C" {
 
 	void dscp4_fringe_opencl_ComputeFringe(dscp4_fringe_opencl_context_t* openclContext)
 	{
-		const size_t region[3] = { openclContext->fringe_context->algorithm_options.cache.fringe_buffer_res_x, openclContext->fringe_context->algorithm_options.cache.fringe_buffer_res_y / 2, 1 };
-		const size_t outputBufferSize = openclContext->fringe_context->algorithm_options.cache.fringe_buffer_res_x * openclContext->fringe_context->algorithm_options.cache.fringe_buffer_res_y * 4;
+		const size_t region[3] = { openclContext->fringe_context->algorithm_options->cache.fringe_buffer_res_x, openclContext->fringe_context->algorithm_options->cache.fringe_buffer_res_y / 2, 1 };
+		const size_t outputBufferSize = openclContext->fringe_context->algorithm_options->cache.fringe_buffer_res_x * openclContext->fringe_context->algorithm_options->cache.fringe_buffer_res_y * 4;
 		
 		const unsigned int num_fringe_buffers = 1;
 
@@ -329,14 +329,14 @@ extern "C" {
 			ret = clEnqueueAcquireGLObjects((cl_command_queue)openclContext->command_queue, 1, (const cl_mem*)&openclContext->fringe_opencl_resources[2], 0, NULL, &event[i*num_fringe_buffers]);
 
 			ret = clEnqueueNDRangeKernel((cl_command_queue)openclContext->command_queue, (cl_kernel)openclContext->kernel, 2, NULL,
-				(const size_t*)openclContext->fringe_context->algorithm_options.cache.opencl_global_workgroup_size, (const size_t*)openclContext->fringe_context->algorithm_options.opencl_local_workgroup_size, 1, &event[i*num_fringe_buffers], &event[i*num_fringe_buffers+1]);
+				(const size_t*)openclContext->fringe_context->algorithm_options->cache.opencl_global_workgroup_size, (const size_t*)openclContext->fringe_context->algorithm_options->opencl_local_workgroup_size, 1, &event[i*num_fringe_buffers], &event[i*num_fringe_buffers+1]);
 
 			for (unsigned int j = 0; j < openclContext->fringe_context->display_options.num_heads; j++)
 			{
 				unsigned int numGPUS = openclContext->fringe_context->display_options.num_heads / openclContext->fringe_context->display_options.num_heads_per_gpu;
 				unsigned int which_gpu = j % numGPUS;
 
-				size_t dst_origin[3] = { 0, j < numGPUS ? 0 : openclContext->fringe_context->algorithm_options.cache.fringe_buffer_res_y / 2, 0 };
+				size_t dst_origin[3] = { 0, j < numGPUS ? 0 : openclContext->fringe_context->algorithm_options->cache.fringe_buffer_res_y / 2, 0 };
 
 				ret = clEnqueueCopyBufferToImage((cl_command_queue)openclContext->command_queue,
 					(cl_mem)openclContext->framebuffer_opencl_output,

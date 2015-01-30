@@ -77,13 +77,13 @@ dscp4_fringe_cuda_context_t* dscp4_fringe_cuda_CreateContext(dscp4_fringe_contex
 	if (error != cudaSuccess)
 		printf("ERROR Could not register viewset OpenGL DEPTH texture with CUDA\n");
 
-	cudaContext->fringe_cuda_resources = (struct cudaGraphicsResource**)malloc(sizeof(void*)*cudaContext->fringe_context->algorithm_options.cache.num_fringe_buffers);
+	cudaContext->fringe_cuda_resources = (struct cudaGraphicsResource**)malloc(sizeof(void*)*cudaContext->fringe_context->algorithm_options->cache.num_fringe_buffers);
 
-	//error = cudaMalloc((void**)&framebuffer_tex_out, sizeof(framebuffer_tex_out) * cudaContext->fringe_context->algorithm_options.cache.num_fringe_buffers);
+	//error = cudaMalloc((void**)&framebuffer_tex_out, sizeof(framebuffer_tex_out) * cudaContext->fringe_context->algorithm_options->cache.num_fringe_buffers);
 	//if (error)
 	//	printf("ERROR Could not alloc CUDA framebuffer textures\n");
 
-	for (unsigned int i = 0; i < cudaContext->fringe_context->algorithm_options.cache.num_fringe_buffers; i++)
+	for (unsigned int i = 0; i < cudaContext->fringe_context->algorithm_options->cache.num_fringe_buffers; i++)
 	{
 		//error = cudaGraphicsGLRegisterBuffer(&cudaContext->fringe_cuda_resources[i], cudaContext->fringe_context->fringe_gl_buf_out[i], cudaGraphicsRegisterFlagsWriteDiscard);
 		error = cudaGraphicsGLRegisterImage(&cudaContext->fringe_cuda_resources[i], cudaContext->fringe_context->fringe_gl_tex_out[i], GL_TEXTURE_2D, cudaGraphicsRegisterFlagsWriteDiscard);
@@ -95,23 +95,23 @@ dscp4_fringe_cuda_context_t* dscp4_fringe_cuda_CreateContext(dscp4_fringe_contex
 	if (error != cudaSuccess)
 		printf("ERROR Could not alloc CUDA megabuffer\n");
 
-	const size_t wafelBufferLength = cudaContext->fringe_context->algorithm_options.cache.num_samples_per_wafel * cudaContext->fringe_context->algorithm_options.num_wafels_per_scanline * cudaContext->fringe_context->algorithm_options.num_scanlines;
+	const size_t wafelBufferLength = cudaContext->fringe_context->algorithm_options->cache.num_samples_per_wafel * cudaContext->fringe_context->algorithm_options->num_wafels_per_scanline * cudaContext->fringe_context->algorithm_options->num_scanlines;
 
 	error = cudaMalloc(&cudaContext->wafel_buffers, wafelBufferLength * sizeof(unsigned char));
 	error = cudaMalloc(&cudaContext->wafel_positions, wafelBufferLength * sizeof(float));
 	
 	dim3 threadsPerBlock(
-		cudaContext->fringe_context->algorithm_options.cuda_block_dimensions[0],
-		cudaContext->fringe_context->algorithm_options.cuda_block_dimensions[1]
+		cudaContext->fringe_context->algorithm_options->cuda_block_dimensions[0],
+		cudaContext->fringe_context->algorithm_options->cuda_block_dimensions[1]
 		);
 	dim3 numBlocks(
-		cudaContext->fringe_context->algorithm_options.cache.cuda_number_of_blocks[0],
-		cudaContext->fringe_context->algorithm_options.cache.cuda_number_of_blocks[1]
+		cudaContext->fringe_context->algorithm_options->cache.cuda_number_of_blocks[0],
+		cudaContext->fringe_context->algorithm_options->cache.cuda_number_of_blocks[1]
 		);
 
 	fillWafelPositionsBuffer <<<numBlocks, threadsPerBlock, 592 * 4>> >(
-		cudaContext->fringe_context->algorithm_options.cache.num_samples_per_wafel,
-		cudaContext->fringe_context->algorithm_options.cache.sample_pitch
+		cudaContext->fringe_context->algorithm_options->cache.num_samples_per_wafel,
+		cudaContext->fringe_context->algorithm_options->cache.sample_pitch
 		);
 
 	return cudaContext;
@@ -191,12 +191,12 @@ void dscp4_fringe_cuda_ComputeFringe(dscp4_fringe_cuda_context_t* cudaContext)
 		printf("ERROR Getting stereogram DEPTH CUDA graphics resource mapped pointer\n");
 
 
-	//output = (void**)malloc(sizeof(void*)* cudaContext->fringe_context->algorithm_options.cache.num_fringe_buffers);
-	//outputSizes = (size_t*)malloc(sizeof(size_t)* cudaContext->fringe_context->algorithm_options.cache.num_fringe_buffers);
+	//output = (void**)malloc(sizeof(void*)* cudaContext->fringe_context->algorithm_options->cache.num_fringe_buffers);
+	//outputSizes = (size_t*)malloc(sizeof(size_t)* cudaContext->fringe_context->algorithm_options->cache.num_fringe_buffers);
 
-	framebufferArrays = (cudaArray_t*)malloc(sizeof(cudaArray_t)* cudaContext->fringe_context->algorithm_options.cache.num_fringe_buffers);
+	framebufferArrays = (cudaArray_t*)malloc(sizeof(cudaArray_t)* cudaContext->fringe_context->algorithm_options->cache.num_fringe_buffers);
 
-	for (unsigned int i = 0; i < cudaContext->fringe_context->algorithm_options.cache.num_fringe_buffers; i++)
+	for (unsigned int i = 0; i < cudaContext->fringe_context->algorithm_options->cache.num_fringe_buffers; i++)
 	{
 		//error = cudaGraphicsMapResources(1, (cudaGraphicsResource_t*)(&cudaContext->fringe_cuda_resources[i]), 0);
 		//if(error != cudaSuccess)
@@ -223,44 +223,44 @@ void dscp4_fringe_cuda_ComputeFringe(dscp4_fringe_cuda_context_t* cudaContext)
 	}
 
 	//// run kernel here
-	//for (unsigned int i = 0; i < cudaContext->fringe_context->algorithm_options.cache.num_fringe_buffers; i++)
+	//for (unsigned int i = 0; i < cudaContext->fringe_context->algorithm_options->cache.num_fringe_buffers; i++)
 	//{
 
 	error = cudaMemset(cudaContext->spec_buffer, 0, cudaContext->fringe_context->display_options.head_res_x_spec * cudaContext->fringe_context->display_options.head_res_y_spec * cudaContext->fringe_context->display_options.num_heads * 4);
 
 		dim3 threadsPerBlock(
-			cudaContext->fringe_context->algorithm_options.cuda_block_dimensions[0],
-			cudaContext->fringe_context->algorithm_options.cuda_block_dimensions[1]
+			cudaContext->fringe_context->algorithm_options->cuda_block_dimensions[0],
+			cudaContext->fringe_context->algorithm_options->cuda_block_dimensions[1]
 			);
 		dim3 numBlocks(
-			cudaContext->fringe_context->algorithm_options.cache.cuda_number_of_blocks[0],
-			cudaContext->fringe_context->algorithm_options.cache.cuda_number_of_blocks[1]
+			cudaContext->fringe_context->algorithm_options->cache.cuda_number_of_blocks[0],
+			cudaContext->fringe_context->algorithm_options->cache.cuda_number_of_blocks[1]
 			);
 
 		computeFringe << <numBlocks, threadsPerBlock, 592 * 4 >> >(
 			(unsigned char*)cudaContext->spec_buffer,
 			(const float*)viewsetDepthArray,
-			cudaContext->fringe_context->algorithm_options.num_wafels_per_scanline,
-			cudaContext->fringe_context->algorithm_options.num_scanlines,
-			cudaContext->fringe_context->algorithm_options.cache.stereogram_res_x,
-			cudaContext->fringe_context->algorithm_options.cache.stereogram_res_y,
-			cudaContext->fringe_context->algorithm_options.cache.stereogram_num_tiles_x,
-			cudaContext->fringe_context->algorithm_options.cache.stereogram_num_tiles_y,
-			cudaContext->fringe_context->algorithm_options.cache.fringe_buffer_res_x,
-			cudaContext->fringe_context->algorithm_options.cache.fringe_buffer_res_y,
-			cudaContext->fringe_context->algorithm_options.cache.k_r,
-			cudaContext->fringe_context->algorithm_options.cache.k_g,
-			cudaContext->fringe_context->algorithm_options.cache.k_b,
-			cudaContext->fringe_context->algorithm_options.cache.upconvert_const_r,
-			cudaContext->fringe_context->algorithm_options.cache.upconvert_const_g,
-			cudaContext->fringe_context->algorithm_options.cache.upconvert_const_b,
-			cudaContext->fringe_context->algorithm_options.cache.num_samples_per_wafel,
-			cudaContext->fringe_context->algorithm_options.cache.sample_pitch,
-			cudaContext->fringe_context->algorithm_options.cache.z_span,
-			cudaContext->fringe_context->algorithm_options.cache.z_offset,
+			cudaContext->fringe_context->algorithm_options->num_wafels_per_scanline,
+			cudaContext->fringe_context->algorithm_options->num_scanlines,
+			cudaContext->fringe_context->algorithm_options->cache.stereogram_res_x,
+			cudaContext->fringe_context->algorithm_options->cache.stereogram_res_y,
+			cudaContext->fringe_context->algorithm_options->cache.stereogram_num_tiles_x,
+			cudaContext->fringe_context->algorithm_options->cache.stereogram_num_tiles_y,
+			cudaContext->fringe_context->algorithm_options->cache.fringe_buffer_res_x,
+			cudaContext->fringe_context->algorithm_options->cache.fringe_buffer_res_y,
+			cudaContext->fringe_context->algorithm_options->cache.k_r,
+			cudaContext->fringe_context->algorithm_options->cache.k_g,
+			cudaContext->fringe_context->algorithm_options->cache.k_b,
+			cudaContext->fringe_context->algorithm_options->cache.upconvert_const_r,
+			cudaContext->fringe_context->algorithm_options->cache.upconvert_const_g,
+			cudaContext->fringe_context->algorithm_options->cache.upconvert_const_b,
+			cudaContext->fringe_context->algorithm_options->cache.num_samples_per_wafel,
+			cudaContext->fringe_context->algorithm_options->cache.sample_pitch,
+			cudaContext->fringe_context->algorithm_options->cache.z_span,
+			cudaContext->fringe_context->algorithm_options->cache.z_offset,
 			cudaContext->fringe_context->display_options.num_aom_channels,
 			cudaContext->fringe_context->display_options.head_res_y_spec,
-			cudaContext->fringe_context->algorithm_options.cache.num_fringe_buffers
+			cudaContext->fringe_context->algorithm_options->cache.num_fringe_buffers
 			);
 	//}g
 
@@ -286,7 +286,7 @@ void dscp4_fringe_cuda_ComputeFringe(dscp4_fringe_cuda_context_t* cudaContext)
 			cudaMemcpyDeviceToDevice);
 	}
 
-	for (unsigned int i = 0; i < cudaContext->fringe_context->algorithm_options.cache.num_fringe_buffers; i++)
+	for (unsigned int i = 0; i < cudaContext->fringe_context->algorithm_options->cache.num_fringe_buffers; i++)
 	{
 		//cudaUnbindTexture(framebuffer_tex_out[i]);
 		error = cudaGraphicsUnmapResources(1, (cudaGraphicsResource_t*)(&cudaContext->fringe_cuda_resources[i]), 0);

@@ -51,7 +51,7 @@ public:
 #endif
 
 	// General options
-	boost::filesystem::path getInstallPath() { return pt_.get<std::string>("general.install_path"); }
+	boost::filesystem::path getInstallPath() { return pt_.get<std::string>("general.install_prefix"); }
 	boost::filesystem::path getBinPath() { return pt_.get<std::string>("general.bin_path"); }
 	boost::filesystem::path getLibPath() { return pt_.get<std::string>("general.lib_path"); }
 	boost::filesystem::path getModelsPath() { return pt_.get<std::string>("general.models_path"); }

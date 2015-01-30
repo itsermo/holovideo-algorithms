@@ -387,7 +387,7 @@ int main(int argc, const char* argv[])
 	LOG4CXX_INFO(logger, "Head vertical resolution (in pixels): " << displayOptions.head_res_y)
 
 	LOG4CXX_DEBUG(logger, "Starting DSCP4 lib")
-	renderContext = dscp4_CreateContext(renderOptions, algorithmOptions, displayOptions, logLevel);
+	renderContext = dscp4_CreateContext(&renderOptions, &algorithmOptions, displayOptions, logLevel);
 
 	if (!dscp4_InitRenderer(renderContext))
 	{

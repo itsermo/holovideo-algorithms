@@ -11,13 +11,13 @@ int main(int argc, char *argv[])
     // AA_UseHighDpiPixmaps attribute is off by default in Qt 5.1 but will most
     // likely be on by default in a future release of Qt.
     app.setAttribute(Qt::AA_UseHighDpiPixmaps);
-
+	
     QIcon appIcon;
     appIcon.addFile(":/Icons/AppIcon32");
     appIcon.addFile(":/Icons/AppIcon128");
     app.setWindowIcon(appIcon);
 
-    MainWindow mainWindow;
+    MainWindow mainWindow(new QDSCP4Settings(argc, (const char **)argv));
     mainWindow.show();
     return app.exec();
 }

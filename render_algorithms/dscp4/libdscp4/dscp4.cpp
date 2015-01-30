@@ -5,8 +5,8 @@ extern "C"
 {
 
 	DSCP4_API dscp4_context_t dscp4_CreateContext(
-		render_options_t render_options,
-		algorithm_options_t algorithm_options,
+		render_options_t *render_options,
+		algorithm_options_t *algorithm_options,
 		display_options_t display_options,
 		unsigned int verbosity)
 	{

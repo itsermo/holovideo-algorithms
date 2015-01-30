@@ -289,7 +289,7 @@ extern "C"{
 
 	typedef struct
 	{
-		algorithm_options_t algorithm_options;
+		algorithm_options_t *algorithm_options;
 		display_options_t display_options;
 		const char * kernel_file_path;
 		unsigned int view_gl_fbo;

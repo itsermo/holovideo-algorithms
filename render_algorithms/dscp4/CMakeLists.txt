@@ -1,5 +1,7 @@
 cmake_minimum_REQUIRED(VERSION 2.8)
 
+cmake_policy(SET CMP0020 NEW)
+
 #Macro for getting the windows version
 macro(get_WIN32_WINNT version)
     if (WIN32 AND CMAKE_SYSTEM_VERSION)
@@ -131,8 +133,8 @@ if(UNIX)
 		install(FILES ${CMAKE_BINARY_DIR}/${DSCP4_APP_BIN}/dscp4.desktop DESTINATION /usr/local/share/applications)
 	endif()
 	if(BUILD_DSCP4_QT_APP)
-		configure_file(dscp4-qt/res/dscp4-qt.desktop.in ${DSCP4_APP_QT_BIN}/dscp4-qt.desktop)
-		install(FILES ${CMAKE_BINARY_DIR}/${DSCP4_APP_QT_BIN}/dscp4-qt.desktop DESTINATION /usr/local/share/applications)
+		configure_file(dscp4-qt/res/dscp4-qt.desktop.in ${DSCP4_QT_APP_BIN}/dscp4-qt.desktop)
+		install(FILES ${CMAKE_BINARY_DIR}/${DSCP4_QT_APP_BIN}/dscp4-qt.desktop DESTINATION /usr/local/share/applications)
 	endif()
 	install(FILES ${CMAKE_BINARY_DIR}/dscp4.conf DESTINATION /etc/dscp4)
 elseif(WIN32)

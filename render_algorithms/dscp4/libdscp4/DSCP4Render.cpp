@@ -45,7 +45,7 @@ if (glGetError() != GL_NO_ERROR)						\
 using namespace dscp4;
 
 DSCP4Render::DSCP4Render() :
-		DSCP4Render(render_options_t {
+		DSCP4Render(new render_options_t {
 						DSCP4_DEFAULT_RENDER_SHADERS_PATH,
 						DSCP4_DEFAULT_RENDER_KERNELS_PATH,
 						DSCP4_DEFAULT_RENDER_SHADER_FILENAME_PREFIX,
@@ -55,7 +55,7 @@ DSCP4Render::DSCP4Render() :
 						DSCP4_DEFAULT_RENDER_LIGHT_POS_Y,
 						DSCP4_DEFAULT_RENDER_LIGHT_POS_Z,
 						DSCP4_DEFAULT_RENDER_AUTOSCALE_ENABLED },
-					algorithm_options_t {
+					new algorithm_options_t {
 						DSCP4_DEFAULT_ALGORITHM_NUM_VIEWS_X,
 						DSCP4_DEFAULT_ALGORITHM_NUM_VIEWS_Y,
 						DSCP4_DEFAULT_ALGORITHM_NUM_WAFELS,
@@ -76,7 +76,7 @@ DSCP4Render::DSCP4Render() :
 						{ DSCP4_DEFAULT_ALGORITHM_CUDA_BLOCK_DIM_X,
 						DSCP4_DEFAULT_ALGORITHM_CUDA_BLOCK_DIM_Y },
 						algorithm_cache_t() },
-					display_options_t {
+					    display_options_t {
 						DSCP4_DEFAULT_DISPLAY_NAME,
 						DSCP4_DEFAULT_DISPLAY_X11_ENV_VAR,
 						DSCP4_DEFAULT_DISPLAY_NUM_HEADS,
@@ -94,8 +94,8 @@ DSCP4Render::DSCP4Render() :
 	
 }
 
-DSCP4Render::DSCP4Render(render_options_t renderOptions,
-	algorithm_options_t algorithmOptions,
+DSCP4Render::DSCP4Render(render_options_t *renderOptions,
+	algorithm_options_t *algorithmOptions,
 	display_options_t displayOptions,
 	unsigned int verbosity
 	) :
@@ -169,16 +169,17 @@ DSCP4Render::DSCP4Render(render_options_t renderOptions,
 
 #endif
 
-	if (renderOptions.shaders_path == nullptr)
+	if (renderOptions->shaders_path == nullptr)
 	{
 		LOG4CXX_WARN(logger_, "No shader path location specified, using current working path: " << boost::filesystem::current_path().string())
-			renderOptions_.shaders_path = (char*)boost::filesystem::current_path().string().c_str();
+			renderOptions_->shaders_path = (char*)boost::filesystem::current_path().string().c_str();
 	}
 }
 
 DSCP4Render::~DSCP4Render()
 {
-	
+	delete fringeContext_.algorithm_options;
+	delete renderOptions_;
 }
 
 bool DSCP4Render::init()
@@ -198,7 +199,7 @@ bool DSCP4Render::init()
 	CHECK_SDL_RC(SDL_Init(SDL_INIT_VIDEO) < 0, "Could not initialize SDL")
 
 
-	switch (renderOptions_.render_mode)
+	switch (renderOptions_->render_mode)
 	{
 	case DSCP4_RENDER_MODE_MODEL_VIEWING:
 		numWindows_ = 1;
@@ -279,17 +280,17 @@ bool DSCP4Render::initWindow(SDL_Window*& window, SDL_GLContext& glContext, int 
 
 	int flags = SDL_WINDOW_OPENGL;
 
-	switch (renderOptions_.render_mode)
+	switch (renderOptions_->render_mode)
 	{
 	case DSCP4_RENDER_MODE_MODEL_VIEWING:
-		windowWidth_[thisWindowNum] = fringeContext_.algorithm_options.num_wafels_per_scanline;
-		windowHeight_[thisWindowNum] = fringeContext_.algorithm_options.num_scanlines;
+		windowWidth_[thisWindowNum] = fringeContext_.algorithm_options->num_wafels_per_scanline;
+		windowHeight_[thisWindowNum] = fringeContext_.algorithm_options->num_scanlines;
 		x = abs((int)(bounds.w - windowWidth_[thisWindowNum])) / 2;
 		y = abs((int)(bounds.h - windowHeight_[thisWindowNum])) / 2;
 		break;
 	case DSCP4_RENDER_MODE_STEREOGRAM_VIEWING:
 		windowWidth_[thisWindowNum] *= 0.5f;
-		windowHeight_[thisWindowNum] = windowWidth_[thisWindowNum] * (float)fringeContext_.algorithm_options.cache.stereogram_res_y / (float)fringeContext_.algorithm_options.cache.stereogram_res_x;
+		windowHeight_[thisWindowNum] = windowWidth_[thisWindowNum] * (float)fringeContext_.algorithm_options->cache.stereogram_res_y / (float)fringeContext_.algorithm_options->cache.stereogram_res_x;
 		x = abs((int)(bounds.w - windowWidth_[thisWindowNum])) / 2;
 		y = abs((int)(bounds.h - windowHeight_[thisWindowNum])) / 2;
 		//LOG4CXX_DEBUG(logger_, "Creating SDL OpenGL Window " << thisWindowNum << ": " << windowWidth_[thisWindowNum] << "x" << windowHeight_[thisWindowNum] << " @ " << "{" << bounds.x + 80 << "," << bounds.y + 80 << "}")
@@ -311,7 +312,7 @@ bool DSCP4Render::initWindow(SDL_Window*& window, SDL_GLContext& glContext, int 
 #ifdef _DEBUG
 
 		windowWidth_[thisWindowNum] *= 0.3f;
-		windowHeight_[thisWindowNum] = windowWidth_[thisWindowNum] * (float)fringeContext_.algorithm_options.cache.fringe_buffer_res_y / (float)fringeContext_.algorithm_options.cache.fringe_buffer_res_x;
+		windowHeight_[thisWindowNum] = windowWidth_[thisWindowNum] * (float)fringeContext_.algorithm_options->cache.fringe_buffer_res_y / (float)fringeContext_.algorithm_options->cache.fringe_buffer_res_x;
 		x += (bounds.w/3 - windowWidth_[thisWindowNum]);
 		y += windowHeight_[thisWindowNum] * 0.08f;
 #else
@@ -390,13 +391,13 @@ bool DSCP4Render::initLightingShader(int which)
 {
 	lightingShader_[which].init();
 	lightingShader_[which].loadShader(VSShaderLib::VERTEX_SHADER,
-		(boost::filesystem::path(renderOptions_.shaders_path) /
-		boost::filesystem::path(std::string((const char*)renderOptions_.shader_filename_prefix).append(".vert"))).string()
+		(boost::filesystem::path(renderOptions_->shaders_path) /
+		boost::filesystem::path(std::string((const char*)renderOptions_->shader_filename_prefix).append(".vert"))).string()
 		);
 
 	lightingShader_[which].loadShader(VSShaderLib::FRAGMENT_SHADER,
-		(boost::filesystem::path(renderOptions_.shaders_path) /
-		boost::filesystem::path(std::string((const char*)renderOptions_.shader_filename_prefix).append(".frag"))).string()
+		(boost::filesystem::path(renderOptions_->shaders_path) /
+		boost::filesystem::path(std::string((const char*)renderOptions_->shader_filename_prefix).append(".frag"))).string()
 		);
 
 	lightingShader_[which].setProgramOutput(0, "outputF");
@@ -559,11 +560,11 @@ void DSCP4Render::renderLoop()
 
 	//lightingShader_ = new VSShaderLib[numWindows_];
 
-	camera_.eye = glm::vec3(0, 0, (renderOptions_.render_mode == DSCP4_RENDER_MODE_MODEL_VIEWING) || (renderOptions_.render_mode == DSCP4_RENDER_MODE_AERIAL_DISPLAY) ? 4.0f : .5f);
+	camera_.eye = glm::vec3(0, 0, (renderOptions_->render_mode == DSCP4_RENDER_MODE_MODEL_VIEWING) || (renderOptions_->render_mode == DSCP4_RENDER_MODE_AERIAL_DISPLAY) ? 4.0f : .5f);
 	camera_.center = glm::vec3(0, 0, 0);
 	camera_.up = glm::vec3(0, 1, 0);
 
-	lighting_.position = glm::vec4(renderOptions_.light_pos_x, renderOptions_.light_pos_y, renderOptions_.light_pos_z, 1.f);
+	lighting_.position = glm::vec4(renderOptions_->light_pos_x, renderOptions_->light_pos_y, renderOptions_->light_pos_z, 1.f);
 	lighting_.ambientColor = glm::vec4(0.2f, 0.2f, 0.2f, 1.f);
 	lighting_.diffuseColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.f);
 	lighting_.specularColor = glm::vec4(1.f, 1.f, 1.f, 1.f);
@@ -585,7 +586,7 @@ void DSCP4Render::renderLoop()
 
 	SDL_GL_MakeCurrent(windows_[0], glContexts_[0]);
 
-	switch (renderOptions_.render_mode)
+	switch (renderOptions_->render_mode)
 	{
 	case DSCP4_RENDER_MODE_MODEL_VIEWING:
 		initViewingTextures();
@@ -644,7 +645,7 @@ void DSCP4Render::renderLoop()
 				rotateAngleY_ > 359.f ?
 				0.f : rotateAngleY_ + rotateIncrement_ : rotateAngleY_.load();
 
-			switch (renderOptions_.render_mode)
+			switch (renderOptions_->render_mode)
 			{
 			case DSCP4_RENDER_MODE_MODEL_VIEWING:
 			{
@@ -710,7 +711,7 @@ void DSCP4Render::renderLoop()
 
 	SDL_GL_MakeCurrent(windows_[0], glContexts_[0]);
 
-	switch (renderOptions_.render_mode)
+	switch (renderOptions_->render_mode)
 	{
 	case DSCP4_RENDER_MODE_MODEL_VIEWING:
 		deinitViewingTextures();
@@ -750,11 +751,11 @@ void DSCP4Render::renderLoop()
 void DSCP4Render::generateStereogram()
 {
 	// X and Y resolution for each tile, or stereogram view
-	const int tile_x_res = fringeContext_.algorithm_options.num_wafels_per_scanline;
-	const int tile_y_res = fringeContext_.algorithm_options.num_scanlines;
+	const int tile_x_res = fringeContext_.algorithm_options->num_wafels_per_scanline;
+	const int tile_y_res = fringeContext_.algorithm_options->num_scanlines;
 
 	// The grid dimension
-	const int tile_dim = static_cast<unsigned int>(sqrt(fringeContext_.algorithm_options.num_views_x));
+	const int tile_dim = static_cast<unsigned int>(sqrt(fringeContext_.algorithm_options->num_views_x));
 
 	// Draw to the stereogram FBO, instead of back buffer
 	glBindFramebuffer(GL_FRAMEBUFFER, fringeContext_.stereogram_gl_fbo);
@@ -768,23 +769,23 @@ void DSCP4Render::generateStereogram()
 	std::lock_guard<std::mutex> lgl(lightingMutex_);
 	std::lock_guard<std::mutex> lgm(meshMutex_);
 
-	for (unsigned int i = 0; i < fringeContext_.algorithm_options.num_views_x; i++)
+	for (unsigned int i = 0; i < fringeContext_.algorithm_options->num_views_x; i++)
 	{
 		glViewport(tile_x_res*(i%tile_dim), tile_y_res*(i / tile_dim), tile_x_res, tile_y_res);
 
 		glMatrixMode(GL_PROJECTION);
 
 		const float ratio = static_cast<float>(tile_x_res) / static_cast<float>(tile_y_res);
-		const float q = (i - fringeContext_.algorithm_options.num_views_x * 0.5f) / static_cast<float>(fringeContext_.algorithm_options.num_views_x) * fringeContext_.algorithm_options.fov_y * DEG_TO_RAD;
+		const float q = (i - fringeContext_.algorithm_options->num_views_x * 0.5f) / static_cast<float>(fringeContext_.algorithm_options->num_views_x) * fringeContext_.algorithm_options->fov_y * DEG_TO_RAD;
 
 		projectionMatrix_ = buildOrthoXPerspYProjMat(-ratio, ratio, -1.0f, 1.0f, zNear_, zFar_, q);
 
 		glLoadMatrixf(glm::value_ptr(projectionMatrix_));
 
-		if (renderOptions_.shader_model != DSCP4_SHADER_MODEL_OFF)
+		if (renderOptions_->shader_model != DSCP4_SHADER_MODEL_OFF)
 			glEnable(GL_LIGHTING);
 
-		glShadeModel(renderOptions_.shader_model == DSCP4_SHADER_MODEL_SMOOTH ? GL_SMOOTH : GL_FLAT);
+		glShadeModel(renderOptions_->shader_model == DSCP4_SHADER_MODEL_SMOOTH ? GL_SMOOTH : GL_FLAT);
 
 		glMatrixMode(GL_MODELVIEW);
 
@@ -813,7 +814,7 @@ void DSCP4Render::generateStereogram()
 		glDisable(GL_LIGHT0);
 		glDisable(GL_DEPTH_TEST);
 
-		if (renderOptions_.shader_model != DSCP4_SHADER_MODEL_OFF)
+		if (renderOptions_->shader_model != DSCP4_SHADER_MODEL_OFF)
 			glDisable(GL_LIGHTING);
 	}
 
@@ -830,20 +831,20 @@ void DSCP4Render::generateView()
 	glBindFramebuffer(GL_FRAMEBUFFER, fringeContext_.view_gl_fbo);
 	glDrawBuffer(GL_COLOR_ATTACHMENT0);
 
-	const float ratio = (float)fringeContext_.algorithm_options.num_wafels_per_scanline / (float)fringeContext_.algorithm_options.num_scanlines;
+	const float ratio = (float)fringeContext_.algorithm_options->num_wafels_per_scanline / (float)fringeContext_.algorithm_options->num_scanlines;
 	{
 		std::lock_guard<std::mutex> lgc(cameraMutex_);
 		glMatrixMode(GL_PROJECTION);
 
 		projectionMatrix_ = glm::mat4();
-		projectionMatrix_ *= glm::perspective(fringeContext_.algorithm_options.fov_y * DEG_TO_RAD, ratio, 3.f, 5.f);
+		projectionMatrix_ *= glm::perspective(fringeContext_.algorithm_options->fov_y * DEG_TO_RAD, ratio, 3.f, 5.f);
 
 		glLoadMatrixf(glm::value_ptr(projectionMatrix_));
 
-		if (renderOptions_.shader_model != DSCP4_SHADER_MODEL_OFF)
+		if (renderOptions_->shader_model != DSCP4_SHADER_MODEL_OFF)
 			glEnable(GL_LIGHTING);
 
-		glShadeModel(renderOptions_.shader_model == DSCP4_SHADER_MODEL_SMOOTH ? GL_SMOOTH : GL_FLAT);
+		glShadeModel(renderOptions_->shader_model == DSCP4_SHADER_MODEL_SMOOTH ? GL_SMOOTH : GL_FLAT);
 
 		/* Clear the color and depth buffers. */
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -908,7 +909,7 @@ void DSCP4Render::drawForStereogram()
 {
 #ifdef DSCP4_ENABLE_TRACE_LOG
 	auto duration = measureTime<>(std::bind(&DSCP4Render::generateStereogram, this));
-	LOG4CXX_TRACE(logger_, "Generating " << fringeContext_.algorithm_options.num_views_x << " stereogram views in total took " << duration << " ms (" << 1.f / duration * 1000 << " fps)")
+	LOG4CXX_TRACE(logger_, "Generating " << fringeContext_.algorithm_options->num_views_x << " stereogram views in total took " << duration << " ms (" << 1.f / duration * 1000 << " fps)")
 #else
 	generateStereogram();
 #endif
@@ -936,14 +937,14 @@ void DSCP4Render::drawForAerialDisplay()
 		const float ratio = (float)windowWidth_[i] / (float)windowHeight_[i];
 		
 		projectionMatrix_ = glm::mat4();
-		projectionMatrix_ *= glm::perspective(fringeContext_.algorithm_options.fov_y * DEG_TO_RAD, ratio, 3.0f, 5.f);
+		projectionMatrix_ *= glm::perspective(fringeContext_.algorithm_options->fov_y * DEG_TO_RAD, ratio, 3.0f, 5.f);
 
 		glLoadMatrixf(glm::value_ptr(projectionMatrix_));
 
-		if (renderOptions_.shader_model != DSCP4_SHADER_MODEL_OFF)
+		if (renderOptions_->shader_model != DSCP4_SHADER_MODEL_OFF)
 			glEnable(GL_LIGHTING);
 
-		glShadeModel(renderOptions_.shader_model == DSCP4_SHADER_MODEL_SMOOTH ? GL_SMOOTH : GL_FLAT);
+		glShadeModel(renderOptions_->shader_model == DSCP4_SHADER_MODEL_SMOOTH ? GL_SMOOTH : GL_FLAT);
 
 		/* Clear the color and depth buffers. */
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -991,14 +992,14 @@ void DSCP4Render::drawForFringe()
 
 #ifdef DSCP4_ENABLE_TRACE_LOG
 	auto duration = measureTime<>(std::bind(&DSCP4Render::generateStereogram, this));
-	LOG4CXX_TRACE(logger_, "Generating " << fringeContext_.algorithm_options.num_views_x << " stereogram views in total took " << duration << " ms (" << 1.f / duration * 1000 << " fps)")
+	LOG4CXX_TRACE(logger_, "Generating " << fringeContext_.algorithm_options->num_views_x << " stereogram views in total took " << duration << " ms (" << 1.f / duration * 1000 << " fps)")
 #else
 	generateStereogram();
 #endif
 
 #ifdef DSCP4_ENABLE_TRACE_LOG
 	duration = measureTime<>(std::bind(&DSCP4Render::copyStereogramDepthToPBO, this));
-	LOG4CXX_TRACE(logger_, "Copying stereogram " << fringeContext_.algorithm_options.num_views_x << " views to PBOs took " << duration << " ms (" << 1.f / duration * 1000 << " fps)")
+	LOG4CXX_TRACE(logger_, "Copying stereogram " << fringeContext_.algorithm_options->num_views_x << " views to PBOs took " << duration << " ms (" << 1.f / duration * 1000 << " fps)")
 #else
 	copyStereogramDepthToPBO();
 #endif
@@ -1147,7 +1148,7 @@ void DSCP4Render::addMesh(const char *id, int numVertices, float *vertices, floa
 	mesh.info.gl_vertex_buf_id = -1;
 	mesh.info.gl_normal_buf_id = -1;
 
-	if (renderOptions_.auto_scale_enabled)
+	if (renderOptions_->auto_scale_enabled)
 	{
 		// create a 2D array for miniball algorithm
 		float **ap = new float*[numVertices];
@@ -1486,8 +1487,8 @@ void DSCP4Render::initViewingTextures()
 		GL_TEXTURE_2D,
 		0,
 		GL_DEPTH_COMPONENT32F,
-		fringeContext_.algorithm_options.num_wafels_per_scanline,
-		fringeContext_.algorithm_options.num_scanlines,
+		fringeContext_.algorithm_options->num_wafels_per_scanline,
+		fringeContext_.algorithm_options->num_scanlines,
 		0,
 		GL_DEPTH_COMPONENT,
 		GL_FLOAT,
@@ -1508,8 +1509,8 @@ void DSCP4Render::initViewingTextures()
 		GL_TEXTURE_2D,
 		0,
 		GL_RGBA8,
-		fringeContext_.algorithm_options.num_wafels_per_scanline,
-		fringeContext_.algorithm_options.num_scanlines,
+		fringeContext_.algorithm_options->num_wafels_per_scanline,
+		fringeContext_.algorithm_options->num_scanlines,
 		0,
 		GL_RGBA,
 		GL_FLOAT,
@@ -1563,8 +1564,8 @@ void DSCP4Render::initStereogramTextures()
 		GL_TEXTURE_2D,
 		0,
 		GL_DEPTH_COMPONENT32F,
-		fringeContext_.algorithm_options.cache.stereogram_res_x,
-		fringeContext_.algorithm_options.cache.stereogram_res_y,
+		fringeContext_.algorithm_options->cache.stereogram_res_x,
+		fringeContext_.algorithm_options->cache.stereogram_res_y,
 		0,
 		GL_DEPTH_COMPONENT,
 		GL_FLOAT,
@@ -1585,8 +1586,8 @@ void DSCP4Render::initStereogramTextures()
 		GL_TEXTURE_2D,
 		0,
 		GL_RGBA8,
-		fringeContext_.algorithm_options.cache.stereogram_res_x,
-		fringeContext_.algorithm_options.cache.stereogram_res_y,
+		fringeContext_.algorithm_options->cache.stereogram_res_x,
+		fringeContext_.algorithm_options->cache.stereogram_res_y,
 		0,
 		GL_RGBA,
 		GL_FLOAT,
@@ -1620,8 +1621,8 @@ void DSCP4Render::initStereogramTextures()
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	// begin generation of stereogram view buffers (these will go into CUDA kernels)
-	size_t rgba_size = fringeContext_.algorithm_options.cache.stereogram_res_x * fringeContext_.algorithm_options.cache.stereogram_res_y * sizeof(GLbyte)* 4;
-	size_t depth_size = fringeContext_.algorithm_options.cache.stereogram_res_x * fringeContext_.algorithm_options.cache.stereogram_res_y * sizeof(GLfloat);
+	size_t rgba_size = fringeContext_.algorithm_options->cache.stereogram_res_x * fringeContext_.algorithm_options->cache.stereogram_res_y * sizeof(GLbyte)* 4;
+	size_t depth_size = fringeContext_.algorithm_options->cache.stereogram_res_x * fringeContext_.algorithm_options->cache.stereogram_res_y * sizeof(GLfloat);
 
 	// Create a PBO to store depth data.  Every frame rendered,
 	// depth buffer is copied into this PBO, which is sent to OpenCL/CUDA kernel
@@ -1649,35 +1650,21 @@ void DSCP4Render::initFringeTextures()
 	// Create N-textures for outputting fringe data to the X displays
 	// Whatever holographic computation is done will be written
 	// To these textures and ultimately displayed on the holovideo display
-	glGenTextures(fringeContext_.algorithm_options.cache.num_fringe_buffers, fringeContext_.fringe_gl_tex_out);
+	glGenTextures(fringeContext_.algorithm_options->cache.num_fringe_buffers, fringeContext_.fringe_gl_tex_out);
 
-	char *blah = new char[fringeContext_.algorithm_options.cache.fringe_buffer_res_x * fringeContext_.algorithm_options.cache.fringe_buffer_res_y * 4];
-	for (size_t i = 0; i < fringeContext_.algorithm_options.cache.fringe_buffer_res_x * fringeContext_.algorithm_options.cache.fringe_buffer_res_y * 4; i++)
+	char *blah = new char[fringeContext_.algorithm_options->cache.fringe_buffer_res_x * fringeContext_.algorithm_options->cache.fringe_buffer_res_y * 4];
+	for (size_t i = 0; i < fringeContext_.algorithm_options->cache.fringe_buffer_res_x * fringeContext_.algorithm_options->cache.fringe_buffer_res_y * 4; i++)
 	{
 		blah[i] = i % 255;
 	}
 
-	//if (fringeContext_.algorithm_options.compute_method == DSCP4_COMPUTE_METHOD_CUDA)
-	//{
-	//	fringeContext_.fringe_gl_buf_out = new GLuint[numWindows_];
-
-	//	glGenBuffers(fringeContext_.algorithm_options.cache.num_fringe_buffers, fringeContext_.fringe_gl_buf_out);
-
-	//	for (unsigned int i = 0; i < fringeContext_.algorithm_options.cache.num_fringe_buffers; i++)
-	//	{
-	//		glBindBuffer(GL_ARRAY_BUFFER, fringeContext_.fringe_gl_buf_out[i]);
-	//		glBufferData(GL_ARRAY_BUFFER, fringeContext_.algorithm_options.cache.fringe_buffer_res_x * fringeContext_.algorithm_options.cache.fringe_buffer_res_y * sizeof(GLbyte)* 4, blah, GL_DYNAMIC_DRAW);
-	//		glBindBuffer(GL_ARRAY_BUFFER, 0);
-	//	}
-	//}
-
-	for (size_t i = 0; i < fringeContext_.algorithm_options.cache.num_fringe_buffers; i++)
+	for (size_t i = 0; i < fringeContext_.algorithm_options->cache.num_fringe_buffers; i++)
 	{
 		glBindTexture(GL_TEXTURE_2D, fringeContext_.fringe_gl_tex_out[i]);
 
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8,
-			fringeContext_.algorithm_options.cache.fringe_buffer_res_x,
-			fringeContext_.algorithm_options.cache.fringe_buffer_res_y,
+			fringeContext_.algorithm_options->cache.fringe_buffer_res_x,
+			fringeContext_.algorithm_options->cache.fringe_buffer_res_y,
 			0, GL_RGBA, GL_UNSIGNED_BYTE, blah);
 
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -1706,15 +1693,15 @@ void DSCP4Render::copyStereogramDepthToPBO()
 	// depth texture extensions.  If not, then we need to copy depth texture
 	// to PBO, which is a performance hit (NVIDIA so far does not support this)
 #ifdef DSCP4_HAVE_OPENCL
-	if (fringeContext_.algorithm_options.compute_method == DSCP4_COMPUTE_METHOD_CUDA ||
+	if (fringeContext_.algorithm_options->compute_method == DSCP4_COMPUTE_METHOD_CUDA ||
 		!((dscp4_fringe_opencl_context_t*)computeContext_)->have_cl_gl_depth_images_extension)
 	{
 #endif
 	//copy DEPTH from stereogram views, because CUDA/OpenCL cannot access depth data directly from framebuffer
 	glBindBuffer(GL_PIXEL_PACK_BUFFER, fringeContext_.stereogram_gl_depth_pbo_in);
 	glReadPixels(0, 0,
-		fringeContext_.algorithm_options.cache.stereogram_res_x,
-		fringeContext_.algorithm_options.cache.stereogram_res_y,
+		fringeContext_.algorithm_options->cache.stereogram_res_x,
+		fringeContext_.algorithm_options->cache.stereogram_res_y,
 		GL_DEPTH_COMPONENT, GL_FLOAT, 0);
 
 	glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
@@ -1733,10 +1720,10 @@ void DSCP4Render::copyStereogramDepthToPBO()
 void DSCP4Render::drawFringeTextures()
 {
 	GLfloat Vertices[] = { 0.f, 0.f, 0.f,
-		static_cast<float>(fringeContext_.algorithm_options.cache.fringe_buffer_res_x), 0, 0,
-		static_cast<float>(fringeContext_.algorithm_options.cache.fringe_buffer_res_x),
-		static_cast<float>(fringeContext_.algorithm_options.cache.fringe_buffer_res_y), 0.f,
-		0.f, static_cast<float>(fringeContext_.algorithm_options.cache.fringe_buffer_res_y), 0.f
+		static_cast<float>(fringeContext_.algorithm_options->cache.fringe_buffer_res_x), 0, 0,
+		static_cast<float>(fringeContext_.algorithm_options->cache.fringe_buffer_res_x),
+		static_cast<float>(fringeContext_.algorithm_options->cache.fringe_buffer_res_y), 0.f,
+		0.f, static_cast<float>(fringeContext_.algorithm_options->cache.fringe_buffer_res_y), 0.f
 	};
 
 	
@@ -1760,9 +1747,9 @@ void DSCP4Render::drawFringeTextures()
 		glMatrixMode(GL_PROJECTION);
 		projectionMatrix_ = glm::ortho(
 			0.f,
-			static_cast<float>(fringeContext_.algorithm_options.cache.fringe_buffer_res_x),
+			static_cast<float>(fringeContext_.algorithm_options->cache.fringe_buffer_res_x),
 			0.f,
-			static_cast<float>(fringeContext_.algorithm_options.cache.fringe_buffer_res_y)
+			static_cast<float>(fringeContext_.algorithm_options->cache.fringe_buffer_res_y)
 			);
 
 		glLoadMatrixf(glm::value_ptr(projectionMatrix_));
@@ -1775,30 +1762,6 @@ void DSCP4Render::drawFringeTextures()
 		glDisable(GL_LIGHTING);
 
 		glBindTexture(GL_TEXTURE_2D, fringeContext_.fringe_gl_tex_out[i]);
-
-		//if (fringeContext_.algorithm_options.compute_method == DSCP4_COMPUTE_METHOD_CUDA)
-		//{
-		//	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, fringeContext_.fringe_gl_buf_out[i]);
-		//	
-		//	#ifdef DSCP4_ENABLE_TRACE_LOG
-		//			auto duration = measureTime<>([&](){
-		//				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
-		//					fringeContext_.algorithm_options.cache.fringe_buffer_res_x,
-		//					fringeContext_.algorithm_options.cache.fringe_buffer_res_y,
-		//					0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
-		//			});
-		//			LOG4CXX_TRACE(logger_, "Copying hologram fringe result " << i << " to texture took " << duration << " ms (" << 1.f / duration * 1000 << " fps)")
-		//	#else
-		//			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
-		//				fringeContext_.algorithm_options.cache.fringe_buffer_res_x,
-		//				fringeContext_.algorithm_options.cache.fringe_buffer_res_y,
-		//				0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
-		//	#endif
-
-		//	//glBindBuffer(GL_PIXEL_UNPACK_BUFFER, fringeContext_.stereogram_gl_rgba_buf_in);
-
-		//	//glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 4*fringeContext_.algorithm_options.num_wafels_per_scanline, 4*fringeContext_.algorithm_options.num_scanlines, GL_RGBA, GL_UNSIGNED_BYTE,0);
-		//}
 
 		glEnableClientState(GL_VERTEX_ARRAY);
 		glVertexPointer(3, GL_FLOAT, 0, Vertices);
@@ -1937,7 +1900,7 @@ void DSCP4Render::drawViewingTexture()
 void DSCP4Render::initComputeMethod()
 {
 
-	switch (fringeContext_.algorithm_options.compute_method)
+	switch (fringeContext_.algorithm_options->compute_method)
 	{
 	case DSCP4_COMPUTE_METHOD_CUDA:
 #ifdef DSCP4_HAVE_CUDA
@@ -1965,7 +1928,7 @@ void DSCP4Render::initComputeMethod()
 
 void DSCP4Render::deinitComputeMethod()
 {
-	switch (fringeContext_.algorithm_options.compute_method)
+	switch (fringeContext_.algorithm_options->compute_method)
 	{
 	case DSCP4_COMPUTE_METHOD_CUDA:
 #ifdef DSCP4_HAVE_CUDA
@@ -1986,7 +1949,7 @@ void DSCP4Render::deinitComputeMethod()
 
 void DSCP4Render::computeHologram()
 {
-	switch (fringeContext_.algorithm_options.compute_method)
+	switch (fringeContext_.algorithm_options->compute_method)
 	{
 	case DSCP4_COMPUTE_METHOD_CUDA:
 #ifdef DSCP4_HAVE_CUDA
@@ -2005,58 +1968,58 @@ void DSCP4Render::computeHologram()
 
 void DSCP4Render::updateAlgorithmOptionsCache()
 {
-	fringeContext_.algorithm_options.cache.num_fringe_buffers =
+	fringeContext_.algorithm_options->cache.num_fringe_buffers =
 		fringeContext_.display_options.num_heads / fringeContext_.display_options.num_heads_per_gpu;
 
 	// the x res and y res are set by heads arranged vertically
 	// in the OS display management configurations
-	fringeContext_.algorithm_options.cache.fringe_buffer_res_x =
+	fringeContext_.algorithm_options->cache.fringe_buffer_res_x =
 		fringeContext_.display_options.head_res_x;
 
-	fringeContext_.algorithm_options.cache.fringe_buffer_res_y =
+	fringeContext_.algorithm_options->cache.fringe_buffer_res_y =
 		fringeContext_.display_options.head_res_y * fringeContext_.display_options.num_heads_per_gpu;
 
-	fringeContext_.algorithm_options.cache.stereogram_num_tiles_x =
-		fringeContext_.algorithm_options.cache.stereogram_num_tiles_y =
-		static_cast<unsigned int>(sqrt(fringeContext_.algorithm_options.num_views_x));
+	fringeContext_.algorithm_options->cache.stereogram_num_tiles_x =
+		fringeContext_.algorithm_options->cache.stereogram_num_tiles_y =
+		static_cast<unsigned int>(sqrt(fringeContext_.algorithm_options->num_views_x));
 
-	fringeContext_.algorithm_options.cache.stereogram_res_x =
-		fringeContext_.algorithm_options.cache.stereogram_num_tiles_x
-		* fringeContext_.algorithm_options.num_wafels_per_scanline;
+	fringeContext_.algorithm_options->cache.stereogram_res_x =
+		fringeContext_.algorithm_options->cache.stereogram_num_tiles_x
+		* fringeContext_.algorithm_options->num_wafels_per_scanline;
 
-	fringeContext_.algorithm_options.cache.stereogram_res_y =
-		fringeContext_.algorithm_options.cache.stereogram_num_tiles_y
-		* fringeContext_.algorithm_options.num_scanlines;
+	fringeContext_.algorithm_options->cache.stereogram_res_y =
+		fringeContext_.algorithm_options->cache.stereogram_num_tiles_y
+		* fringeContext_.algorithm_options->num_scanlines;
 
-	fringeContext_.algorithm_options.cache.reference_beam_angle_rad =
-		fringeContext_.algorithm_options.reference_beam_angle * M_PI / 180.f;
+	fringeContext_.algorithm_options->cache.reference_beam_angle_rad =
+		fringeContext_.algorithm_options->reference_beam_angle * M_PI / 180.f;
 
-	fringeContext_.algorithm_options.cache.num_samples_per_wafel =
+	fringeContext_.algorithm_options->cache.num_samples_per_wafel =
 		fringeContext_.display_options.num_samples_per_hololine /
-		fringeContext_.algorithm_options.num_wafels_per_scanline;
+		fringeContext_.algorithm_options->num_wafels_per_scanline;
 
-	fringeContext_.algorithm_options.cache.k_r =
-		2 * M_PI / fringeContext_.algorithm_options.wavelength_red;
+	fringeContext_.algorithm_options->cache.k_r =
+		2 * M_PI / fringeContext_.algorithm_options->wavelength_red;
 
-	fringeContext_.algorithm_options.cache.k_g =
-		2 * M_PI / fringeContext_.algorithm_options.wavelength_green;
+	fringeContext_.algorithm_options->cache.k_g =
+		2 * M_PI / fringeContext_.algorithm_options->wavelength_green;
 
-	fringeContext_.algorithm_options.cache.k_b =
-		2 * M_PI / fringeContext_.algorithm_options.wavelength_blue;
+	fringeContext_.algorithm_options->cache.k_b =
+		2 * M_PI / fringeContext_.algorithm_options->wavelength_blue;
 
-	fringeContext_.algorithm_options.cache.upconvert_const_r =
-		(double)((double)fringeContext_.display_options.num_samples_per_hololine * (double)fringeContext_.algorithm_options.temporal_upconvert_red) / 
+	fringeContext_.algorithm_options->cache.upconvert_const_r =
+		(double)((double)fringeContext_.display_options.num_samples_per_hololine * (double)fringeContext_.algorithm_options->temporal_upconvert_red) / 
 		(double)((double)fringeContext_.display_options.pixel_clock_rate * (double)fringeContext_.display_options.hologram_plane_width);
 
-	fringeContext_.algorithm_options.cache.upconvert_const_g =
-		(double)((double)fringeContext_.display_options.num_samples_per_hololine * (double)fringeContext_.algorithm_options.temporal_upconvert_green)
+	fringeContext_.algorithm_options->cache.upconvert_const_g =
+		(double)((double)fringeContext_.display_options.num_samples_per_hololine * (double)fringeContext_.algorithm_options->temporal_upconvert_green)
 		/ (double)((double)fringeContext_.display_options.pixel_clock_rate * (double)fringeContext_.display_options.hologram_plane_width);
 
-	fringeContext_.algorithm_options.cache.upconvert_const_b =
-		(double)((double)fringeContext_.display_options.num_samples_per_hololine * (double)fringeContext_.algorithm_options.temporal_upconvert_blue)
+	fringeContext_.algorithm_options->cache.upconvert_const_b =
+		(double)((double)fringeContext_.display_options.num_samples_per_hololine * (double)fringeContext_.algorithm_options->temporal_upconvert_blue)
 		/ (double)((double)fringeContext_.display_options.pixel_clock_rate * (double)fringeContext_.display_options.hologram_plane_width);
 
-	fringeContext_.algorithm_options.cache.sample_pitch =
+	fringeContext_.algorithm_options->cache.sample_pitch =
 		fringeContext_.display_options.hologram_plane_width
 		/ (float)fringeContext_.display_options.num_samples_per_hololine;
 
@@ -2066,55 +2029,55 @@ void DSCP4Render::updateAlgorithmOptionsCache()
 	// otherwise it will set a global workgroup size to be the next multiple of local size X
 	// this is because global workgroup size should be as big as possible (the hologram size)
 	// but also divisible by the local workgroup size
-	if (fringeContext_.algorithm_options.compute_method == DSCP4_COMPUTE_METHOD_OPENCL)
+	if (fringeContext_.algorithm_options->compute_method == DSCP4_COMPUTE_METHOD_OPENCL)
 	{
-		fringeContext_.algorithm_options.cache.opencl_global_workgroup_size[0] = fringeContext_.algorithm_options.opencl_local_workgroup_size[0] == 0 ? fringeContext_.algorithm_options.num_wafels_per_scanline :
-			fringeContext_.algorithm_options.num_wafels_per_scanline % fringeContext_.algorithm_options.opencl_local_workgroup_size[0] == 0 ?
-			fringeContext_.algorithm_options.num_wafels_per_scanline :
-			fringeContext_.algorithm_options.opencl_local_workgroup_size[0]
-			- (fringeContext_.algorithm_options.num_wafels_per_scanline % fringeContext_.algorithm_options.opencl_local_workgroup_size[0])
-			+ fringeContext_.algorithm_options.num_wafels_per_scanline;
+		fringeContext_.algorithm_options->cache.opencl_global_workgroup_size[0] = fringeContext_.algorithm_options->opencl_local_workgroup_size[0] == 0 ? fringeContext_.algorithm_options->num_wafels_per_scanline :
+			fringeContext_.algorithm_options->num_wafels_per_scanline % fringeContext_.algorithm_options->opencl_local_workgroup_size[0] == 0 ?
+			fringeContext_.algorithm_options->num_wafels_per_scanline :
+			fringeContext_.algorithm_options->opencl_local_workgroup_size[0]
+			- (fringeContext_.algorithm_options->num_wafels_per_scanline % fringeContext_.algorithm_options->opencl_local_workgroup_size[0])
+			+ fringeContext_.algorithm_options->num_wafels_per_scanline;
 
-		fringeContext_.algorithm_options.cache.opencl_global_workgroup_size[1] = fringeContext_.algorithm_options.opencl_local_workgroup_size[1] == 0 ? fringeContext_.algorithm_options.num_scanlines :
-			fringeContext_.algorithm_options.num_scanlines % fringeContext_.algorithm_options.opencl_local_workgroup_size[1] == 0 ?
-			fringeContext_.algorithm_options.num_scanlines :
-			fringeContext_.algorithm_options.opencl_local_workgroup_size[1]
-			- (fringeContext_.algorithm_options.num_scanlines % fringeContext_.algorithm_options.opencl_local_workgroup_size[1])
-			+ fringeContext_.algorithm_options.num_scanlines;
+		fringeContext_.algorithm_options->cache.opencl_global_workgroup_size[1] = fringeContext_.algorithm_options->opencl_local_workgroup_size[1] == 0 ? fringeContext_.algorithm_options->num_scanlines :
+			fringeContext_.algorithm_options->num_scanlines % fringeContext_.algorithm_options->opencl_local_workgroup_size[1] == 0 ?
+			fringeContext_.algorithm_options->num_scanlines :
+			fringeContext_.algorithm_options->opencl_local_workgroup_size[1]
+			- (fringeContext_.algorithm_options->num_scanlines % fringeContext_.algorithm_options->opencl_local_workgroup_size[1])
+			+ fringeContext_.algorithm_options->num_scanlines;
 	}
 #endif
 
 #ifdef DSCP4_HAVE_CUDA
-	if (fringeContext_.algorithm_options.compute_method == DSCP4_COMPUTE_METHOD_CUDA)
+	if (fringeContext_.algorithm_options->compute_method == DSCP4_COMPUTE_METHOD_CUDA)
 	{
-		fringeContext_.algorithm_options.cache.cuda_number_of_blocks[0] =
-			fringeContext_.algorithm_options.num_wafels_per_scanline % fringeContext_.algorithm_options.cuda_block_dimensions[0] == 0 ?
-			fringeContext_.algorithm_options.num_wafels_per_scanline / fringeContext_.algorithm_options.cuda_block_dimensions[0] :
-			(fringeContext_.algorithm_options.num_wafels_per_scanline
-			+ (fringeContext_.algorithm_options.cuda_block_dimensions[0]
-			- fringeContext_.algorithm_options.num_wafels_per_scanline % fringeContext_.algorithm_options.cuda_block_dimensions[0]))
-			/ fringeContext_.algorithm_options.cuda_block_dimensions[0];
+		fringeContext_.algorithm_options->cache.cuda_number_of_blocks[0] =
+			fringeContext_.algorithm_options->num_wafels_per_scanline % fringeContext_.algorithm_options->cuda_block_dimensions[0] == 0 ?
+			fringeContext_.algorithm_options->num_wafels_per_scanline / fringeContext_.algorithm_options->cuda_block_dimensions[0] :
+			(fringeContext_.algorithm_options->num_wafels_per_scanline
+			+ (fringeContext_.algorithm_options->cuda_block_dimensions[0]
+			- fringeContext_.algorithm_options->num_wafels_per_scanline % fringeContext_.algorithm_options->cuda_block_dimensions[0]))
+			/ fringeContext_.algorithm_options->cuda_block_dimensions[0];
 
-		fringeContext_.algorithm_options.cache.cuda_number_of_blocks[1] =
-			fringeContext_.algorithm_options.num_scanlines % fringeContext_.algorithm_options.cuda_block_dimensions[1] == 0 ?
-			fringeContext_.algorithm_options.num_scanlines / fringeContext_.algorithm_options.cuda_block_dimensions[1] :
-			(fringeContext_.algorithm_options.num_scanlines
-			+ (fringeContext_.algorithm_options.cuda_block_dimensions[1]
-			- fringeContext_.algorithm_options.num_scanlines % fringeContext_.algorithm_options.cuda_block_dimensions[1]))
-			/ fringeContext_.algorithm_options.cuda_block_dimensions[1];
+		fringeContext_.algorithm_options->cache.cuda_number_of_blocks[1] =
+			fringeContext_.algorithm_options->num_scanlines % fringeContext_.algorithm_options->cuda_block_dimensions[1] == 0 ?
+			fringeContext_.algorithm_options->num_scanlines / fringeContext_.algorithm_options->cuda_block_dimensions[1] :
+			(fringeContext_.algorithm_options->num_scanlines
+			+ (fringeContext_.algorithm_options->cuda_block_dimensions[1]
+			- fringeContext_.algorithm_options->num_scanlines % fringeContext_.algorithm_options->cuda_block_dimensions[1]))
+			/ fringeContext_.algorithm_options->cuda_block_dimensions[1];
 	}
 
 #endif
 
-	fringeContext_.algorithm_options.cache.z_offset = 0.f;
-	fringeContext_.algorithm_options.cache.z_span = 0.5f;
+	fringeContext_.algorithm_options->cache.z_offset = 0.f;
+	fringeContext_.algorithm_options->cache.z_span = 0.5f;
 
 }
 
 #ifdef DSCP4_HAVE_PNG
 void DSCP4Render::saveScreenshotPNG()
 {
-	switch (renderOptions_.render_mode)
+	switch (renderOptions_->render_mode)
 	{
 	case DSCP4_RENDER_MODE_MODEL_VIEWING:
 	{
@@ -2125,9 +2088,9 @@ void DSCP4Render::saveScreenshotPNG()
 		boost::gil::gray32f_view_t depthImg;
 		boost::gil::gray16_view_t depthImg2;
 
-		colorBuf = new unsigned char[fringeContext_.algorithm_options.num_wafels_per_scanline * fringeContext_.algorithm_options.num_scanlines * 4];
-		depthBuf = new float[fringeContext_.algorithm_options.num_wafels_per_scanline * fringeContext_.algorithm_options.num_scanlines];
-		depthBuf2 = new unsigned short[fringeContext_.algorithm_options.num_wafels_per_scanline * fringeContext_.algorithm_options.num_scanlines];
+		colorBuf = new unsigned char[fringeContext_.algorithm_options->num_wafels_per_scanline * fringeContext_.algorithm_options->num_scanlines * 4];
+		depthBuf = new float[fringeContext_.algorithm_options->num_wafels_per_scanline * fringeContext_.algorithm_options->num_scanlines];
+		depthBuf2 = new unsigned short[fringeContext_.algorithm_options->num_wafels_per_scanline * fringeContext_.algorithm_options->num_scanlines];
 
 		glBindTexture(GL_TEXTURE_2D, fringeContext_.view_gl_fbo_color);
 		glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, colorBuf);
@@ -2135,9 +2098,9 @@ void DSCP4Render::saveScreenshotPNG()
 		glGetTexImage(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, GL_FLOAT, depthBuf);
 		glBindTexture(GL_TEXTURE_2D, 0);
 
-		colorImg = boost::gil::interleaved_view(fringeContext_.algorithm_options.num_wafels_per_scanline, fringeContext_.algorithm_options.num_scanlines, (boost::gil::rgba8_pixel_t*)colorBuf, fringeContext_.algorithm_options.num_wafels_per_scanline * 4);
-		depthImg = boost::gil::interleaved_view(fringeContext_.algorithm_options.num_wafels_per_scanline, fringeContext_.algorithm_options.num_scanlines, (boost::gil::gray32f_pixel_t*)depthBuf, fringeContext_.algorithm_options.num_wafels_per_scanline * 4);
-		depthImg2 = boost::gil::interleaved_view(fringeContext_.algorithm_options.num_wafels_per_scanline, fringeContext_.algorithm_options.num_scanlines, (boost::gil::gray16_pixel_t*)depthBuf2, fringeContext_.algorithm_options.num_wafels_per_scanline * 2);
+		colorImg = boost::gil::interleaved_view(fringeContext_.algorithm_options->num_wafels_per_scanline, fringeContext_.algorithm_options->num_scanlines, (boost::gil::rgba8_pixel_t*)colorBuf, fringeContext_.algorithm_options->num_wafels_per_scanline * 4);
+		depthImg = boost::gil::interleaved_view(fringeContext_.algorithm_options->num_wafels_per_scanline, fringeContext_.algorithm_options->num_scanlines, (boost::gil::gray32f_pixel_t*)depthBuf, fringeContext_.algorithm_options->num_wafels_per_scanline * 4);
+		depthImg2 = boost::gil::interleaved_view(fringeContext_.algorithm_options->num_wafels_per_scanline, fringeContext_.algorithm_options->num_scanlines, (boost::gil::gray16_pixel_t*)depthBuf2, fringeContext_.algorithm_options->num_wafels_per_scanline * 2);
 
 		boost::gil::copy_and_convert_pixels(depthImg, depthImg2);
 
@@ -2163,7 +2126,7 @@ void DSCP4Render::saveScreenshotPNG()
 		boost::gil::gray32f_view_t depthImg;
 		boost::gil::gray16_view_t depthImg2;
 
-		colorBuf = new unsigned char[fringeContext_.algorithm_options.cache.stereogram_res_x * fringeContext_.algorithm_options.cache.stereogram_res_y * 4];
+		colorBuf = new unsigned char[fringeContext_.algorithm_options->cache.stereogram_res_x * fringeContext_.algorithm_options->cache.stereogram_res_y * 4];
 
 #ifdef DSCP4_ENABLE_TRACE_LOG
 		auto duration = measureTime<>([&](){
@@ -2171,7 +2134,7 @@ void DSCP4Render::saveScreenshotPNG()
 
 		glBindTexture(GL_TEXTURE_2D, fringeContext_.stereogram_gl_fbo_color);
 		glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, colorBuf);
-		colorImg = boost::gil::interleaved_view(fringeContext_.algorithm_options.cache.stereogram_res_x, fringeContext_.algorithm_options.cache.stereogram_res_y, (boost::gil::rgba8_pixel_t*)colorBuf, fringeContext_.algorithm_options.cache.stereogram_res_x * 4);
+		colorImg = boost::gil::interleaved_view(fringeContext_.algorithm_options->cache.stereogram_res_x, fringeContext_.algorithm_options->cache.stereogram_res_y, (boost::gil::rgba8_pixel_t*)colorBuf, fringeContext_.algorithm_options->cache.stereogram_res_x * 4);
 		boost::gil::png_write_view("dscp4_stereogram_color.png", boost::gil::flipped_up_down_view(colorImg));
 		LOG4CXX_INFO(logger_, "Saved stereogram view COLOR panorama screenshot to '" << (boost::filesystem::current_path() / "dscp4_stereogram_color.png").string() << "'")
 
@@ -2184,14 +2147,14 @@ void DSCP4Render::saveScreenshotPNG()
 		duration = measureTime<>([&](){
 #endif
 
-		depthBuf = new float[fringeContext_.algorithm_options.cache.stereogram_res_x * fringeContext_.algorithm_options.cache.stereogram_res_y];
-		depthBuf2 = new unsigned short[fringeContext_.algorithm_options.cache.stereogram_res_x * fringeContext_.algorithm_options.cache.stereogram_res_y];
+		depthBuf = new float[fringeContext_.algorithm_options->cache.stereogram_res_x * fringeContext_.algorithm_options->cache.stereogram_res_y];
+		depthBuf2 = new unsigned short[fringeContext_.algorithm_options->cache.stereogram_res_x * fringeContext_.algorithm_options->cache.stereogram_res_y];
 		glBindTexture(GL_TEXTURE_2D, fringeContext_.stereogram_gl_fbo_depth);
 		glGetTexImage(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, GL_FLOAT, depthBuf);
 		glBindTexture(GL_TEXTURE_2D, 0);
 
-		depthImg = boost::gil::interleaved_view(fringeContext_.algorithm_options.cache.stereogram_res_x, fringeContext_.algorithm_options.cache.stereogram_res_y, (boost::gil::gray32f_pixel_t*)depthBuf, fringeContext_.algorithm_options.cache.stereogram_res_x * 4);
-		depthImg2 = boost::gil::interleaved_view(fringeContext_.algorithm_options.cache.stereogram_res_x, fringeContext_.algorithm_options.cache.stereogram_res_y, (boost::gil::gray16_pixel_t*)depthBuf2, fringeContext_.algorithm_options.cache.stereogram_res_x * 2);
+		depthImg = boost::gil::interleaved_view(fringeContext_.algorithm_options->cache.stereogram_res_x, fringeContext_.algorithm_options->cache.stereogram_res_y, (boost::gil::gray32f_pixel_t*)depthBuf, fringeContext_.algorithm_options->cache.stereogram_res_x * 4);
+		depthImg2 = boost::gil::interleaved_view(fringeContext_.algorithm_options->cache.stereogram_res_x, fringeContext_.algorithm_options->cache.stereogram_res_y, (boost::gil::gray16_pixel_t*)depthBuf2, fringeContext_.algorithm_options->cache.stereogram_res_x * 2);
 		boost::gil::copy_and_convert_pixels(depthImg, depthImg2);
 		boost::gil::png_write_view("dscp4_stereogram_depth.png", boost::gil::flipped_up_down_view(depthImg2));
 		
@@ -2203,7 +2166,7 @@ void DSCP4Render::saveScreenshotPNG()
 #endif
 
 
-		for (unsigned int i = 0; i < fringeContext_.algorithm_options.num_views_x; i++)
+		for (unsigned int i = 0; i < fringeContext_.algorithm_options->num_views_x; i++)
 		{
 
 				std::stringstream depthFilenameSS;
@@ -2220,12 +2183,12 @@ void DSCP4Render::saveScreenshotPNG()
 #endif
 
 				auto colorSubImg = boost::gil::subimage_view(colorImg,
-					fringeContext_.algorithm_options.num_wafels_per_scanline * (i%static_cast<unsigned int>(sqrt(fringeContext_.algorithm_options.num_views_x))),
-					fringeContext_.algorithm_options.num_scanlines *(i / static_cast<unsigned int>(sqrt(fringeContext_.algorithm_options.num_views_x))),
-					fringeContext_.algorithm_options.num_wafels_per_scanline,
-					fringeContext_.algorithm_options.num_scanlines);
+					fringeContext_.algorithm_options->num_wafels_per_scanline * (i%static_cast<unsigned int>(sqrt(fringeContext_.algorithm_options->num_views_x))),
+					fringeContext_.algorithm_options->num_scanlines *(i / static_cast<unsigned int>(sqrt(fringeContext_.algorithm_options->num_views_x))),
+					fringeContext_.algorithm_options->num_wafels_per_scanline,
+					fringeContext_.algorithm_options->num_scanlines);
 				boost::gil::png_write_view(colorFilename.c_str(), boost::gil::flipped_up_down_view(colorSubImg));
-				LOG4CXX_INFO(logger_, "Saved stereogram view COLOR screenshot " << i + 1 << " of " << fringeContext_.algorithm_options.num_views_x << " to '" << (boost::filesystem::current_path() / colorFilename).string() << "'")
+				LOG4CXX_INFO(logger_, "Saved stereogram view COLOR screenshot " << i + 1 << " of " << fringeContext_.algorithm_options->num_views_x << " to '" << (boost::filesystem::current_path() / colorFilename).string() << "'")
 
 #ifdef DSCP4_ENABLE_TRACE_LOG
 			});
@@ -2236,12 +2199,12 @@ void DSCP4Render::saveScreenshotPNG()
 				duration = measureTime<>([&](){
 #endif
 					auto depthSubImg = boost::gil::subimage_view(depthImg2,
-					fringeContext_.algorithm_options.num_wafels_per_scanline * (i%static_cast<unsigned int>(sqrt(fringeContext_.algorithm_options.num_views_x))),
-					fringeContext_.algorithm_options.num_scanlines *(i / static_cast<unsigned int>(sqrt(fringeContext_.algorithm_options.num_views_x))),
-					fringeContext_.algorithm_options.num_wafels_per_scanline,
-					fringeContext_.algorithm_options.num_scanlines);
+					fringeContext_.algorithm_options->num_wafels_per_scanline * (i%static_cast<unsigned int>(sqrt(fringeContext_.algorithm_options->num_views_x))),
+					fringeContext_.algorithm_options->num_scanlines *(i / static_cast<unsigned int>(sqrt(fringeContext_.algorithm_options->num_views_x))),
+					fringeContext_.algorithm_options->num_wafels_per_scanline,
+					fringeContext_.algorithm_options->num_scanlines);
 				boost::gil::png_write_view(depthFilename.c_str(), boost::gil::flipped_up_down_view(depthSubImg));
-				LOG4CXX_INFO(logger_, "Saved stereogram view DEPTH screenshot " << i + 1 << " of " << fringeContext_.algorithm_options.num_views_x << " to '" << (boost::filesystem::current_path() / depthFilename).string() << "'")
+				LOG4CXX_INFO(logger_, "Saved stereogram view DEPTH screenshot " << i + 1 << " of " << fringeContext_.algorithm_options->num_views_x << " to '" << (boost::filesystem::current_path() / depthFilename).string() << "'")
 #ifdef DSCP4_ENABLE_TRACE_LOG
 			});
 			LOG4CXX_TRACE(logger_, "Saving stereogram view DEPTH screenshot took " << duration << " ms (" << 1.f / duration * 1000 << " fps)")
@@ -2256,10 +2219,10 @@ void DSCP4Render::saveScreenshotPNG()
 	case DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE:
 	{
 		unsigned char * fringeBuffer = nullptr;
-		fringeBuffer = new unsigned char[fringeContext_.algorithm_options.cache.fringe_buffer_res_x * fringeContext_.algorithm_options.cache.fringe_buffer_res_y * 4];
+		fringeBuffer = new unsigned char[fringeContext_.algorithm_options->cache.fringe_buffer_res_x * fringeContext_.algorithm_options->cache.fringe_buffer_res_y * 4];
 
 
-		for (unsigned int i = 0; i < fringeContext_.algorithm_options.cache.num_fringe_buffers; i++)
+		for (unsigned int i = 0; i < fringeContext_.algorithm_options->cache.num_fringe_buffers; i++)
 		{
 			std::stringstream fringeFilenameSS;
 			fringeFilenameSS << "dscp4_fringe_pattern_" << std::setfill('0') << std::setw(2) << i << ".png";
@@ -2275,17 +2238,17 @@ void DSCP4Render::saveScreenshotPNG()
 			glBindTexture(GL_TEXTURE_2D, fringeContext_.fringe_gl_tex_out[i]);
 			glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, fringeBuffer);
 
-			auto fringeBufferNoAlpha = new unsigned char[fringeContext_.algorithm_options.cache.fringe_buffer_res_x * fringeContext_.algorithm_options.cache.fringe_buffer_res_y * 3];
+			auto fringeBufferNoAlpha = new unsigned char[fringeContext_.algorithm_options->cache.fringe_buffer_res_x * fringeContext_.algorithm_options->cache.fringe_buffer_res_y * 3];
 
-			auto fringeImage = boost::gil::interleaved_view(fringeContext_.algorithm_options.cache.fringe_buffer_res_x, fringeContext_.algorithm_options.cache.fringe_buffer_res_y, (boost::gil::rgba8_pixel_t*)fringeBuffer, fringeContext_.algorithm_options.cache.fringe_buffer_res_x * 4);
+			auto fringeImage = boost::gil::interleaved_view(fringeContext_.algorithm_options->cache.fringe_buffer_res_x, fringeContext_.algorithm_options->cache.fringe_buffer_res_y, (boost::gil::rgba8_pixel_t*)fringeBuffer, fringeContext_.algorithm_options->cache.fringe_buffer_res_x * 4);
 			
-			auto fringeImageNoAlpha = boost::gil::interleaved_view(fringeContext_.algorithm_options.cache.fringe_buffer_res_x, fringeContext_.algorithm_options.cache.fringe_buffer_res_y, (boost::gil::rgb8_pixel_t*)fringeBufferNoAlpha, fringeContext_.algorithm_options.cache.fringe_buffer_res_x * 3);
+			auto fringeImageNoAlpha = boost::gil::interleaved_view(fringeContext_.algorithm_options->cache.fringe_buffer_res_x, fringeContext_.algorithm_options->cache.fringe_buffer_res_y, (boost::gil::rgb8_pixel_t*)fringeBufferNoAlpha, fringeContext_.algorithm_options->cache.fringe_buffer_res_x * 3);
 			boost::gil::copy_and_convert_pixels(fringeImage, fringeImageNoAlpha);
 
 			boost::gil::png_write_view(fringeFilename.c_str(), fringeImage);
 
 
-			LOG4CXX_INFO(logger_, "Saved hologram fringe pattern buffer " << i + 1 << " of " << fringeContext_.algorithm_options.cache.num_fringe_buffers << " to '" << (boost::filesystem::current_path() / fringeFilename).string() << "'")
+			LOG4CXX_INFO(logger_, "Saved hologram fringe pattern buffer " << i + 1 << " of " << fringeContext_.algorithm_options->cache.num_fringe_buffers << " to '" << (boost::filesystem::current_path() / fringeFilename).string() << "'")
 
 #ifdef DSCP4_ENABLE_TRACE_LOG
 			});
@@ -2325,17 +2288,17 @@ void DSCP4Render::setFullScreen(bool fullscreen)
 			}
 			else
 			{
-				switch (renderOptions_.render_mode)
+				switch (renderOptions_->render_mode)
 				{
 				case DSCP4_RENDER_MODE_MODEL_VIEWING:
-					windowWidth_[w] = fringeContext_.algorithm_options.num_wafels_per_scanline;
-					windowHeight_[w] = fringeContext_.algorithm_options.num_scanlines;
+					windowWidth_[w] = fringeContext_.algorithm_options->num_wafels_per_scanline;
+					windowHeight_[w] = fringeContext_.algorithm_options->num_scanlines;
 					x = (bounds.w - windowWidth_[w]) / 2;
 					y = (bounds.h - windowHeight_[w]) / 2;
 					break;
 				case DSCP4_RENDER_MODE_STEREOGRAM_VIEWING:
 					windowWidth_[w] *= 0.8f;
-					windowHeight_[w] = windowWidth_[w] * (float)fringeContext_.algorithm_options.cache.stereogram_res_y / (float)fringeContext_.algorithm_options.cache.stereogram_res_x;
+					windowHeight_[w] = windowWidth_[w] * (float)fringeContext_.algorithm_options->cache.stereogram_res_y / (float)fringeContext_.algorithm_options->cache.stereogram_res_x;
 					x = (bounds.w - windowWidth_[w]) / 2;
 					y = (bounds.h - windowHeight_[w]) / 2;
 					break;
@@ -2349,7 +2312,7 @@ void DSCP4Render::setFullScreen(bool fullscreen)
 					x += windowHeight_[w] * 0.03f;
 					y += windowWidth_[w] * 0.03f;
 					windowHeight_[w] *= 0.8f;
-					windowWidth_[w] = windowHeight_[w] * (float)fringeContext_.algorithm_options.cache.fringe_buffer_res_x / (float)fringeContext_.algorithm_options.cache.fringe_buffer_res_y;
+					windowWidth_[w] = windowHeight_[w] * (float)fringeContext_.algorithm_options->cache.fringe_buffer_res_x / (float)fringeContext_.algorithm_options->cache.fringe_buffer_res_y;
 					break;
 				default:
 					break;

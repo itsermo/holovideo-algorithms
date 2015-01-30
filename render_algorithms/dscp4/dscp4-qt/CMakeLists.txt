@@ -3,11 +3,11 @@
 cmake_minimum_required(VERSION 2.8.12)
 cmake_policy(SET CMP0020 NEW)
 
-set(DSCP4_APP_QT_BIN "dscp4-qt")
+set(DSCP4_QT_APP_BIN "dscp4-qt")
 
-project(${DSCP4_APP_QT_BIN})
+project(${DSCP4_QT_APP_BIN})
 
-set(DSCP4_APP_QT_BIN ${PROJECT_NAME} PARENT_SCOPE)
+set(DSCP4_QT_APP_BIN ${PROJECT_NAME} PARENT_SCOPE)
 
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -32,11 +32,16 @@ if(X11_FOUND)
 	add_definitions(-DDSCP4_HAVE_X11)
 endif()
 
-set(SOURCE_FILES
-    src/main.cc
-    src/mainwindow.h
-    src/mainwindow.cc
+file(GLOB SOURCE_FILES
+    src/*.cc
+	src/*.h
+	src/*.cpp
+	src/*.hpp
+	../dscp4/DSCP4ProgOptions.cpp
+	../dscp4/DSCP4ProgOptions.hpp
 )
+
+include_directories(../dscp4 ../libdscp4)
 
 if (WIN32)
     set(SOURCE_FILES ${SOURCE_FILES} win/dscp4-qt.rc)
@@ -57,7 +62,7 @@ if (APPLE)
     set_source_files_properties(AppIcon.icns PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
 endif ()
 
-add_executable(${DSCP4_APP_QT_BIN} MACOSX_BUNDLE
+add_executable(${DSCP4_QT_APP_BIN} MACOSX_BUNDLE
     ${SOURCE_FILES}
     ${UI_HEADERS}
     ${UI_FILES}
@@ -72,16 +77,16 @@ set(MACOSX_BUNDLE_COPYRIGHT "Copyright (c) MIT")
 set(MACOSX_BUNDLE_GUI_IDENTIFIER "edu.mit.media.obmg.dscp4")
 set(MACOSX_BUNDLE_ICON_FILE AppIcon.icns)
 
-qt5_use_modules(${DSCP4_APP_QT_BIN} Widgets)
+qt5_use_modules(${DSCP4_QT_APP_BIN} Widgets)
 
-target_link_libraries(${DSCP4_APP_QT_BIN} dscp4-lib ${Boost_LIBRARIES} ${assimp_LIBRARIES})
+target_link_libraries(${DSCP4_QT_APP_BIN} dscp4-lib ${Boost_LIBRARIES} ${assimp_LIBRARIES})
 
 if(WITH_LIBLOG4CXX)
-	target_link_libraries(${DSCP4_APP_QT_BIN} ${LIBLOG4CXX_LIBRARIES})
+	target_link_libraries(${DSCP4_QT_APP_BIN} ${LIBLOG4CXX_LIBRARIES})
 endif()
 
 if (MSVC)
-    set_target_properties(${DSCP4_APP_QT_BIN} PROPERTIES
+    set_target_properties(${DSCP4_QT_APP_BIN} PROPERTIES
         WIN32_EXECUTABLE YES
         LINK_FLAGS "/ENTRY:mainCRTStartup"
     )
@@ -92,7 +97,7 @@ file(GLOB RES_FILES
 	"res/*.png"
 )
 
-install(TARGETS ${DSCP4_APP_QT_BIN} DESTINATION bin)
+install(TARGETS ${DSCP4_QT_APP_BIN} DESTINATION bin)
 install(FILES ${RES_FILES} DESTINATION share/dscp4/assets)
 
 set(DSCP4_APP_QT_BIN_INSTALL_PATH "${CMAKE_INSTALL_PREFIX}/bin" PARENT_SCOPE)

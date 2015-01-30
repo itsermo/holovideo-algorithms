@@ -86,8 +86,8 @@ namespace dscp4
 	public:
 
 		DSCP4Render();
-		DSCP4Render(render_options_t renderOptions,
-			algorithm_options_t algorithmOptions,
+		DSCP4Render(render_options_t *renderOptions,
+			algorithm_options_t *algorithmOptions,
 			display_options_t displayOptions,
 			unsigned int verbosity);
 		~DSCP4Render();
@@ -104,9 +104,9 @@ namespace dscp4
 		void addPointCloud(const char *id, float *points, int numPoints, float pointSize, bool hasColorData = true);
 		void removePointCloud(const char *id) { this->removeMesh(id); }
 
-		void setRenderMode(render_mode_t renderMode) { renderOptions_.render_mode = renderMode; }
-		void setShadingModel(shader_model_t shadeModel) { renderOptions_.shader_model = shadeModel; }
-		void setAutoScaleEnabled(bool autoScaleEnabled) { renderOptions_.auto_scale_enabled = autoScaleEnabled; }
+		void setRenderMode(render_mode_t renderMode) { renderOptions_->render_mode = renderMode; }
+		void setShadingModel(shader_model_t shadeModel) { renderOptions_->shader_model = shadeModel; }
+		void setAutoScaleEnabled(bool autoScaleEnabled) { renderOptions_->auto_scale_enabled = autoScaleEnabled; }
 
 		void translateMesh(std::string meshID, float x, float y, float z);
 		void rotateMesh(std::string meshID, float angle, float x, float y, float z);
@@ -283,7 +283,7 @@ namespace dscp4
 		std::atomic<float> rotateIncrement_;
 		std::atomic<bool> spinOn_;
 
-		render_options_t renderOptions_;
+		render_options_t *renderOptions_;
 
 		dscp4_fringe_context_t fringeContext_;
 		void * computeContext_;
