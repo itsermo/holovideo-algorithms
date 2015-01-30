@@ -45,7 +45,7 @@
      </rect>
     </property>
     <property name="currentIndex">
-     <number>0</number>
+     <number>1</number>
     </property>
     <property name="movable">
      <bool>false</bool>
@@ -1333,8 +1333,14 @@
        <property name="buttonSymbols">
         <enum>QAbstractSpinBox::PlusMinus</enum>
        </property>
+       <property name="minimum">
+        <double>-9999999999.000000000000000</double>
+       </property>
+       <property name="maximum">
+        <double>99999999999.000000000000000</double>
+       </property>
        <property name="singleStep">
-        <double>0.010000000000000</double>
+        <double>0.100000000000000</double>
        </property>
       </widget>
       <widget class="QDoubleSpinBox" name="lightPositionYDoubleSpinBox">
@@ -1352,8 +1358,14 @@
        <property name="buttonSymbols">
         <enum>QAbstractSpinBox::PlusMinus</enum>
        </property>
+       <property name="minimum">
+        <double>-9999999999.000000000000000</double>
+       </property>
+       <property name="maximum">
+        <double>9999999999.000000000000000</double>
+       </property>
        <property name="singleStep">
-        <double>0.010000000000000</double>
+        <double>0.100000000000000</double>
        </property>
       </widget>
       <widget class="QDoubleSpinBox" name="lightPositionZDoubleSpinBox">
@@ -1371,8 +1383,14 @@
        <property name="buttonSymbols">
         <enum>QAbstractSpinBox::PlusMinus</enum>
        </property>
+       <property name="minimum">
+        <double>-9999999999.000000000000000</double>
+       </property>
+       <property name="maximum">
+        <double>9999999999.000000000000000</double>
+       </property>
        <property name="singleStep">
-        <double>0.010000000000000</double>
+        <double>0.100000000000000</double>
        </property>
       </widget>
       <widget class="QLabel" name="renderModeLabel">
@@ -1953,7 +1971,7 @@
         <set>Qt::AlignCenter</set>
        </property>
       </widget>
-      <widget class="QLabel" name="computeModeLabel">
+      <widget class="QLabel" name="computeMethodLabel">
        <property name="geometry">
         <rect>
          <x>490</x>
@@ -1963,13 +1981,13 @@
         </rect>
        </property>
        <property name="text">
-        <string>Compute Mode</string>
+        <string>Compute Method</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignCenter</set>
        </property>
       </widget>
-      <widget class="QComboBox" name="computeModeComboBox">
+      <widget class="QComboBox" name="computeMethodComboBox">
        <property name="geometry">
         <rect>
          <x>490</x>
@@ -2059,7 +2077,7 @@
         <number>2048</number>
        </property>
       </widget>
-      <widget class="QSpinBox" name="numAOMChannelsSpinBox_2">
+      <widget class="QSpinBox" name="numWafelsSpinBox">
        <property name="geometry">
         <rect>
          <x>80</x>
@@ -2078,7 +2096,7 @@
         <number>0</number>
        </property>
       </widget>
-      <widget class="QSpinBox" name="numHeadsSpinBox_2">
+      <widget class="QSpinBox" name="xViewsSpinBox">
        <property name="geometry">
         <rect>
          <x>80</x>
@@ -2097,7 +2115,7 @@
         <number>0</number>
        </property>
       </widget>
-      <widget class="QSpinBox" name="numHeadsPerGPUSpinBox_2">
+      <widget class="QSpinBox" name="yViewsSpinBox">
        <property name="geometry">
         <rect>
          <x>80</x>
@@ -2116,7 +2134,7 @@
         <number>0</number>
        </property>
       </widget>
-      <widget class="QSpinBox" name="numAOMChannelsSpinBox_3">
+      <widget class="QSpinBox" name="numScanlinesSpinBox">
        <property name="geometry">
         <rect>
          <x>80</x>
@@ -2378,7 +2396,7 @@
         <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
        </property>
       </widget>
-      <widget class="QDoubleSpinBox" name="clockRateDoubleSpinBox">
+      <widget class="QSpinBox" name="clockRateSpinBox">
        <property name="geometry">
         <rect>
          <x>220</x>
@@ -2390,14 +2408,8 @@
        <property name="toolTip">
         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Sets the pixel clockrate&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
-       <property name="decimals">
-        <number>0</number>
-       </property>
        <property name="maximum">
-        <double>99999999999999.000000000000000</double>
-       </property>
-       <property name="value">
-        <double>0.000000000000000</double>
+        <number>999999999</number>
        </property>
       </widget>
       <widget class="QSpinBox" name="numHeadsSpinBox">
