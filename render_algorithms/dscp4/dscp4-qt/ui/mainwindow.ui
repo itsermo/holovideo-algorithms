@@ -1789,14 +1789,14 @@
       <widget class="QLabel" name="zFarLabel">
        <property name="geometry">
         <rect>
-         <x>130</x>
+         <x>140</x>
          <y>120</y>
-         <width>41</width>
+         <width>31</width>
          <height>21</height>
         </rect>
        </property>
        <property name="text">
-        <string>Z-Far</string>
+        <string>Far</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -1827,14 +1827,14 @@
       <widget class="QLabel" name="zNearLabel">
        <property name="geometry">
         <rect>
-         <x>130</x>
+         <x>140</x>
          <y>90</y>
-         <width>41</width>
+         <width>31</width>
          <height>21</height>
         </rect>
        </property>
        <property name="text">
-        <string>Z-Near</string>
+        <string>Near</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>

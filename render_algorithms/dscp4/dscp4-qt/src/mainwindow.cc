@@ -1,9 +1,10 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "QLogAppender.h"
 
 #include <boost/filesystem.hpp>
 #include <qfiledialog.h>
-
+#include <boost/tokenizer.hpp>
 
 MainWindow::MainWindow(QWidget *parent)
 : MainWindow(nullptr, parent)
@@ -13,6 +14,20 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::MainWindow(QDSCP4Settings* settings, QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow), settings_(settings)
 {
+
+#ifdef DSCP4_HAVE_LOG4CXX
+
+	logger_ = log4cxx::Logger::getLogger("edu.mit.media.obmg.holovideo.dscp4");
+
+#ifdef WIN32
+	log4cxx::PatternLayoutPtr logLayoutPtr = new log4cxx::PatternLayout(L"%-5p\t%m%n");
+#else
+	log4cxx::PatternLayoutPtr logLayoutPtr = new log4cxx::PatternLayout("%-5p\t%m%n");
+#endif
+	log4cxx::helpers::ObjectPtrT<log4cxx::QLogAppender> logAppenderPtr = new log4cxx::QLogAppender(logLayoutPtr);
+	log4cxx::BasicConfigurator::configure(logAppenderPtr);
+#endif
+
 	ui->setupUi(this);
 
 	// General/Input options
@@ -123,15 +138,30 @@ MainWindow::MainWindow(QDSCP4Settings* settings, QWidget *parent) : QMainWindow(
 	populateKernelFiles();
 	populateShaderFiles();
 
-	QObject::connect(ui->modelsPathLineEdit, SIGNAL(editingFinished()), this, SLOT(populateModelFiles()));
-	QObject::connect(ui->kernelsPathLineEdit, SIGNAL(editingFinished()), this, SLOT(populateKernelFiles()));
+	QObject::connect(ui->modelsPathLineEdit, SIGNAL(textChanged(QString)), this, SLOT(populateModelFiles()));
+	QObject::connect(ui->kernelsPathLineEdit, SIGNAL(textChanged(QString)), this, SLOT(populateKernelFiles()));
+	QObject::connect(ui->shadersPathLineEdit, SIGNAL(textChanged(QString)), this, SLOT(populateShaderFiles()));
+
 
 	QObject::connect(ui->inputFileToolButton, SIGNAL(clicked()), this, SLOT(browseAndSetInputModelFile()));
 	QObject::connect(ui->openclKernelFileToolButton, SIGNAL(clicked()), this, SLOT(browseAndSetOpenCLKernelFile()));
 	QObject::connect(ui->shaderFileNameToolButton, SIGNAL(clicked()), this, SLOT(browseAndSetShaderFileName()));
 
+	QObject::connect(ui->installPathToolButton, SIGNAL(clicked()), this, SLOT(browseAndSetInstallPath()));
+	QObject::connect(ui->binPathToolButton, SIGNAL(clicked()), this, SLOT(browseAndSetBinPath()));
+	QObject::connect(ui->modelPathToolButton, SIGNAL(clicked()), this, SLOT(browseAndSetModelsPath()));
+	QObject::connect(ui->libPathToolButton, SIGNAL(clicked()), this, SLOT(browseAndSetLibPath()));
+	QObject::connect(ui->shadersPathToolButton, SIGNAL(clicked()), this, SLOT(browseAndSetShadersPath()));
+	QObject::connect(ui->kernelsPathToolButton, SIGNAL(clicked()), this, SLOT(browseAndSetKernelsPath()));
+
 	// Log
 	QObject::connect(ui->clearLogButton, SIGNAL(clicked()), ui->logTextEdit, SLOT(clear()));
+
+#ifdef DSCP4_HAVE_LOG4CXX
+	QObject::connect(logAppenderPtr, SIGNAL(gotNewLogMessage(QString)), ui->logTextEdit, SLOT(append(QString)));
+#endif
+
+	LOG4CXX_INFO(logger_, "Logger initialized")
 
 	ui->tabWidget->setCurrentIndex(0);
 }
@@ -149,6 +179,11 @@ void MainWindow::populateModelFiles()
 	boost::filesystem::directory_iterator end_iter;
 
 	QString initialSelection = ui->inputFileComboBox->currentText();
+	std::string supportedExtStr;
+	assetImporter_.GetExtensionList(supportedExtStr);
+
+	QString supportedExtension = QString::fromStdString(supportedExtStr);
+	QStringList extList = supportedExtension.remove("*").split(";");
 
 	ui->inputFileComboBox->clear();
 
@@ -158,7 +193,11 @@ void MainWindow::populateModelFiles()
 		{
 			if (boost::filesystem::is_regular_file(dir_iter->status()))
 			{
-				ui->inputFileComboBox->addItem(QString::fromStdString(dir_iter->path().filename().string()));
+				for (const auto&t : extList)
+				{
+					if (dir_iter->path().extension().string() == t.toLower().toStdString())
+						ui->inputFileComboBox->addItem(QString::fromStdString(dir_iter->path().filename().string()));
+				}
 			}
 		}
 	}
@@ -176,14 +215,16 @@ void MainWindow::populateKernelFiles()
 	QString initialSelection = ui->openclKernelFileComboBox->currentText();
 
 	ui->openclKernelFileComboBox->clear();
-
+	
 	if (boost::filesystem::exists(kernelsPath) && boost::filesystem::is_directory(kernelsPath))
 	{
 		for (boost::filesystem::directory_iterator dir_iter(kernelsPath); dir_iter != end_iter; ++dir_iter)
 		{
 			if (boost::filesystem::is_regular_file(dir_iter->status()))
 			{
-				if (dir_iter->path().extension() == ".cl")
+				auto extStr = dir_iter->path().extension().string();
+				std::transform(extStr.begin(), extStr.end(), extStr.begin(), std::tolower);
+				if (extStr == ".cl")
 					ui->openclKernelFileComboBox->addItem(QString::fromStdString(dir_iter->path().filename().string()));
 			}
 		}
@@ -208,7 +249,9 @@ void MainWindow::populateShaderFiles()
 		{
 			if (boost::filesystem::is_regular_file(dir_iter->status()))
 			{
-				if (dir_iter->path().extension() == ".frag")
+				auto extStr = dir_iter->path().extension().string();
+				std::transform(extStr.begin(), extStr.end(), extStr.begin(), std::tolower);
+				if (extStr == ".frag")
 					ui->shaderFileNameComboBox->addItem(QString::fromStdString(dir_iter->path().filename().stem().string()));
 			}
 		}
@@ -224,7 +267,7 @@ QString MainWindow::browseDir()
 	dialog.setFileMode(QFileDialog::Directory);
 	dialog.setOption(QFileDialog::ShowDirsOnly);
 
-	return dialog.getOpenFileName(this);
+	return dialog.getExistingDirectory(this);
 }
 
 QString MainWindow::browseFile(const char * title, QString currentDir, const char * filter)
