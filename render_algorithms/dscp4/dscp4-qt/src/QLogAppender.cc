@@ -11,10 +11,11 @@ IMPLEMENT_LOG4CXX_OBJECT(QLogAppender)
 
 QLogAppender::QLogAppender()  {}
 
-QLogAppender::QLogAppender(const LayoutPtr& layoutPtr)
+QLogAppender::QLogAppender(ObjectPtrT<log4cxx::Layout> const& layoutPtr)
 {
 	this->setLayout(layoutPtr);
 }
+
 
 QLogAppender::~QLogAppender() {}
 

@@ -22,7 +22,7 @@ namespace log4cxx
 		END_LOG4CXX_CAST_MAP()
 
 		QLogAppender();
-		QLogAppender(const LayoutPtr& layoutPtr);
+		QLogAppender(log4cxx::helpers::ObjectPtrT<log4cxx::Layout> const& layoutPtr);
 		~QLogAppender();
 
 		//This method is called by the AppenderSkeleton#doAppend method

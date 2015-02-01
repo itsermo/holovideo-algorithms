@@ -219,8 +219,8 @@ private:
 			emit valueChanged(newValue);
 		}
 		
-		MainWindow* parentWindow = (MainWindow*)this->parent();
-		parentWindow->forceRedraw();
+		//MainWindow* parentWindow = (MainWindow*)this->parent();
+		//parentWindow->forceRedraw();
 	}
 
 	DSCP4ProgramOptions programOptions_;

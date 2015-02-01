@@ -36,7 +36,7 @@ nvidiaSettingsProcess_(nullptr)
 	logAppenderPtr->setName(log4cxx::LogString(L"dscp4-qt"));
 #else
 	log4cxx::PatternLayoutPtr logLayoutPtr = new log4cxx::PatternLayout("%-5p\t%m%n");
-	log4cxx::helpers::ObjectPtrT<log4cxx::QLogAppender> logAppenderPtr = new log4cxx::QLogAppender(logLayoutPtr);
+	log4cxx::helpers::ObjectPtrT<log4cxx::QLogAppender> logAppenderPtr = new log4cxx::QLogAppender((log4cxx::helpers::ObjectPtrT<log4cxx::Layout>)logLayoutPtr);
 	logAppenderPtr->setName(log4cxx::LogString("dscp4-qt"));
 #endif
 	logger_->addAppender(logAppenderPtr);
@@ -288,7 +288,7 @@ void MainWindow::populateKernelFiles()
 			if (boost::filesystem::is_regular_file(dir_iter->status()))
 			{
 				auto extStr = dir_iter->path().extension().string();
-				std::transform(extStr.begin(), extStr.end(), extStr.begin(), std::tolower);
+				std::transform(extStr.begin(), extStr.end(), extStr.begin(), ::tolower);
 				if (extStr == ".cl")
 					ui->openclKernelFileComboBox->addItem(QString::fromStdString(dir_iter->path().filename().string()));
 			}
@@ -315,7 +315,7 @@ void MainWindow::populateShaderFiles()
 			if (boost::filesystem::is_regular_file(dir_iter->status()))
 			{
 				auto extStr = dir_iter->path().extension().string();
-				std::transform(extStr.begin(), extStr.end(), extStr.begin(), std::tolower);
+				std::transform(extStr.begin(), extStr.end(), extStr.begin(), ::tolower);
 				if (extStr == ".frag")
 					ui->shaderFileNameComboBox->addItem(QString::fromStdString(dir_iter->path().filename().stem().string()));
 			}
@@ -372,9 +372,9 @@ void MainWindow::browseAndSetShaderFileName()
 	
 	if (!result.isNull())
 	{
-		auto name = result.splitRef(".");
-		ui->shaderFileNameComboBox->addItem(name[0].toString());
-		ui->shaderFileNameComboBox->setCurrentIndex(ui->shaderFileNameComboBox->findText(name[0].toString()));
+		auto name = result.split(".");
+		ui->shaderFileNameComboBox->addItem(name[0]);
+		ui->shaderFileNameComboBox->setCurrentIndex(ui->shaderFileNameComboBox->findText(name[0]));
 	}
 }
 
@@ -664,7 +664,7 @@ void MainWindow::setSpinOn(bool spinOn)
 
 void MainWindow::enableUnchangeableUI()
 {
-	for each (QWidget* var in unchangeables_)
+	for (QWidget* var : unchangeables_)
 	{
 		var->setEnabled(true);
 	}
@@ -672,7 +672,7 @@ void MainWindow::enableUnchangeableUI()
 
 void MainWindow::disableUnchangeableUI()
 {
-	for each (QWidget* var in unchangeables_)
+	for (QWidget* var : unchangeables_)
 	{
 		var->setEnabled(false);
 	}
@@ -680,7 +680,7 @@ void MainWindow::disableUnchangeableUI()
 
 void MainWindow::enableControlsUI()
 {
-	for each (QWidget* var in dscp4Controls_)
+	for (QWidget* var : dscp4Controls_)
 	{
 		var->setEnabled(true);
 	}
@@ -688,7 +688,7 @@ void MainWindow::enableControlsUI()
 
 void MainWindow::disableControlsUI()
 {
-	for each (QWidget* var in dscp4Controls_)
+	for (QWidget* var : dscp4Controls_)
 	{
 		var->setEnabled(false);
 	}
