@@ -84,4 +84,25 @@ extern "C"
 	{
 		((dscp4::DSCP4Render*)renderContext)->rotateMesh(id, angle, x, y, z);
 	}
+
+	DSCP4_API void dscp4_SetSpinOn(dscp4_context_t renderContext, int spinOn)
+	{
+		((dscp4::DSCP4Render*)renderContext)->setSpinOn(spinOn);
+	}
+
+	DSCP4_API int dscp4_GetSpinOn(dscp4_context_t renderContext)
+	{
+		return ((dscp4::DSCP4Render*)renderContext)->getSpinOn();
+	}
+
+	DSCP4_API void dscp4_SaveFrameBufferToPNG(dscp4_context_t renderContext)
+	{
+		((dscp4::DSCP4Render*)renderContext)->saveScreenshotPNG();
+	}
+
+	DSCP4_API void dscp4_ForceRedraw(dscp4_context_t renderContext)
+	{
+		((dscp4::DSCP4Render*)renderContext)->Update();
+	}
+
 }

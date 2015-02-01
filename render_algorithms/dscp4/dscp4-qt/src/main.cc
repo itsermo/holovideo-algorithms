@@ -17,7 +17,8 @@ int main(int argc, char *argv[])
     appIcon.addFile(":/Icons/AppIcon128");
     app.setWindowIcon(appIcon);
 
-    MainWindow mainWindow(new QDSCP4Settings(argc, (const char **)argv));
+    MainWindow mainWindow(argc, (const char **)argv);
+
     mainWindow.show();
     return app.exec();
 }

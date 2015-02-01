@@ -4,6 +4,7 @@
 #include <qobject.h>
 #include <DSCP4ProgOptions.hpp>
 #include "../libdscp4/dscp4_defs.h"
+#include "mainwindow.h"
 
 namespace Ui
 {
@@ -14,8 +15,8 @@ class QDSCP4Settings : public QObject {
 	Q_OBJECT
 
 public:
-	QDSCP4Settings();
-	QDSCP4Settings(int argc, const char **argv);
+	QDSCP4Settings(QWidget *parent = 0);
+	QDSCP4Settings(int argc, const char **argv, QWidget *parent = 0);
 
 	void restoreDefaultSettings();
 	void populateSettings();
@@ -217,6 +218,9 @@ private:
 			where = newValue;
 			emit valueChanged(newValue);
 		}
+		
+		MainWindow* parentWindow = (MainWindow*)this->parent();
+		parentWindow->forceRedraw();
 	}
 
 	DSCP4ProgramOptions programOptions_;

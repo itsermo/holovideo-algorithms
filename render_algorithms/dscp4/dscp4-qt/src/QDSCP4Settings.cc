@@ -1,12 +1,12 @@
 #include "QDSCP4Settings.h"
 
-QDSCP4Settings::QDSCP4Settings() : QDSCP4Settings(0, nullptr)
+QDSCP4Settings::QDSCP4Settings(QWidget *parent) : QDSCP4Settings(0, nullptr, parent)
 {
 
 
 }
 
-QDSCP4Settings::QDSCP4Settings(int argc, const char **argv) :
+QDSCP4Settings::QDSCP4Settings(int argc, const char **argv, QWidget *parent) : QObject(parent),
 algorithmOptions_(new algorithm_options_t{}),
 renderOptions_(new render_options_t{}),
 argc_(argc),

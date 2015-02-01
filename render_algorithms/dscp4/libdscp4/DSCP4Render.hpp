@@ -138,6 +138,10 @@ namespace dscp4
 		bool isFullScreen() { return isFullScreen_.load(); }
 		void setFullScreen(bool fullscreen);
 
+#ifdef DSCP4_HAVE_PNG
+		void saveScreenshotPNG();
+#endif
+
 	private:
 
 		// for testing
@@ -232,10 +236,6 @@ namespace dscp4
 		void drawAllMeshes();
 		void drawMesh(mesh_t& mesh);
 		void drawObjects();
-
-#ifdef DSCP4_HAVE_PNG
-		void saveScreenshotPNG();
-#endif
 
 		// Renderer projection settings
 		//float zNear_;

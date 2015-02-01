@@ -9,13 +9,15 @@
 #include <dscp4.h>
 
 MainWindow::MainWindow(QWidget *parent)
-: MainWindow(nullptr, parent)
+: MainWindow(0, nullptr, parent)
 {
 
 }
 
-MainWindow::MainWindow(QDSCP4Settings* settings, QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow), settings_(settings)
+MainWindow::MainWindow(int argc, const char ** argv, QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow), algorithmContext_(nullptr)
 {
+
+	settings_ = new QDSCP4Settings(argc, argv, this);
 
 #ifdef DSCP4_HAVE_LOG4CXX
 
@@ -136,7 +138,7 @@ MainWindow::MainWindow(QDSCP4Settings* settings, QWidget *parent) : QMainWindow(
 	QObject::connect(settings_, SIGNAL(numSamplesPerHololineChanged(int)), ui->numSamplesPerHololineSpinBox, SLOT(setValue(int)));
 	QObject::connect(ui->numSamplesPerHololineSpinBox, SIGNAL(valueChanged(int)), settings_, SLOT(setNumSamplesPerHololine(int)));
 
-	settings->populateSettings();
+	settings_->populateSettings();
 
 	populateModelFiles();
 	populateKernelFiles();
@@ -163,9 +165,18 @@ MainWindow::MainWindow(QDSCP4Settings* settings, QWidget *parent) : QMainWindow(
 	QObject::connect(logAppenderPtr, SIGNAL(gotNewLogMessage(QString)), ui->logTextEdit, SLOT(append(QString)));
 #endif
 
-	//Start/Stop button
+	//Controls
 	QObject::connect(ui->startButton, SIGNAL(clicked()), this, SLOT(startDSCP4()));
 	QObject::connect(ui->stopButton, SIGNAL(clicked()), this, SLOT(stopDSCP4()));
+	QObject::connect(ui->saveScreenshotButton, SIGNAL(clicked()), this, SLOT(dumpFramebufferToPNG()));
+	QObject::connect(ui->forceRedrawButton, SIGNAL(clicked()), this, SLOT(forceRedraw()));
+	QObject::connect(ui->spinModelCheckBox, SIGNAL(toggled(bool)), this, SLOT(setSpinOn(bool)));
+	QObject::connect(ui->xTranslateHorizontalSlider, SIGNAL(valueChanged(int)), this, SLOT(translateModelX(int)));
+	QObject::connect(ui->yTranslateHorizontalSlider, SIGNAL(valueChanged(int)), this, SLOT(translateModelY(int)));
+	QObject::connect(ui->zTranslateHorizontalSlider, SIGNAL(valueChanged(int)), this, SLOT(translateModelZ(int)));
+	QObject::connect(ui->xRotateHorizontalSlider, SIGNAL(valueChanged(int)), this, SLOT(rotateModelX(int)));
+	QObject::connect(ui->yRotateHorizontalSlider, SIGNAL(valueChanged(int)), this, SLOT(rotateModelY(int)));
+	QObject::connect(ui->zRotateHorizontalSlider, SIGNAL(valueChanged(int)), this, SLOT(rotateModelZ(int)));
 
 	LOG4CXX_INFO(logger_, "Logger initialized")
 
@@ -194,7 +205,7 @@ MainWindow::MainWindow(QDSCP4Settings* settings, QWidget *parent) : QMainWindow(
 
 MainWindow::~MainWindow()
 {
-
+	delete settings_;
 }
 
 
@@ -505,6 +516,59 @@ void MainWindow::stopDSCP4()
 	disableControlsUI();
 
 	ui->stopButton->setDisabled(true);
+}
+
+void MainWindow::dumpFramebufferToPNG()
+{
+	dscp4_SaveFrameBufferToPNG(algorithmContext_);
+}
+
+void MainWindow::forceRedraw()
+{
+	if (algorithmContext_)
+		dscp4_ForceRedraw(algorithmContext_);
+}
+
+void MainWindow::translateModelX(int x)
+{
+	dscp4_TranslateObject(algorithmContext_, "Mesh 0", x * 0.0005f, 0, 0);
+	forceRedraw();
+}
+
+void MainWindow::translateModelY(int y)
+{
+	dscp4_TranslateObject(algorithmContext_, "Mesh 0", 0, y * 0.0005f, 0);
+	forceRedraw();
+}
+
+void MainWindow::translateModelZ(int z)
+{
+	dscp4_TranslateObject(algorithmContext_, "Mesh 0", 0, 0, z * 0.0005f);
+	forceRedraw();
+}
+
+void MainWindow::rotateModelX(int x)
+{
+	dscp4_RotateObject(algorithmContext_, "Mesh 0", 180.f * x * 0.01, 1, 0, 0);
+	forceRedraw();
+}
+
+void MainWindow::rotateModelY(int y)
+{
+	dscp4_RotateObject(algorithmContext_, "Mesh 0", 180.f * y * 0.001, 0, 1, 0);
+	forceRedraw();
+}
+
+void MainWindow::rotateModelZ(int z)
+{
+	dscp4_RotateObject(algorithmContext_, "Mesh 0", 180.f * z * 0.001, 0, 0, 1);
+	forceRedraw();
+}
+
+void MainWindow::setSpinOn(bool spinOn)
+{
+	dscp4_SetSpinOn(algorithmContext_, spinOn);
+	forceRedraw();
 }
 
 void MainWindow::enableUnchangeableUI()

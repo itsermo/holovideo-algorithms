@@ -28,12 +28,14 @@ namespace Ui
     class MainWindow;
 }
 
+class QDSCP4Settings;
+
 class MainWindow : public QMainWindow {
     Q_OBJECT
 
 public:
 	MainWindow(QWidget *parent = 0);
-	MainWindow(QDSCP4Settings* settings, QWidget *parent = 0);
+	MainWindow(int argc, const char ** argv, QWidget *parent = 0);
     virtual ~MainWindow();
 
 public slots:
@@ -58,6 +60,19 @@ public slots:
 	void disableUnchangeableUI();
 	void enableControlsUI();
 	void disableControlsUI();
+
+	void dumpFramebufferToPNG();
+	void forceRedraw();
+
+	void translateModelX(int x);
+	void translateModelY(int y);
+	void translateModelZ(int z);
+
+	void rotateModelX(int x);
+	void rotateModelY(int y);
+	void rotateModelZ(int z);
+
+	void setSpinOn(bool spinOn);
 
 signals:
 	void dscp4IsRunningChanged(bool isRunning);

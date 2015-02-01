@@ -53,6 +53,12 @@ extern "C" {
 	DSCP4_API void dscp4_ScaleObject(dscp4_context_t renderContext, const char* id, float x, float y, float z);
 	DSCP4_API void dscp4_RotateObject(dscp4_context_t renderContext, const char* id, float angle, float x, float y, float z);
 
+	DSCP4_API void dscp4_SetSpinOn(dscp4_context_t renderContext, int spinOn);
+	DSCP4_API int dscp4_GetSpinOn(dscp4_context_t renderContext);
+
+	DSCP4_API void dscp4_SaveFrameBufferToPNG(dscp4_context_t renderContext);
+	DSCP4_API void dscp4_ForceRedraw(dscp4_context_t renderContext);
+
 #ifdef __cplusplus
 };
 #endif

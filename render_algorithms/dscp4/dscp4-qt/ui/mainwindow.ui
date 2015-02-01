@@ -464,6 +464,9 @@
        <property name="maximum">
         <number>1000</number>
        </property>
+       <property name="singleStep">
+        <number>1</number>
+       </property>
        <property name="pageStep">
         <number>100</number>
        </property>
@@ -579,7 +582,7 @@
         </rect>
        </property>
        <property name="text">
-        <string>Translate Model</string>
+        <string>Translate View</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignCenter</set>
@@ -665,7 +668,7 @@
         </rect>
        </property>
        <property name="text">
-        <string>Rotate Model</string>
+        <string>Rotate View</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignCenter</set>
