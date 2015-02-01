@@ -25,6 +25,7 @@ __global__ void computeFringe(
 	const unsigned int viewset_num_tiles_y,
 	const unsigned int framebuffer_res_x,
 	const unsigned int framebuffer_res_y,
+	const float REF_BEAM_ANGLE_RAD,
 	const float K_R,
 	const float K_G,
 	const float K_B,
@@ -77,13 +78,13 @@ dscp4_fringe_cuda_context_t* dscp4_fringe_cuda_CreateContext(dscp4_fringe_contex
 	if (error != cudaSuccess)
 		printf("ERROR Could not register viewset OpenGL DEPTH texture with CUDA\n");
 
-	cudaContext->fringe_cuda_resources = (struct cudaGraphicsResource**)malloc(sizeof(void*)*cudaContext->fringe_context->algorithm_options->cache.num_fringe_buffers);
+	cudaContext->fringe_cuda_resources = (struct cudaGraphicsResource**)malloc(sizeof(void*)*cudaContext->fringe_context->algorithm_options.cache.num_fringe_buffers);
 
-	//error = cudaMalloc((void**)&framebuffer_tex_out, sizeof(framebuffer_tex_out) * cudaContext->fringe_context->algorithm_options->cache.num_fringe_buffers);
+	//error = cudaMalloc((void**)&framebuffer_tex_out, sizeof(framebuffer_tex_out) * cudaContext->fringe_context->algorithm_options.cache.num_fringe_buffers);
 	//if (error)
 	//	printf("ERROR Could not alloc CUDA framebuffer textures\n");
 
-	for (unsigned int i = 0; i < cudaContext->fringe_context->algorithm_options->cache.num_fringe_buffers; i++)
+	for (unsigned int i = 0; i < cudaContext->fringe_context->algorithm_options.cache.num_fringe_buffers; i++)
 	{
 		//error = cudaGraphicsGLRegisterBuffer(&cudaContext->fringe_cuda_resources[i], cudaContext->fringe_context->fringe_gl_buf_out[i], cudaGraphicsRegisterFlagsWriteDiscard);
 		error = cudaGraphicsGLRegisterImage(&cudaContext->fringe_cuda_resources[i], cudaContext->fringe_context->fringe_gl_tex_out[i], GL_TEXTURE_2D, cudaGraphicsRegisterFlagsWriteDiscard);
@@ -95,23 +96,23 @@ dscp4_fringe_cuda_context_t* dscp4_fringe_cuda_CreateContext(dscp4_fringe_contex
 	if (error != cudaSuccess)
 		printf("ERROR Could not alloc CUDA megabuffer\n");
 
-	const size_t wafelBufferLength = cudaContext->fringe_context->algorithm_options->cache.num_samples_per_wafel * cudaContext->fringe_context->algorithm_options->num_wafels_per_scanline * cudaContext->fringe_context->algorithm_options->num_scanlines;
+	const size_t wafelBufferLength = cudaContext->fringe_context->algorithm_options.cache.num_samples_per_wafel * cudaContext->fringe_context->algorithm_options.num_wafels_per_scanline * cudaContext->fringe_context->algorithm_options.num_scanlines;
 
 	error = cudaMalloc(&cudaContext->wafel_buffers, wafelBufferLength * sizeof(unsigned char));
 	error = cudaMalloc(&cudaContext->wafel_positions, wafelBufferLength * sizeof(float));
 	
 	dim3 threadsPerBlock(
-		cudaContext->fringe_context->algorithm_options->cuda_block_dimensions[0],
-		cudaContext->fringe_context->algorithm_options->cuda_block_dimensions[1]
+		cudaContext->fringe_context->algorithm_options.cuda_block_dimensions[0],
+		cudaContext->fringe_context->algorithm_options.cuda_block_dimensions[1]
 		);
 	dim3 numBlocks(
-		cudaContext->fringe_context->algorithm_options->cache.cuda_number_of_blocks[0],
-		cudaContext->fringe_context->algorithm_options->cache.cuda_number_of_blocks[1]
+		cudaContext->fringe_context->algorithm_options.cache.cuda_number_of_blocks[0],
+		cudaContext->fringe_context->algorithm_options.cache.cuda_number_of_blocks[1]
 		);
 
 	fillWafelPositionsBuffer <<<numBlocks, threadsPerBlock, 592 * 4>> >(
-		cudaContext->fringe_context->algorithm_options->cache.num_samples_per_wafel,
-		cudaContext->fringe_context->algorithm_options->cache.sample_pitch
+		cudaContext->fringe_context->algorithm_options.cache.num_samples_per_wafel,
+		cudaContext->fringe_context->algorithm_options.cache.sample_pitch
 		);
 
 	return cudaContext;
@@ -191,12 +192,12 @@ void dscp4_fringe_cuda_ComputeFringe(dscp4_fringe_cuda_context_t* cudaContext)
 		printf("ERROR Getting stereogram DEPTH CUDA graphics resource mapped pointer\n");
 
 
-	//output = (void**)malloc(sizeof(void*)* cudaContext->fringe_context->algorithm_options->cache.num_fringe_buffers);
-	//outputSizes = (size_t*)malloc(sizeof(size_t)* cudaContext->fringe_context->algorithm_options->cache.num_fringe_buffers);
+	//output = (void**)malloc(sizeof(void*)* cudaContext->fringe_context->algorithm_options.cache.num_fringe_buffers);
+	//outputSizes = (size_t*)malloc(sizeof(size_t)* cudaContext->fringe_context->algorithm_options.cache.num_fringe_buffers);
 
-	framebufferArrays = (cudaArray_t*)malloc(sizeof(cudaArray_t)* cudaContext->fringe_context->algorithm_options->cache.num_fringe_buffers);
+	framebufferArrays = (cudaArray_t*)malloc(sizeof(cudaArray_t)* cudaContext->fringe_context->algorithm_options.cache.num_fringe_buffers);
 
-	for (unsigned int i = 0; i < cudaContext->fringe_context->algorithm_options->cache.num_fringe_buffers; i++)
+	for (unsigned int i = 0; i < cudaContext->fringe_context->algorithm_options.cache.num_fringe_buffers; i++)
 	{
 		//error = cudaGraphicsMapResources(1, (cudaGraphicsResource_t*)(&cudaContext->fringe_cuda_resources[i]), 0);
 		//if(error != cudaSuccess)
@@ -223,44 +224,45 @@ void dscp4_fringe_cuda_ComputeFringe(dscp4_fringe_cuda_context_t* cudaContext)
 	}
 
 	//// run kernel here
-	//for (unsigned int i = 0; i < cudaContext->fringe_context->algorithm_options->cache.num_fringe_buffers; i++)
+	//for (unsigned int i = 0; i < cudaContext->fringe_context->algorithm_options.cache.num_fringe_buffers; i++)
 	//{
 
 	error = cudaMemset(cudaContext->spec_buffer, 0, cudaContext->fringe_context->display_options.head_res_x_spec * cudaContext->fringe_context->display_options.head_res_y_spec * cudaContext->fringe_context->display_options.num_heads * 4);
 
 		dim3 threadsPerBlock(
-			cudaContext->fringe_context->algorithm_options->cuda_block_dimensions[0],
-			cudaContext->fringe_context->algorithm_options->cuda_block_dimensions[1]
+			cudaContext->fringe_context->algorithm_options.cuda_block_dimensions[0],
+			cudaContext->fringe_context->algorithm_options.cuda_block_dimensions[1]
 			);
 		dim3 numBlocks(
-			cudaContext->fringe_context->algorithm_options->cache.cuda_number_of_blocks[0],
-			cudaContext->fringe_context->algorithm_options->cache.cuda_number_of_blocks[1]
+			cudaContext->fringe_context->algorithm_options.cache.cuda_number_of_blocks[0],
+			cudaContext->fringe_context->algorithm_options.cache.cuda_number_of_blocks[1]
 			);
 
 		computeFringe << <numBlocks, threadsPerBlock, 592 * 4 >> >(
 			(unsigned char*)cudaContext->spec_buffer,
 			(const float*)viewsetDepthArray,
-			cudaContext->fringe_context->algorithm_options->num_wafels_per_scanline,
-			cudaContext->fringe_context->algorithm_options->num_scanlines,
-			cudaContext->fringe_context->algorithm_options->cache.stereogram_res_x,
-			cudaContext->fringe_context->algorithm_options->cache.stereogram_res_y,
-			cudaContext->fringe_context->algorithm_options->cache.stereogram_num_tiles_x,
-			cudaContext->fringe_context->algorithm_options->cache.stereogram_num_tiles_y,
-			cudaContext->fringe_context->algorithm_options->cache.fringe_buffer_res_x,
-			cudaContext->fringe_context->algorithm_options->cache.fringe_buffer_res_y,
-			cudaContext->fringe_context->algorithm_options->cache.k_r,
-			cudaContext->fringe_context->algorithm_options->cache.k_g,
-			cudaContext->fringe_context->algorithm_options->cache.k_b,
-			cudaContext->fringe_context->algorithm_options->cache.upconvert_const_r,
-			cudaContext->fringe_context->algorithm_options->cache.upconvert_const_g,
-			cudaContext->fringe_context->algorithm_options->cache.upconvert_const_b,
-			cudaContext->fringe_context->algorithm_options->cache.num_samples_per_wafel,
-			cudaContext->fringe_context->algorithm_options->cache.sample_pitch,
-			cudaContext->fringe_context->algorithm_options->cache.z_span,
-			cudaContext->fringe_context->algorithm_options->cache.z_offset,
+			cudaContext->fringe_context->algorithm_options.num_wafels_per_scanline,
+			cudaContext->fringe_context->algorithm_options.num_scanlines,
+			cudaContext->fringe_context->algorithm_options.cache.stereogram_res_x,
+			cudaContext->fringe_context->algorithm_options.cache.stereogram_res_y,
+			cudaContext->fringe_context->algorithm_options.cache.stereogram_num_tiles_x,
+			cudaContext->fringe_context->algorithm_options.cache.stereogram_num_tiles_y,
+			cudaContext->fringe_context->algorithm_options.cache.fringe_buffer_res_x,
+			cudaContext->fringe_context->algorithm_options.cache.fringe_buffer_res_y,
+			cudaContext->fringe_context->algorithm_options.cache.reference_beam_angle_rad,
+			cudaContext->fringe_context->algorithm_options.cache.k_r,
+			cudaContext->fringe_context->algorithm_options.cache.k_g,
+			cudaContext->fringe_context->algorithm_options.cache.k_b,
+			cudaContext->fringe_context->algorithm_options.cache.upconvert_const_r,
+			cudaContext->fringe_context->algorithm_options.cache.upconvert_const_g,
+			cudaContext->fringe_context->algorithm_options.cache.upconvert_const_b,
+			cudaContext->fringe_context->algorithm_options.cache.num_samples_per_wafel,
+			cudaContext->fringe_context->algorithm_options.cache.sample_pitch,
+			cudaContext->fringe_context->algorithm_options.cache.z_span,
+			cudaContext->fringe_context->algorithm_options.cache.z_offset,
 			cudaContext->fringe_context->display_options.num_aom_channels,
 			cudaContext->fringe_context->display_options.head_res_y_spec,
-			cudaContext->fringe_context->algorithm_options->cache.num_fringe_buffers
+			cudaContext->fringe_context->algorithm_options.cache.num_fringe_buffers
 			);
 	//}g
 
@@ -286,7 +288,7 @@ void dscp4_fringe_cuda_ComputeFringe(dscp4_fringe_cuda_context_t* cudaContext)
 			cudaMemcpyDeviceToDevice);
 	}
 
-	for (unsigned int i = 0; i < cudaContext->fringe_context->algorithm_options->cache.num_fringe_buffers; i++)
+	for (unsigned int i = 0; i < cudaContext->fringe_context->algorithm_options.cache.num_fringe_buffers; i++)
 	{
 		//cudaUnbindTexture(framebuffer_tex_out[i]);
 		error = cudaGraphicsUnmapResources(1, (cudaGraphicsResource_t*)(&cudaContext->fringe_cuda_resources[i]), 0);
@@ -332,6 +334,7 @@ __global__ void computeFringe(
 	const unsigned int viewset_num_tiles_y,
 	const unsigned int framebuffer_res_x,
 	const unsigned int framebuffer_res_y,
+	const float REF_BEAM_ANGLE_RAD,
 	const float K_R,
 	const float K_G,
 	const float K_B,
@@ -357,47 +360,41 @@ __global__ void computeFringe(
 	{
 		int x = global_x;
 		int y = global_y;
-
-		for (int i = 0; i < NUM_SAMPLES_PER_WAFEL; i++)
-		{
-			wafel_position[i] = -(float)NUM_SAMPLES_PER_WAFEL * SAMPLE_PITCH / 2.f + i*(float)SAMPLE_PITCH;
-		}
-		// offset of wafel samples/position buffer
-		const unsigned int num_views = (viewset_num_tiles_x * viewset_num_tiles_y);
 		
-		unsigned char wafel_buffer[592];
+
+		unsigned char wafel_buffer[1024];
 		for (int i = 0; i < NUM_SAMPLES_PER_WAFEL; i++)
 		{
+			wafel_position[i] = -(float)NUM_SAMPLES_PER_WAFEL * SAMPLE_PITCH * 0.5f + i*(float)SAMPLE_PITCH;
 			wafel_buffer[i] = 0;
 		}
+
+		// offset of wafel samples/position buffer
+		const unsigned int num_views = (viewset_num_tiles_x * viewset_num_tiles_y);
 
 		for (unsigned int color_chan = 0; color_chan < 3; color_chan++)
 		{
 			x = global_x;
 			y = global_y;
 
-			float k = (color_chan == 0 ? K_R : color_chan == 1 ? K_G : K_B);
-			double spatial_up_const = (color_chan == 0 ? SPATIAL_UPCONVERT_CONST_R : color_chan == 1 ? SPATIAL_UPCONVERT_CONST_G : SPATIAL_UPCONVERT_CONST_B);
+			const float k = (color_chan == 0 ? K_R : color_chan == 1 ? K_G : K_B);
+			const double spatial_upconvert_const = (color_chan == 0 ? SPATIAL_UPCONVERT_CONST_R : color_chan == 1 ? SPATIAL_UPCONVERT_CONST_G : SPATIAL_UPCONVERT_CONST_B);
 
 			for (unsigned int vy = 0, idx = 0; vy < viewset_num_tiles_y; vy++)
 			{
 				for (unsigned int vx = 0; vx < viewset_num_tiles_x; vx++, idx++)
 				{
 					// Check later
-					float d = (viewset_depth_in[y * viewset_res_x + x] - 0.5f) * Z_SPAN + Z_OFFSET;
-					float temp_x = d * tan(30.f * 3.141592654f / 180.f * (idx - num_views / 2)) + NUM_SAMPLES_PER_WAFEL * SAMPLE_PITCH / 2;
-					float4 color = tex2D(viewset_color_in, x, y);
-					unsigned char c = (color_chan == 0 ? 255.f*color.x : color_chan == 1 ? 255.f*color.y : 255.f*color.z);
+					const float d = (viewset_depth_in[y * viewset_res_x + x] - 0.5f) * Z_SPAN + Z_OFFSET;
+					const float temp_x = d * tan(REF_BEAM_ANGLE_RAD * (idx - num_views / 2)) + NUM_SAMPLES_PER_WAFEL * SAMPLE_PITCH *0.5f;
+					const float4 color = tex2D(viewset_color_in, x, y);
+					const unsigned char c = (color_chan == 0 ? 255.f*color.x : color_chan == 1 ? 255.f*color.y : 255.f*color.z);
 
 					if (c != 0)
 						for (int i = 0; i < NUM_SAMPLES_PER_WAFEL; i++)
 						{
-							//wafel_buffer[wafel_offset + i] += c / num_views * cos(k * (float)sqrt(pow((double)((double)wafel_position[wafel_offset + i] - (double)x), (double)2) + pow((double)d, (double)2)) - d + wafel_position[wafel_offset + i] * up_const);
-							//wafel_buffer[i] += c * cos(k * sqrt((wafel_position[i] - temp_x)*(wafel_position[i] - temp_x) + d*d) - d + (global_x * NUM_SAMPLES_PER_WAFEL * SAMPLE_PITCH + temp_x) * (sin(30.f*3.141592654 / 180.f) + 2.f * 3.141592654 / k * spatial_up_const));
-							double mycos = cos(k * sqrt((wafel_position[i] - temp_x)*(wafel_position[i] - temp_x) + d*d) - d + (global_x * NUM_SAMPLES_PER_WAFEL * SAMPLE_PITCH + temp_x) * (sin(30.f*3.141592654 / 180.f) + 2.f * 3.141592654 / k * spatial_up_const));
-							wafel_buffer[i] += (unsigned char)((double)c * (mycos + 1.f)/2.f);
-
-							double mycos2 = cos(k);
+							double mycos = __cosf(k * sqrtf(pow(wafel_position[i] - temp_x,2) + pow(d,2)) - d + (global_x * NUM_SAMPLES_PER_WAFEL * SAMPLE_PITCH + temp_x) * (__sinf(REF_BEAM_ANGLE_RAD) + 2.f * 3.141592654 / k * spatial_upconvert_const));
+							wafel_buffer[i] += (unsigned char)(c * (mycos + 1.f)*0.5f);
 						}
 
 					x += num_wafels_per_scanline;
@@ -409,20 +406,19 @@ __global__ void computeFringe(
 
 		int which_frame_buf = (global_y % NUM_AOM_CHANNELS);
 		int which_hololine = global_y / NUM_AOM_CHANNELS;
-//		int which_frameline = (float)x / (framebuffer_res_x / NUM_SAMPLES_PER_WAFEL);
-//		int which_wafel = x - (which_frameline * (framebuffer_res_x / NUM_SAMPLES_PER_WAFEL));
+
+		unsigned int offset = which_frame_buf / NUM_BUFFERS * framebuffer_res_x * HEAD_RES_Y_SPEC * 4
+			+ which_hololine * (((NUM_SAMPLES_PER_WAFEL * num_wafels_per_scanline) / framebuffer_res_x) * framebuffer_res_x * 4)
+			+ NUM_SAMPLES_PER_WAFEL * 4 * global_x
+			+ which_frame_buf % 3;
 
 		for (int i = 0; i < NUM_SAMPLES_PER_WAFEL; i++)
 		{
-			const unsigned int idx = which_frame_buf / NUM_BUFFERS * framebuffer_res_x * HEAD_RES_Y_SPEC * 4
-				+ which_hololine * (((NUM_SAMPLES_PER_WAFEL * num_wafels_per_scanline) / framebuffer_res_x) * framebuffer_res_x * 4)
-				+ NUM_SAMPLES_PER_WAFEL * 4 * global_x
-				+ which_frame_buf % 3 + 4 * i;
-
+			const unsigned int idx = offset + 4 * i;
 			framebuffer_out[idx] = wafel_buffer[i];
 
 			if (which_frame_buf % 3 == 2)
-				framebuffer_out[idx + 1] = 255;
+				framebuffer_out[idx+1] = 255;
 		}
 
 	}
