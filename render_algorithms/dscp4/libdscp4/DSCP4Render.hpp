@@ -89,7 +89,7 @@ namespace dscp4
 		DSCP4Render(render_options_t *renderOptions,
 			algorithm_options_t *algorithmOptions,
 			display_options_t displayOptions,
-			unsigned int verbosity);
+			unsigned int verbosity, void * logAppender = nullptr);
 		~DSCP4Render();
 
 		bool init();

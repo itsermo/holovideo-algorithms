@@ -18,6 +18,7 @@
 #include <QMainWindow>
 #include <QScopedPointer>
 #include "QDSCP4Settings.h"
+#include <qprocess.h>
 
 #include <assimp/Importer.hpp>      
 #include <assimp/scene.h>           
@@ -55,6 +56,9 @@ public slots:
 
 	void startDSCP4();
 	void stopDSCP4();
+	void startX11();
+	void stopX11();
+	void startNVIDIASettings();
 
 	void enableUnchangeableUI();
 	void disableUnchangeableUI();
@@ -102,6 +106,9 @@ private:
 
 	Assimp::Importer assetImporter_;
 	const aiScene* objectScene_;
+
+	QProcess * x11Process_;
+	QProcess * nvidiaSettingsProcess_;
 };
 
 #endif

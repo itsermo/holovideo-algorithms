@@ -91,7 +91,7 @@ DSCP4Render::DSCP4Render() :
 						DSCP4_DEFAULT_DISPLAY_NUM_SAMPLES_PER_HOLOLINE,
 						DSCP4_DEFAULT_DISPLAY_HOLOGRAM_PLANE_WIDTH
 						},
-						DSCP4_DEFAULT_LOG_VERBOSITY)
+						DSCP4_DEFAULT_LOG_VERBOSITY, nullptr)
 {
 	
 }
@@ -99,7 +99,8 @@ DSCP4Render::DSCP4Render() :
 DSCP4Render::DSCP4Render(render_options_t *renderOptions,
 	algorithm_options_t *algorithmOptions,
 	display_options_t displayOptions,
-	unsigned int verbosity
+	unsigned int verbosity,
+	void * logAppender
 	) :
 	windows_(nullptr),
 	glContexts_(nullptr),
@@ -128,17 +129,25 @@ DSCP4Render::DSCP4Render(render_options_t *renderOptions,
 {
 #ifdef DSCP4_HAVE_LOG4CXX
 	
-	log4cxx::BasicConfigurator::resetConfiguration();
+	if (logAppender)
+	{
+		//auto appender = log4cxx::AppenderPtr((log4cxx::Appender*)logAppender);
+		//logger_->addAppender(appender);
+		//log4cxx::BasicConfigurator::configure(appender);
+	}
+	else
+	{
+		log4cxx::BasicConfigurator::resetConfiguration();
 
 #ifdef WIN32
-	log4cxx::PatternLayoutPtr logLayoutPtr = new log4cxx::PatternLayout(L"%-5p %m%n");
+		log4cxx::PatternLayoutPtr logLayoutPtr = new log4cxx::PatternLayout(L"%-5p %m%n");
 #else
-	log4cxx::PatternLayoutPtr logLayoutPtr = new log4cxx::PatternLayout("%-5p %m%n");
+		log4cxx::PatternLayoutPtr logLayoutPtr = new log4cxx::PatternLayout("%-5p %m%n");
 #endif
 
-	log4cxx::ConsoleAppenderPtr logAppenderPtr = new log4cxx::ConsoleAppender(logLayoutPtr);
-	log4cxx::BasicConfigurator::configure(logAppenderPtr);
-
+		log4cxx::ConsoleAppenderPtr logAppenderPtr = new log4cxx::ConsoleAppender(logLayoutPtr);
+		log4cxx::BasicConfigurator::configure(logAppenderPtr);
+	}
 	switch (verbosity)
 	{
 	case 0:
@@ -325,7 +334,7 @@ bool DSCP4Render::initWindow(SDL_Window*& window, SDL_GLContext& glContext, int 
 		break;
 	}
 
-	LOG4CXX_DEBUG(logger_, "Creating fullscreen SDL OpenGL Window " << thisWindowNum << ": " << windowWidth_[thisWindowNum] << "x" << bounds.h << " @ " << "{" << bounds.x << "," << bounds.y << "}")
+	LOG4CXX_DEBUG(logger_, "Creating SDL OpenGL Window " << thisWindowNum << ": " << windowWidth_[thisWindowNum] << "x" << windowHeight_[thisWindowNum] << " @ " << "{" << x << "," << y << "}")
 	window = SDL_CreateWindow(("edu.mit.media.obmg.dscp4-" + std::to_string(thisWindowNum)).c_str(), x, y, windowWidth_[thisWindowNum], windowHeight_[thisWindowNum], flags);
 	
 	CHECK_SDL_RC(window == nullptr, "Could not create SDL window");

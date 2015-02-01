@@ -8,13 +8,20 @@
 
 #include <dscp4.h>
 
+#include <qmessagebox.h>
+
 MainWindow::MainWindow(QWidget *parent)
 : MainWindow(0, nullptr, parent)
 {
 
 }
 
-MainWindow::MainWindow(int argc, const char ** argv, QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow), algorithmContext_(nullptr)
+MainWindow::MainWindow(int argc, const char ** argv, QWidget *parent) : 
+QMainWindow(parent), 
+ui(new Ui::MainWindow), 
+algorithmContext_(nullptr), 
+x11Process_(nullptr),
+nvidiaSettingsProcess_(nullptr)
 {
 
 	settings_ = new QDSCP4Settings(argc, argv, this);
@@ -25,11 +32,15 @@ MainWindow::MainWindow(int argc, const char ** argv, QWidget *parent) : QMainWin
 
 #ifdef WIN32
 	log4cxx::PatternLayoutPtr logLayoutPtr = new log4cxx::PatternLayout(L"%-5p\t%m%n");
+	log4cxx::helpers::ObjectPtrT<log4cxx::QLogAppender> logAppenderPtr = new log4cxx::QLogAppender(logLayoutPtr);
+	logAppenderPtr->setName(log4cxx::LogString(L"dscp4-qt"));
 #else
 	log4cxx::PatternLayoutPtr logLayoutPtr = new log4cxx::PatternLayout("%-5p\t%m%n");
-#endif
 	log4cxx::helpers::ObjectPtrT<log4cxx::QLogAppender> logAppenderPtr = new log4cxx::QLogAppender(logLayoutPtr);
-	log4cxx::BasicConfigurator::configure(logAppenderPtr);
+	logAppenderPtr->setName(log4cxx::LogString("dscp4-qt"));
+#endif
+	logger_->addAppender(logAppenderPtr);
+	//log4cxx::BasicConfigurator::configure(logAppenderPtr);
 #endif
 
 	ui->setupUi(this);
@@ -168,6 +179,8 @@ MainWindow::MainWindow(int argc, const char ** argv, QWidget *parent) : QMainWin
 	//Controls
 	QObject::connect(ui->startButton, SIGNAL(clicked()), this, SLOT(startDSCP4()));
 	QObject::connect(ui->stopButton, SIGNAL(clicked()), this, SLOT(stopDSCP4()));
+	QObject::connect(ui->x11ToggleButton, SIGNAL(clicked()), this, SLOT(startX11()));
+	QObject::connect(ui->nvidiaSettingsToggleButton, SIGNAL(clicked()), this, SLOT(startNVIDIASettings()));
 	QObject::connect(ui->saveScreenshotButton, SIGNAL(clicked()), this, SLOT(dumpFramebufferToPNG()));
 	QObject::connect(ui->forceRedrawButton, SIGNAL(clicked()), this, SLOT(forceRedraw()));
 	QObject::connect(ui->spinModelCheckBox, SIGNAL(toggled(bool)), this, SLOT(setSpinOn(bool)));
@@ -206,6 +219,22 @@ MainWindow::MainWindow(int argc, const char ** argv, QWidget *parent) : QMainWin
 MainWindow::~MainWindow()
 {
 	delete settings_;
+
+	if (algorithmContext_)
+		stopDSCP4();
+
+	if (nvidiaSettingsProcess_)
+	{
+		nvidiaSettingsProcess_->kill();
+		delete nvidiaSettingsProcess_;
+	}
+
+	if (x11Process_)
+	{
+		x11Process_->kill();
+		delete x11Process_;
+	}
+
 }
 
 
@@ -430,7 +459,12 @@ void MainWindow::startDSCP4()
 	auto renderOptions = settings_->getRenderOptions();
 	int logLevel = ui->verbosityComboBox->currentIndex();
 
-	algorithmContext_ = dscp4_CreateContext(renderOptions, algorithmOptions, displayOptions, logLevel);
+	LOG4CXX_INFO(logger_, "Creating DSCP4 context")
+
+	auto logAppenders = logger_->getAllAppenders();
+	auto logAppender = logAppenders[0];
+
+	algorithmContext_ = dscp4_CreateContext(renderOptions, algorithmOptions, displayOptions, logLevel, logAppender);
 
 	if (!dscp4_InitRenderer(algorithmContext_))
 	{
@@ -516,6 +550,63 @@ void MainWindow::stopDSCP4()
 	disableControlsUI();
 
 	ui->stopButton->setDisabled(true);
+}
+
+void MainWindow::startX11()
+{
+	x11Process_ = new QProcess(this);
+	QString command("X ");
+	command.append(ui->x11DisplayEnvLineEdit->text()); // set the display env. variable
+	command.append(" -br"); // set black background
+	command.append(" +xinerama"); //enable xinerama
+	x11Process_->start(command);
+	if (x11Process_->waitForStarted(100))
+	{
+		QObject::disconnect(ui->x11ToggleButton, SIGNAL(clicked()), this, SLOT(startX11()));
+		QObject::connect(ui->x11ToggleButton, SIGNAL(clicked()), this, SLOT(stopX11()));
+		ui->x11ToggleButton->setText("Stop X11");
+	}
+	else
+	{
+		QString message("Please check your X11 settings in /etc/X11/xorg.conf.\n");
+		message.append("Launch command used: \"");
+		message.append(command);
+		message.append("\"");
+		QMessageBox::critical(this, "Error Launching X11", message, QMessageBox::Ok);
+	}
+}
+
+void MainWindow::stopX11()
+{
+	x11Process_->kill();
+	delete[] x11Process_;
+	x11Process_ = nullptr;
+
+	QObject::disconnect(ui->x11ToggleButton, SIGNAL(clicked()), this, SLOT(stopX11()));
+	QObject::connect(ui->x11ToggleButton, SIGNAL(clicked()), this, SLOT(startX11()));
+	ui->x11ToggleButton->setText("Start X11");
+
+}
+
+void MainWindow::startNVIDIASettings()
+{
+	if (nvidiaSettingsProcess_ == nullptr)
+		nvidiaSettingsProcess_ = new QProcess(this);
+
+	if (nvidiaSettingsProcess_->state() != QProcess::Running)
+	{
+		QString command("nvidia-settings -c ");
+		command.append(ui->x11DisplayEnvLineEdit->text()); // set the display env. variable
+		nvidiaSettingsProcess_->start(command);
+		if (!nvidiaSettingsProcess_->waitForStarted(100))
+		{
+			QString message("Please check your NVIDIA drivers installation.\n");
+			message.append("Launch command used: \"");
+			message.append(command);
+			message.append("\"");
+			QMessageBox::critical(this, "Error Launching NVIDIA Settings", message, QMessageBox::Ok);
+		}
+	}
 }
 
 void MainWindow::dumpFramebufferToPNG()
