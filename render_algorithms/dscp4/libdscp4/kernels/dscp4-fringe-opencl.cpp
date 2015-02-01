@@ -68,6 +68,9 @@ extern "C" {
 		dscp4_fringe_opencl_context_t * context = new dscp4_fringe_opencl_context_t;
 		*context = { 0 };
 
+		context->fringe_context = fringeContext;
+
+
 		LOG4CXX_DEBUG(DSCP4_OPENCL_LOGGER, "Creating OpenCL Context");
 
 		const unsigned int num_fringe_buffers = fringeContext->display_options.num_heads / fringeContext->display_options.num_heads_per_gpu;
@@ -81,20 +84,18 @@ extern "C" {
 		std::ifstream programFileStream;
 		std::string programString;
 		
-		LOG4CXX_DEBUG(DSCP4_OPENCL_LOGGER, "Reading OpenCL kernel from " << fringeContext->algorithm_options->opencl_kernel_filename)
-		programFileStream.open(fringeContext->algorithm_options->opencl_kernel_filename);
+		LOG4CXX_DEBUG(DSCP4_OPENCL_LOGGER, "Reading OpenCL kernel from " << fringeContext->kernel_file_path)
+		programFileStream.open(fringeContext->kernel_file_path);
 
 		if (!programFileStream.is_open())
 		{
 			LOG4CXX_ERROR(DSCP4_OPENCL_LOGGER, "Could not find OpenCL kernel file " << fringeContext->algorithm_options->opencl_kernel_filename);
-			dscp4_fringe_opencl_DestroyContext(&context);
+			delete[] context;
 			return NULL;
 		}
 
 		programString = std::string((std::istreambuf_iterator<char>(programFileStream)), (std::istreambuf_iterator<char>()));
 		programFileStream.close();
-
-		context->fringe_context = fringeContext;
 
 		cl_platform_id platformID = NULL;
 		cl_device_id deviceID = NULL;
@@ -278,15 +279,10 @@ extern "C" {
 		CHECK_OPENCL_RC(ret, "Could not release OpenCL program")
 
 
-		const unsigned int num_fringe_buffers =
-			(*openclContext)->fringe_context->display_options.num_heads /
-			(*openclContext)->fringe_context->display_options.num_heads_per_gpu;
-
-		for (unsigned int i = 0; i < num_fringe_buffers; i++)
+		for (unsigned int i = 0; i < (*openclContext)->fringe_context->algorithm_options->cache.num_fringe_buffers; i++)
 		{
 			ret = clReleaseMemObject((cl_mem)(*openclContext)->fringe_opencl_resources[i]);
 			CHECK_OPENCL_RC(ret, "Could not release fringe texture " << i << " OpenCL memory resource")
-
 		}
 
 		delete[] (*openclContext)->fringe_opencl_resources;
@@ -295,7 +291,6 @@ extern "C" {
 		CHECK_OPENCL_RC(ret, "Could not release stereogram RGBA OpenCL memory resource")
 		ret = clReleaseMemObject((cl_mem)(*openclContext)->stereogram_depth_opencl_resource);
 		CHECK_OPENCL_RC(ret, "Could not release stereogram DEPTH OpenCL memory resource")
-
 
 		ret = clReleaseCommandQueue((cl_command_queue)(*openclContext)->command_queue);
 		CHECK_OPENCL_RC(ret, "Could not release OpenCL command queue")

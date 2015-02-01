@@ -18,7 +18,10 @@
 #include <QMainWindow>
 #include <QScopedPointer>
 #include "QDSCP4Settings.h"
-#include <assimp/Importer.hpp>
+
+#include <assimp/Importer.hpp>      
+#include <assimp/scene.h>           
+#include <assimp/postprocess.h> 
 
 namespace Ui
 {
@@ -51,6 +54,18 @@ public slots:
 	void startDSCP4();
 	void stopDSCP4();
 
+	void enableUnchangeableUI();
+	void disableUnchangeableUI();
+	void enableControlsUI();
+	void disableControlsUI();
+
+signals:
+	void dscp4IsRunningChanged(bool isRunning);
+	void dscoUsRunningChangedRev(bool isRunning);
+
+	void x11IsRunningChanged(bool isRunning);
+	void nvidiaSettingsIsRunningChanged(bool isRunning);
+
 private:
 
 	QString browseDir();
@@ -59,12 +74,19 @@ private:
 	QDSCP4Settings * settings_;
     QScopedPointer<Ui::MainWindow> ui;
 
-	Assimp::Importer assetImporter_;
 	
 	dscp4_context_t algorithmContext_;
 
 	log4cxx::LoggerPtr logger_;
 
+	// Turn on all controls when DSCP4 is runninng
+	QList<QWidget*> dscp4Controls_;
+
+	// Turn off all UI elements below while DSCP4 is running
+	QList<QWidget*> unchangeables_;
+
+	Assimp::Importer assetImporter_;
+	const aiScene* objectScene_;
 };
 
 #endif

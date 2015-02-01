@@ -60,6 +60,8 @@ void QDSCP4Settings::populateSettings()
 	this->setNumScanlines(programOptions_.getNumScanlines());
 	this->setFOVX(programOptions_.getFovX());
 	this->setFOVY(programOptions_.getFovY());
+	this->setZNear(programOptions_.getZNear());
+	this->setZFar(programOptions_.getZFar());
 	this->setComputeMethod(programOptions_.getComputeMethod() == "cuda" ? "CUDA" : "OpenCL");
 	this->setComputeBlockDimX(programOptions_.getComputeMethod() == "cuda" ?
 #ifdef DSCP4_HAVE_CUDA

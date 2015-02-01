@@ -20,6 +20,10 @@ public:
 	void restoreDefaultSettings();
 	void populateSettings();
 
+	algorithm_options_t* getAlgorithmOptions() { return algorithmOptions_; }
+	display_options_t getDisplayOptions() { return displayOptions_; }
+	render_options_t* getRenderOptions() { return renderOptions_; }
+
 public slots:
 	void setInstallPath(QString installPath) { 
 		setValue<QString>(installPath, installPath_, std::bind(&QDSCP4Settings::installPathChanged, this, std::placeholders::_1)); 	}
@@ -28,12 +32,14 @@ public slots:
 	void setModelsPath(QString modelsPath) { setValue<QString>(modelsPath, modelsPath_, std::bind(&QDSCP4Settings::modelsPathChanged, this, std::placeholders::_1)); }
 	void setShadersPath(QString shadersPath) {
 		setValue<QString>(shadersPath, shadersPath_, std::bind(&QDSCP4Settings::shadersPathChanged, this, std::placeholders::_1));
-			renderOptions_->shaders_path = shadersPath_.toUtf8().constData();
+			shadersPathStr_ = shadersPath_.toStdString();
+			renderOptions_->shaders_path = shadersPathStr_.c_str();
 		}
 
 	void setKernelsPath(QString kernelsPath) {
 			setValue<QString>(kernelsPath, kernelsPath_, std::bind(&QDSCP4Settings::kernelsPathChanged, this, std::placeholders::_1)); 
-			renderOptions_->kernels_path = kernelsPath_.toUtf8().constData();
+			kernelsPathStr_ = kernelsPath_.toStdString();
+			renderOptions_->kernels_path = kernelsPathStr_.c_str();
 		}
 
 	void setVerbosity(int verbosity) { setValue<int>(verbosity, verbosity_, std::bind(&QDSCP4Settings::verbosityChanged, this, std::placeholders::_1)); }
@@ -51,7 +57,8 @@ public slots:
 	}
 	void setShaderFileName(QString shaderFileName) {
 		setValue<QString>(shaderFileName, shaderFileName_, std::bind(&QDSCP4Settings::shaderFileNameChanged, this, std::placeholders::_1)); 
-		renderOptions_->shader_filename_prefix = shaderFileName_.toUtf8().constData();
+		shaderFileNameStr_ = shaderFileName_.toStdString();
+		renderOptions_->shader_filename_prefix = shaderFileNameStr_.c_str();
 	}
 	void setRenderMode(int renderMode) { setValue<render_mode_t>((render_mode_t)renderMode, renderOptions_->render_mode, std::bind(&QDSCP4Settings::renderModeChanged, this, std::placeholders::_1)); }
 	void setLightPosX(double lightPosX) { setValue<float>(lightPosX, renderOptions_->light_pos_x, std::bind(&QDSCP4Settings::lightPosXChanged, this, std::placeholders::_1)); }
@@ -64,8 +71,8 @@ public slots:
 	void setNumWafelsPerScanline(int numWafelsPerScanline) { setValue<unsigned int>(numWafelsPerScanline, algorithmOptions_->num_wafels_per_scanline, std::bind(&QDSCP4Settings::numWafelsPerScanlineChanged, this, std::placeholders::_1)); }
 	void setFOVX(double fovX){ setValue<float>(fovX, algorithmOptions_->fov_x, std::bind(&QDSCP4Settings::fovXChanged, this, std::placeholders::_1)); }
 	void setFOVY(double fovY) { setValue<float>(fovY, algorithmOptions_->fov_y, std::bind(&QDSCP4Settings::fovYChanged, this, std::placeholders::_1)); }
-	//void setZNear(double zNear){ setValue<double>(fovX, algorithmOptions_->, std::bind(&QDSCP4Settings::fovXChanged, this, std::placeholders::_1)); }
-	//void setZFar(double zFar) { setValue<double>(fovY, algorithmOptions_->fov_y, std::bind(&QDSCP4Settings::fovYChanged, this, std::placeholders::_1)); }
+	void setZNear(double zNear){ setValue<float>(zNear, algorithmOptions_->z_near, std::bind(&QDSCP4Settings::zNearChanged, this, std::placeholders::_1)); }
+	void setZFar(double zFar) { setValue<float>(zFar, algorithmOptions_->z_far, std::bind(&QDSCP4Settings::zFarChanged, this, std::placeholders::_1)); }
 
 	void setComputeMethod(QString computeMethod) { 
 		setValue<QString>(computeMethod, computeMethod_, std::bind(&QDSCP4Settings::computeMethodChanged, this, std::placeholders::_1));
@@ -102,8 +109,9 @@ public slots:
 		}
 	}
 	void setOpenCLKernelFileName(QString openCLKernelFileName) { 
-		setValue<QString>(openCLKernelFileName, openCLKernelFileName_, std::bind(&QDSCP4Settings::openCLKernelFileNameChanged, this, std::placeholders::_1)); 
-		algorithmOptions_->opencl_kernel_filename = openCLKernelFileName_.toUtf8().constData();
+		setValue<QString>(openCLKernelFileName, openCLKernelFileName_, std::bind(&QDSCP4Settings::openCLKernelFileNameChanged, this, std::placeholders::_1));
+		openCLKernelFileNameStr_ = openCLKernelFileName_.toStdString();
+		algorithmOptions_->opencl_kernel_filename = openCLKernelFileNameStr_.c_str();
 	}
 
 	void setRefBeamAngle_Deg(double refBeamAngle_Deg) { setValue<float>(refBeamAngle_Deg, algorithmOptions_->reference_beam_angle, std::bind(&QDSCP4Settings::refBeamAngle_DegChanged, this, std::placeholders::_1)); }
@@ -117,14 +125,15 @@ public slots:
 	// Display options
 	void setDisplayName(QString displayName) { 
 		setValue<QString>(displayName, displayName_, std::bind(&QDSCP4Settings::displayNameChanged, this, std::placeholders::_1)); 
-		displayOptions_.name = displayName_.toStdString().c_str();
+		displayNameStr_ = displayName_.toStdString();
+		displayOptions_.name = displayNameStr_.c_str();
 	}
 
 	void setX11EnvVar(QString x11EnvVar) {
 		setValue<QString>(x11EnvVar, x11EnvVar_, std::bind(&QDSCP4Settings::x11EnvVarChanged, this, std::placeholders::_1));
-		displayOptions_.x11_env_var = x11EnvVar_.toStdString().c_str();
+		x11EnvVarStr_ = x11EnvVar_.toStdString();
+		displayOptions_.x11_env_var = x11EnvVarStr_.c_str();
 	}
-
 
 	void setNumHeads(int numHeads) { setValue<unsigned int>(numHeads, displayOptions_.num_heads, std::bind(&QDSCP4Settings::numHeadsChanged, this, std::placeholders::_1)); }
 	void setNumHeadsPerGPU(int numHeadsPerGPU) { setValue<unsigned int>(numHeadsPerGPU, displayOptions_.num_heads_per_gpu, std::bind(&QDSCP4Settings::numHeadsPerGPUChanged, this, std::placeholders::_1)); }
@@ -168,6 +177,8 @@ signals:
 	void numWafelsPerScanlineChanged(int newNumWafelsPerScanline);
 	void fovXChanged(double newFOVX);
 	void fovYChanged(double newFOVY);
+	void zNearChanged(double newZNear);
+	void zFarChanged(double newZFar);
 	void computeMethodChanged(QString newComputeMethod);
 	void computeBlockDimXChanged(int newComputeBlockDimX);
 	void computeBlockDimYChanged(int newComputeBlockDimY);
@@ -196,7 +207,6 @@ signals:
 	void numSamplesPerHololineChanged(int newNumSamplesPerHololine);
 
 
-
 private:
 
 	template<typename T>
@@ -223,18 +233,27 @@ private:
 	QString libPath_;
 	QString modelsPath_;
 	QString shadersPath_;
+	std::string shadersPathStr_;
+
 	QString kernelsPath_;
+	std::string kernelsPathStr_;
 
 	QString objectFileName_;
 	QString generateNormals_;
 	QString shadeModel_;
 	QString shaderFileName_;
+	std::string shaderFileNameStr_;
+
 
 	QString computeMethod_;
 	QString openCLKernelFileName_;
+	std::string openCLKernelFileNameStr_;
 
 	QString displayName_;
+	std::string displayNameStr_;
+
 	QString x11EnvVar_;
+	std::string x11EnvVarStr_;
 
 	unsigned int computeBlockDimX_;
 	unsigned int computeBlockDimY_;

@@ -6,6 +6,8 @@
 #include <qfiledialog.h>
 #include <boost/tokenizer.hpp>
 
+#include <dscp4.h>
+
 MainWindow::MainWindow(QWidget *parent)
 : MainWindow(nullptr, parent)
 {
@@ -79,6 +81,10 @@ MainWindow::MainWindow(QDSCP4Settings* settings, QWidget *parent) : QMainWindow(
 	QObject::connect(ui->xFOVDoubleSpinBox, SIGNAL(valueChanged(double)), settings_, SLOT(setFOVX(double)));
 	QObject::connect(settings_, SIGNAL(fovYChanged(double)), ui->yFOVDoubleSpinBox, SLOT(setValue(double)));
 	QObject::connect(ui->yFOVDoubleSpinBox, SIGNAL(valueChanged(double)), settings_, SLOT(setFOVY(double)));
+	QObject::connect(settings_, SIGNAL(zNearChanged(double)), ui->zNearAlgorithmDoubleSpinBox, SLOT(setValue(double)));
+	QObject::connect(ui->zNearAlgorithmDoubleSpinBox, SIGNAL(valueChanged(double)), settings_, SLOT(setZNear(double)));
+	QObject::connect(settings_, SIGNAL(zFarChanged(double)), ui->zFarAlgorithmDoubleSpinBox, SLOT(setValue(double)));
+	QObject::connect(ui->zFarAlgorithmDoubleSpinBox, SIGNAL(valueChanged(double)), settings_, SLOT(setZFar(double)));
 	QObject::connect(settings_, SIGNAL(computeMethodChanged(QString)), ui->computeMethodComboBox, SLOT(setCurrentText(QString)));
 	QObject::connect(ui->computeMethodComboBox, SIGNAL(currentTextChanged(QString)), settings_, SLOT(setComputeMethod(QString)));
 	QObject::connect(settings_, SIGNAL(openCLKernelFileNameChanged(QString)), ui->openclKernelFileComboBox, SLOT(setCurrentText(QString)));
@@ -105,10 +111,8 @@ MainWindow::MainWindow(QDSCP4Settings* settings, QWidget *parent) : QMainWindow(
 	// Display options
 	QObject::connect(settings_, SIGNAL(displayNameChanged(QString)), ui->friendlyNameLineEdit, SLOT(setText(QString)));
 	QObject::connect(ui->friendlyNameLineEdit, SIGNAL(textChanged(QString)), settings_, SLOT(setDisplayName(QString)));
-
 	QObject::connect(settings_, SIGNAL(x11EnvVarChanged(QString)), ui->x11DisplayEnvLineEdit, SLOT(setText(QString)));
 	QObject::connect(ui->x11DisplayEnvLineEdit, SIGNAL(textChanged(QString)), settings_, SLOT(setX11EnvVar(QString)));
-
 	QObject::connect(settings_, SIGNAL(numHeadsChanged(int)), ui->numHeadsSpinBox, SLOT(setValue(int)));
 	QObject::connect(ui->numHeadsSpinBox, SIGNAL(valueChanged(int)), settings_, SLOT(setNumHeads(int)));
 	QObject::connect(settings_, SIGNAL(numHeadsPerGPUChanged(int)), ui->numHeadsPerGPUSpinBox, SLOT(setValue(int)));
@@ -142,7 +146,6 @@ MainWindow::MainWindow(QDSCP4Settings* settings, QWidget *parent) : QMainWindow(
 	QObject::connect(ui->kernelsPathLineEdit, SIGNAL(textChanged(QString)), this, SLOT(populateKernelFiles()));
 	QObject::connect(ui->shadersPathLineEdit, SIGNAL(textChanged(QString)), this, SLOT(populateShaderFiles()));
 
-
 	QObject::connect(ui->inputFileToolButton, SIGNAL(clicked()), this, SLOT(browseAndSetInputModelFile()));
 	QObject::connect(ui->openclKernelFileToolButton, SIGNAL(clicked()), this, SLOT(browseAndSetOpenCLKernelFile()));
 	QObject::connect(ui->shaderFileNameToolButton, SIGNAL(clicked()), this, SLOT(browseAndSetShaderFileName()));
@@ -156,12 +159,34 @@ MainWindow::MainWindow(QDSCP4Settings* settings, QWidget *parent) : QMainWindow(
 
 	// Log
 	QObject::connect(ui->clearLogButton, SIGNAL(clicked()), ui->logTextEdit, SLOT(clear()));
-
 #ifdef DSCP4_HAVE_LOG4CXX
 	QObject::connect(logAppenderPtr, SIGNAL(gotNewLogMessage(QString)), ui->logTextEdit, SLOT(append(QString)));
 #endif
 
+	//Start/Stop button
+	QObject::connect(ui->startButton, SIGNAL(clicked()), this, SLOT(startDSCP4()));
+	QObject::connect(ui->stopButton, SIGNAL(clicked()), this, SLOT(stopDSCP4()));
+
 	LOG4CXX_INFO(logger_, "Logger initialized")
+
+	// These UI items will be disabled while DSCP4 is running
+	unchangeables_ <<
+	ui->generalSettingsGroupBox <<
+	ui->renderModeComboBox <<
+	ui->shaderFileNameComboBox <<
+	ui->shaderFileNameToolButton <<
+	ui->displaySettingsGroupBox <<
+	ui->computeMethodComboBox <<
+	ui->inputGroupBox <<
+	ui->displayGroupBox <<
+	ui->renderGroupBox <<
+	ui->startButton <<
+	ui->x11ToggleButton;
+
+	// These UI items will be enabled while DSCP4 is running
+	dscp4Controls_ << ui->renderPreviewGroupBox << ui->controlGroupBox << ui->stopButton;
+
+	disableControlsUI();
 
 	ui->tabWidget->setCurrentIndex(0);
 }
@@ -357,10 +382,159 @@ void MainWindow::browseAndSetKernelsPath()
 
 void MainWindow::startDSCP4()
 {
+	LOG4CXX_INFO(logger_, "Starting DSCP4 algorithm...")
+
+	disableUnchangeableUI();
+
+	unsigned int aiFlags = 0;
+
+	if (ui->generateNormalsComboBox->currentText() == "Smooth")
+		aiFlags |= aiProcess_GenSmoothNormals;
+	else if (ui->generateNormalsComboBox->currentText() == "Flat")
+		aiFlags |= aiProcess_GenNormals;
+
+	if (ui->triangulateMeshCheckBox->isChecked())
+		aiFlags |= aiProcess_Triangulate;
+
+	boost::filesystem::path modelFile(ui->inputFileComboBox->currentText().toStdString());
+	if (!boost::filesystem::exists(modelFile))
+		modelFile = boost::filesystem::path(ui->modelsPathLineEdit->text().toStdString()) / modelFile;
+
+	LOG4CXX_INFO(logger_, "Loading 3D object file \'" << modelFile.string() << "\'...")
+
+	objectScene_ = assetImporter_.ReadFile(modelFile.string(), aiFlags);
+
+	if (objectScene_ == nullptr || !objectScene_->HasMeshes())
+	{
+		LOG4CXX_FATAL(logger_, "3D object file does not appear to have any meshes")
+		assetImporter_.FreeScene();
+		enableUnchangeableUI();
+		return;
+	}
+
+	LOG4CXX_DEBUG(logger_, "Starting DSCP4 lib")
+
+	auto algorithmOptions = settings_->getAlgorithmOptions();
+	auto displayOptions = settings_->getDisplayOptions();
+	auto renderOptions = settings_->getRenderOptions();
+	int logLevel = ui->verbosityComboBox->currentIndex();
+
+	algorithmContext_ = dscp4_CreateContext(renderOptions, algorithmOptions, displayOptions, logLevel);
+
+	if (!dscp4_InitRenderer(algorithmContext_))
+	{
+		LOG4CXX_FATAL(logger_, "Could not initialize DSCP4 lib")
+		assetImporter_.FreeScene();
+		enableUnchangeableUI();
+		return;
+	}
+
+	for (unsigned int m = 0; m < objectScene_->mNumMeshes; m++)
+	{
+		// if it has faces, treat as mesh, otherwise as point cloud
+		if (objectScene_->mMeshes[m]->HasFaces())
+		{
+			std::string meshID;
+			meshID += std::string("Mesh ") += std::to_string(m);
+			LOG4CXX_INFO(logger_, "Found " << meshID << " from 3D object file '" << modelFile.string() << "'")
+			LOG4CXX_INFO(logger_, meshID << " has " << objectScene_->mMeshes[m]->mNumVertices << " vertices")
+			if (objectScene_->mMeshes[m]->HasNormals())
+			{
+				LOG4CXX_INFO(logger_, meshID << " has normals")
+			}
+			else
+			{
+				LOG4CXX_WARN(logger_, meshID << " does not have normals, lighting effects will look fucked up")
+			}
+
+			LOG4CXX_INFO(logger_, meshID << " has " << objectScene_->mMeshes[m]->mNumFaces << " faces")
+
+			if (objectScene_->mMeshes[m]->HasVertexColors(0))
+			{
+				LOG4CXX_INFO(logger_, meshID << " has vertex colors")
+					dscp4_AddMesh(algorithmContext_, meshID.c_str(), objectScene_->mMeshes[m]->mNumVertices, (float*)objectScene_->mMeshes[m]->mVertices, (float*)objectScene_->mMeshes[m]->mNormals, (float*)objectScene_->mMeshes[m]->mColors[0]);
+			}
+			else
+			{
+				LOG4CXX_WARN(logger_, meshID << " does not have vertex colors--it may look dull")
+					dscp4_AddMesh(algorithmContext_, meshID.c_str(), objectScene_->mMeshes[m]->mNumVertices, (float*)objectScene_->mMeshes[m]->mVertices, (float*)objectScene_->mMeshes[m]->mNormals);
+			}
+
+		}
+		else
+		{
+			LOG4CXX_DEBUG(logger_, "Found mesh " << m << " with no faces.  Treating vertecies as point cloud")
+		}
+	}
+
+	for (unsigned int m = 0; m < objectScene_->mNumMaterials; m++)
+	{
+		aiString key;
+		for (unsigned int p = 0; p < objectScene_->mMaterials[m]->mNumProperties; p++)
+		{
+			key = objectScene_->mMaterials[m]->mProperties[p]->mKey;
+		}
+
+		aiColor3D color;
+		objectScene_->mMaterials[m]->Get(AI_MATKEY_COLOR_DIFFUSE, color);
+
+		// if it has faces, treat as mesh, otherwise as point cloud
+		if (true)
+		{
+			//LOG4CXX_DEBUG(logger, "Found mesh " << m << " with " << objectScene->mMeshes[m]->mNumFaces << " faces from 3D object file...");
+			//AddMesh((float*)objectScene->mMeshes[m]->mVertices, objectScene->mMeshes[m]->mNumVertices);
+		}
+		else
+		{
+			LOG4CXX_DEBUG(logger_, "Found Mesh " << m << " with no faces.  Treating vertecies as point cloud")
+		}
+	}
+
+	enableControlsUI();
 
 }
 
 void MainWindow::stopDSCP4()
 {
+	dscp4_DeinitRenderer(algorithmContext_);
+	dscp4_DestroyContext(&algorithmContext_);
 
+	assetImporter_.FreeScene();
+
+	enableUnchangeableUI();
+	disableControlsUI();
+
+	ui->stopButton->setDisabled(true);
+}
+
+void MainWindow::enableUnchangeableUI()
+{
+	for each (QWidget* var in unchangeables_)
+	{
+		var->setEnabled(true);
+	}
+}
+
+void MainWindow::disableUnchangeableUI()
+{
+	for each (QWidget* var in unchangeables_)
+	{
+		var->setEnabled(false);
+	}
+}
+
+void MainWindow::enableControlsUI()
+{
+	for each (QWidget* var in dscp4Controls_)
+	{
+		var->setEnabled(true);
+	}
+}
+
+void MainWindow::disableControlsUI()
+{
+	for each (QWidget* var in dscp4Controls_)
+	{
+		var->setEnabled(false);
+	}
 }

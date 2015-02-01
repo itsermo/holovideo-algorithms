@@ -564,7 +564,7 @@ void DSCP4Render::renderLoop()
 	camera_.center = glm::vec3(0, 0, 0);
 	camera_.up = glm::vec3(0, 1, 0);
 
-	lighting_.position = glm::vec4(renderOptions_->light_pos_x, renderOptions_->light_pos_y, renderOptions_->light_pos_z, 1.f);
+	
 	lighting_.ambientColor = glm::vec4(0.2f, 0.2f, 0.2f, 1.f);
 	lighting_.diffuseColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.f);
 	lighting_.specularColor = glm::vec4(1.f, 1.f, 1.f, 1.f);
@@ -626,6 +626,9 @@ void DSCP4Render::renderLoop()
 
 	while (shouldRender_)
 	{
+
+		lighting_.position = glm::vec4(renderOptions_->light_pos_x, renderOptions_->light_pos_y, renderOptions_->light_pos_z, 1.f);
+
 		SDL_Event event = { 0 };
 
 		std::unique_lock<std::mutex> updateFrameLock(updateFrameMutex_);
@@ -698,6 +701,7 @@ void DSCP4Render::renderLoop()
 			inputStateChanged(&event);
         }
         
+		updateAlgorithmOptionsCache();
 	}
 
 	initLock.lock();
@@ -1911,13 +1915,25 @@ void DSCP4Render::initComputeMethod()
 #endif
 		break;
 	case DSCP4_COMPUTE_METHOD_OPENCL:
+	{
 #ifdef DSCP4_HAVE_OPENCL
 		LOG4CXX_DEBUG(logger_, "OpenCL -- Initializing OpenCL Context")
 		SDL_GL_MakeCurrent(windows_[0], glContexts_[numWindows_ - 1]);
+		fringeContext_.kernel_file_path = fringeContext_.algorithm_options->opencl_kernel_filename;
+		boost::filesystem::path kernelFile(fringeContext_.kernel_file_path);
+		if (!boost::filesystem::exists(kernelFile))
+			kernelFile = boost::filesystem::path(renderOptions_->kernels_path) / kernelFile;
+		
+		std::string kernelFileStr = kernelFile.string();
+
+		fringeContext_.kernel_file_path = kernelFileStr.c_str();
+
+
 		computeContext_ = (dscp4_fringe_opencl_context_t*)dscp4_fringe_opencl_CreateContext(&fringeContext_, (int*)glContexts_[0]);
 #else
 		LOG4CXX_FATAL(logger_, "OpenCL selected as compute method, but this binary was not compiled with OpenCL")
 #endif
+	}
 		break;
 	default:
 		LOG4CXX_ERROR(logger_, "No compute method selected, no hologram will be computed")
