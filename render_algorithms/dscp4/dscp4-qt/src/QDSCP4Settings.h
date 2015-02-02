@@ -78,6 +78,8 @@ public slots:
 	void setComputeMethod(QString computeMethod) { 
 		setValue<QString>(computeMethod, computeMethod_, std::bind(&QDSCP4Settings::computeMethodChanged, this, std::placeholders::_1));
 		algorithmOptions_->compute_method = computeMethod_ == "OpenCL" ? DSCP4_COMPUTE_METHOD_OPENCL : DSCP4_COMPUTE_METHOD_CUDA;
+		setComputeBlockDimX(computeMethod_ == "OpenCL" ? (int)programOptions_.getOpenCLKernelWorksizeX() : (int)programOptions_.getCUDABlockDimensionX());
+		setComputeBlockDimY(computeMethod_ == "OpenCL" ? (int)programOptions_.getOpenCLKernelWorksizeY() : (int)programOptions_.getCUDABlockDimensionY());
 	}
 	void setComputeBlockDimX(int computeBlockDimX) {
 		setValue<unsigned int>(computeBlockDimX, computeBlockDimX_, std::bind(&QDSCP4Settings::computeBlockDimXChanged, this, std::placeholders::_1));

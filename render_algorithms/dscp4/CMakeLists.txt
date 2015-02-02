@@ -45,7 +45,7 @@ find_package(Qt5Widgets)
 
 option(BOOST_DISABLE_AUTOLINK "Defines BOOST_ALL_NO_LIB macro to turn off boost auto linking" ${WIN32})
 option(BUILD_DSCP4_APP "Builds the command-line executable application for testing the DSCP4 algorithm library (libdscp4)" ON)
-option(BUILD_DSCP4_QT_APP "Builds the QT GUI application for testing the DSCP4 algorithm library (libdscp4)" ${QT_QTWIDGETS_FOUND})
+option(BUILD_DSCP4_QT_APP "Builds the QT GUI application for testing the DSCP4 algorithm library (libdscp4)" ON)
 option(BUILD_DSCP4_STATIC "Builds the DSCP4 lib as a static lib" ${WIN32})
 option(WITH_CUDA "Enables CUDA compute building" ${CUDA_FOUND})
 option(WITH_LIBLOG4CXX "Uses Log4Cxx library for logging status and error messages" ${LIBLOG4CXX_FOUND})

@@ -560,11 +560,12 @@ void MainWindow::startX11()
 	command.append(" -br"); // set black background
 	command.append(" +xinerama"); //enable xinerama
 	x11Process_->start(command);
-	if (x11Process_->waitForStarted(100))
+	if (x11Process_->waitForStarted())
 	{
 		QObject::disconnect(ui->x11ToggleButton, SIGNAL(clicked()), this, SLOT(startX11()));
 		QObject::connect(ui->x11ToggleButton, SIGNAL(clicked()), this, SLOT(stopX11()));
 		ui->x11ToggleButton->setText("Stop X11");
+		ui->nvidiaSettingsToggleButton->setEnabled(true);
 	}
 	else
 	{
@@ -578,14 +579,16 @@ void MainWindow::startX11()
 
 void MainWindow::stopX11()
 {
-	x11Process_->kill();
-	delete[] x11Process_;
+	x11Process_->close();
+	x11Process_->waitForFinished();
+	delete x11Process_;
 	x11Process_ = nullptr;
 
 	QObject::disconnect(ui->x11ToggleButton, SIGNAL(clicked()), this, SLOT(stopX11()));
 	QObject::connect(ui->x11ToggleButton, SIGNAL(clicked()), this, SLOT(startX11()));
 	ui->x11ToggleButton->setText("Start X11");
 
+	ui->nvidiaSettingsToggleButton->setEnabled(false);
 }
 
 void MainWindow::startNVIDIASettings()
