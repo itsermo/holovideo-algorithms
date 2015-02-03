@@ -9,8 +9,7 @@
 #include <dscp4.h>
 
 #include <qmessagebox.h>
-
-unsigned char * g_renderPreviewData;
+#include <qtimer.h>
 
 MainWindow::MainWindow(QWidget *parent)
 : MainWindow(0, nullptr, parent)
@@ -23,7 +22,8 @@ QMainWindow(parent),
 ui(new Ui::MainWindow), 
 algorithmContext_(nullptr), 
 x11Process_(nullptr),
-nvidiaSettingsProcess_(nullptr)
+nvidiaSettingsProcess_(nullptr),
+haveNewFrame_(false)
 {
 
 	settings_ = new QDSCP4Settings(argc, argv, this);
@@ -215,6 +215,12 @@ nvidiaSettingsProcess_(nullptr)
 	disableControlsUI();
 
 	ui->tabWidget->setCurrentIndex(0);
+
+
+	auto palette = ui->renderFPSCounter->palette();
+	palette.setColor(palette.WindowText, QColor(0, 255, 0));
+	ui->renderFPSCounter->setPalette(palette);
+	ui->computeFPSCounter->setPalette(palette);
 }
 
 
@@ -478,6 +484,11 @@ void MainWindow::startDSCP4()
 		return;
 	}
 
+	renderPreviewScene_ = new QGraphicsScene(this);
+	renderPreviewTimer_ = new QTimer(this);
+	connect(renderPreviewTimer_, SIGNAL(timeout()), this, SLOT(setRenderPreview()));
+	renderPreviewTimer_->start(33);
+
 	for (unsigned int m = 0; m < objectScene_->mNumMeshes; m++)
 	{
 		// if it has faces, treat as mesh, otherwise as point cloud
@@ -539,44 +550,31 @@ void MainWindow::startDSCP4()
 		}
 	}
 
-
-
 	enableControlsUI();
-
-	g_renderPreviewData = new unsigned char[600 * 468*4];
-	for (int i = 0; i < 600 * 468; i++)
-	{
-		g_renderPreviewData[i] = 0;
-		g_renderPreviewData[i+1] = 0;
-		g_renderPreviewData[i+2] = 0;
-		g_renderPreviewData[i+3] = 255;
-	}
-
-	scene = new QGraphicsScene(this);
-
-	auto img = QImage(g_renderPreviewData, 600, 468, QImage::Format_ARGB32);
-	image = QPixmap::fromImage(img);
-
-	scene->addPixmap(image);
-	auto rect = image.rect();
-	scene->setSceneRect(image.rect());
-
-
-
-	this->ui->renderPreviewGraphicsView->setScene(scene);
-
 }
 
 void MainWindow::dscp4RenderEvent(callback_type_t evt, void * parent, void * userData)
 {
 	if (evt == DSCP4_CALLBACK_TYPE_NEW_FRAME)
 	{
-		auto frameData = (frame_data_t*)userData;
+		((MainWindow*)parent)->pushNewRenderPreviewFrame(*(frame_data_t*)userData);
 	}
+}
+
+void MainWindow::pushNewRenderPreviewFrame(frame_data_t & frameData)
+{
+	std::unique_lock<std::mutex> dataLock(renderPreviewDataMutex_);
+	//memcpy(renderPreviewData_, frameData.buffer, frameData.x_res * frameData.y_res * 4);
+	frameData_ = frameData;
+	haveNewFrame_ = true;
+	dataLock.unlock();
+	haveNewFrameCV_.notify_all();
 }
 
 void MainWindow::stopDSCP4()
 {
+	renderPreviewTimer_->stop();
+
 	dscp4_DeinitRenderer(algorithmContext_);
 	dscp4_DestroyContext(&algorithmContext_);
 
@@ -586,6 +584,9 @@ void MainWindow::stopDSCP4()
 	disableControlsUI();
 
 	ui->stopButton->setDisabled(true);
+
+	delete renderPreviewScene_;
+	renderPreviewScene_ = nullptr;
 }
 
 void MainWindow::startX11()
@@ -730,5 +731,23 @@ void MainWindow::disableControlsUI()
 	for (QWidget* var : dscp4Controls_)
 	{
 		var->setEnabled(false);
+	}
+}
+
+void MainWindow::setRenderPreview()
+{
+	if (haveNewFrame_)
+	{
+		std::unique_lock<std::mutex> updateFrameLock(renderPreviewDataMutex_);
+		QImage theImage((unsigned char *)frameData_.buffer, ui->numWafelsSpinBox->value(), ui->numScanlinesSpinBox->value(), QImage::Format_RGBA8888);
+		renderPreviewImage_ = QPixmap::fromImage(theImage.mirrored(false, true));
+		renderPreviewScene_->clear();
+		renderPreviewScene_->addPixmap(renderPreviewImage_.scaled(ui->renderPreviewGraphicsView->width()-4, ui->renderPreviewGraphicsView->height()-4, Qt::IgnoreAspectRatio, Qt::SmoothTransformation));
+		renderPreviewScene_->setSceneRect(QRect(0, 0, ui->renderPreviewGraphicsView->width()-4, ui->renderPreviewGraphicsView->height()-4));
+		this->ui->renderPreviewGraphicsView->setScene(renderPreviewScene_);
+		this->ui->computeFPSCounter->display(frameData_.compute_fps);
+		this->ui->renderFPSCounter->display(frameData_.render_fps);
+		haveNewFrame_ = false;
+		updateFrameLock.unlock();
 	}
 }

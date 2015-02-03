@@ -704,6 +704,7 @@ void DSCP4Render::renderLoop()
 				break;
 			}
 
+
 			for (unsigned int i = 0; i < numWindows_; i++)
 			{
 				SDL_GL_MakeCurrent(windows_[i], glContexts_[i]);
@@ -716,13 +717,10 @@ void DSCP4Render::renderLoop()
 		LOG4CXX_TRACE(logger_, "Rendering the frame took " << duration << " ms (" << 1.f / duration * 1000 << " fps)");
 #endif
 
-		if (eventCallback_ && renderOptions_->render_mode == DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE)
+        if (eventCallback_ && renderOptions_->render_mode == DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE)
 		{
-			renderPreviewData_.render_fps = 1.f / duration * 1000;
-			glBindTexture(GL_TEXTURE_2D, fringeContext_.stereogram_gl_fbo_color);
-			glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, fringeContext_.algorithm_options->num_wafels_per_scanline, fringeContext_.algorithm_options->num_scanlines, GL_RGBA, GL_UNSIGNED_BYTE, renderPreviewBuffer_);
+			renderPreviewData_.render_fps = 1.f / duration * 1000.f;
 			eventCallback_(DSCP4_CALLBACK_TYPE_NEW_FRAME, parentCallback_, &renderPreviewData_);
-			glBindTexture(GL_TEXTURE_2D, 0);
 		}
 
 	poll:
@@ -730,7 +728,9 @@ void DSCP4Render::renderLoop()
         {
 			inputStateChanged(&event);
         }
-        
+
+
+
 		updateAlgorithmOptionsCache();
 	}
 
@@ -1038,6 +1038,18 @@ void DSCP4Render::drawForFringe()
 #else
 	generateStereogram();
 #endif
+
+	if (eventCallback_)
+	{
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, fringeContext_.stereogram_gl_fbo);
+		glReadPixels(
+			fringeContext_.algorithm_options->num_wafels_per_scanline * (fringeContext_.algorithm_options->cache.stereogram_num_tiles_x - 1),
+			fringeContext_.algorithm_options->num_scanlines * (fringeContext_.algorithm_options->cache.stereogram_num_tiles_y/2 - 1),
+			fringeContext_.algorithm_options->num_wafels_per_scanline,
+			fringeContext_.algorithm_options->num_scanlines,
+			GL_RGBA, GL_UNSIGNED_BYTE, renderPreviewBuffer_);
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+	}
 
 #ifdef DSCP4_ENABLE_TRACE_LOG
 	duration = measureTime<>(std::bind(&DSCP4Render::copyStereogramDepthToPBO, this));

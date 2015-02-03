@@ -1,6 +1,11 @@
 #ifndef mainwindow_h
 #define mainwindow_h
 
+#include <thread>
+#include <condition_variable>
+#include <mutex>
+#include <atomic>
+
 #ifdef DSCP4_HAVE_LOG4CXX
 #include <log4cxx/logger.h>
 #include <log4cxx/patternlayout.h>
@@ -78,7 +83,8 @@ public slots:
 	void rotateModelZ(int z);
 
 	void setSpinOn(bool spinOn);
-
+	void setRenderPreview();
+	void pushNewRenderPreviewFrame(frame_data_t & frameData);
 	static void dscp4RenderEvent(callback_type_t evt, void * parent, void * userData);
 
 signals:
@@ -96,7 +102,6 @@ private:
 	QDSCP4Settings * settings_;
     QScopedPointer<Ui::MainWindow> ui;
 
-	
 	dscp4_context_t algorithmContext_;
 
 	log4cxx::LoggerPtr logger_;
@@ -113,9 +118,15 @@ private:
 	QProcess * x11Process_;
 	QProcess * nvidiaSettingsProcess_;
 
-	QGraphicsScene *scene;
-	QPixmap image;
+	QGraphicsScene *renderPreviewScene_;
+	QPixmap renderPreviewImage_;
 
+	frame_data_t frameData_;
+
+	QTimer *renderPreviewTimer_;
+	std::condition_variable haveNewFrameCV_;
+	std::atomic<bool> haveNewFrame_;
+	std::mutex renderPreviewDataMutex_;
 };
 
 #endif
