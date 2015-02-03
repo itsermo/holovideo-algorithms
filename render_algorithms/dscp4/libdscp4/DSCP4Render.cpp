@@ -564,7 +564,7 @@ void DSCP4Render::renderLoop()
 	std::unique_lock<std::mutex> initLock(isInitMutex_);
 
 #ifdef DSCP4_ENABLE_TRACE_LOG
-	long long duration = 0;
+	long long renderFrameDuration = 0;
 #endif
 
 	float ratio = 0.f;
@@ -660,7 +660,7 @@ void DSCP4Render::renderLoop()
 		}
 
 #ifdef DSCP4_ENABLE_TRACE_LOG
-		duration = measureTime<>([&](){
+		renderFrameDuration = measureTime<>([&](){
 #endif
 
 			// Increments rotation if spinOn_ is true
@@ -685,8 +685,8 @@ void DSCP4Render::renderLoop()
 			{
 		#ifdef DSCP4_ENABLE_TRACE_LOG
 
-				auto duration = measureTime<>(std::bind(&DSCP4Render::drawForAerialDisplay, this));
-				LOG4CXX_TRACE(logger_, "Generating " << numWindows_ << " views took " << duration << " ms (" << 1.f / duration * 1000 << " fps)")
+				auto drawAerialDuration = measureTime<>(std::bind(&DSCP4Render::drawForAerialDisplay, this));
+				LOG4CXX_TRACE(logger_, "Generating " << numWindows_ << " views took " << drawAerialDuration << " ms (" << 1.f / drawAerialDuration * 1000 << " fps)")
 		#else
 				drawForAerialDisplay();
 
@@ -714,12 +714,12 @@ void DSCP4Render::renderLoop()
 #ifdef DSCP4_ENABLE_TRACE_LOG
 		});
 
-		LOG4CXX_TRACE(logger_, "Rendering the frame took " << duration << " ms (" << 1.f / duration * 1000 << " fps)");
+		LOG4CXX_TRACE(logger_, "Rendering the frame took " << renderFrameDuration << " ms (" << 1.f / renderFrameDuration * 1000 << " fps)");
 #endif
 
         if (eventCallback_ && renderOptions_->render_mode == DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE)
 		{
-			renderPreviewData_.render_fps = 1.f / duration * 1000.f;
+			renderPreviewData_.render_fps = 1.f / renderFrameDuration * 1000.f;
 			eventCallback_(DSCP4_CALLBACK_TYPE_NEW_FRAME, parentCallback_, &renderPreviewData_);
 		}
 
@@ -2031,6 +2031,8 @@ void DSCP4Render::computeHologram()
 	default:
 		break;
 	}
+
+	glFinish();
 }
 
 void DSCP4Render::updateAlgorithmOptionsCache()
