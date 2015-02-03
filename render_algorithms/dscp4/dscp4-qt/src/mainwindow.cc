@@ -592,11 +592,11 @@ void MainWindow::stopDSCP4()
 void MainWindow::startX11()
 {
 	x11Process_ = new QProcess(this);
+	QObject::connect(x11Process_, SIGNAL(readyReadStandardError()), this, SLOT(logX11()));
 	QString command("X ");
 	command.append(ui->x11DisplayEnvLineEdit->text()); // set the display env. variable
 	command.append(" -br"); // set black background
 	command.append(" +xinerama"); //enable xinerama
-	QObject::connect(x11Process_, SIGNAL(readyReadStandardOutput()), this, SLOT(logX11()));
 	x11Process_->start(command);
 	if (x11Process_->waitForStarted())
 	{
@@ -604,7 +604,6 @@ void MainWindow::startX11()
 		QObject::connect(ui->x11ToggleButton, SIGNAL(clicked()), this, SLOT(stopX11()));
 		ui->x11ToggleButton->setText("Stop X11");
 		ui->nvidiaSettingsToggleButton->setEnabled(true);
-		
 	}
 	else
 	{
@@ -620,11 +619,16 @@ void MainWindow::stopX11()
 {
 	x11Process_->close();
 	x11Process_->waitForFinished();
+	QObject::disconnect(x11Process_, SIGNAL(readyReadStandardError()), this, SLOT(logX11()));
+
 	delete x11Process_;
 	x11Process_ = nullptr;
 
-	QObject::disconnect(x11Process_, SIGNAL(readyReadStandardOutput()), this, SLOT(logX11()));
 	QObject::disconnect(ui->x11ToggleButton, SIGNAL(clicked()), this, SLOT(stopX11()));
+
+	if(nvidiaSettingsProcess_)
+		QObject::disconnect(nvidiaSettingsProcess_, SIGNAL(readyReadStandardError()), this, SLOT(logNVIDIASettings()));
+
 	QObject::connect(ui->x11ToggleButton, SIGNAL(clicked()), this, SLOT(startX11()));
 	ui->x11ToggleButton->setText("Start X11");
 
@@ -634,11 +638,15 @@ void MainWindow::stopX11()
 void MainWindow::startNVIDIASettings()
 {
 	if (nvidiaSettingsProcess_ == nullptr)
+	{
 		nvidiaSettingsProcess_ = new QProcess(this);
+		QObject::connect(nvidiaSettingsProcess_, SIGNAL(readyReadStandardError()), this, SLOT(logNVIDIASettings()));
+	}
 
 	if (nvidiaSettingsProcess_->state() != QProcess::Running)
 	{
-		QString command("nvidia-settings -c ");
+
+		QString command("nvidia-settings -V all -c ");
 		command.append(ui->x11DisplayEnvLineEdit->text()); // set the display env. variable
 		nvidiaSettingsProcess_->start(command);
 		if (!nvidiaSettingsProcess_->waitForStarted(100))
@@ -650,7 +658,7 @@ void MainWindow::startNVIDIASettings()
 			QMessageBox::critical(this, "Error Launching NVIDIA Settings", message, QMessageBox::Ok);
 		}
 
-		QObject::connect(nvidiaSettingsProcess_, SIGNAL(readyReadStandardOutput()), this, SLOT(logNVIDIASettings()));
+
 
 	}
 }
@@ -761,10 +769,10 @@ void MainWindow::setRenderPreview()
 
 void MainWindow::logX11()
 {
-	ui->x11LogTextEdit->insertPlainText(x11Process_->readAllStandardOutput());
+	ui->x11LogTextEdit->insertPlainText(x11Process_->readAllStandardError());
 }
 
 void MainWindow::logNVIDIASettings()
 {
-	ui->nvidiaSettingsLogTextEdit->insertPlainText(nvidiaSettingsProcess_->readAllStandardOutput());
+	ui->nvidiaSettingsLogTextEdit->insertPlainText(nvidiaSettingsProcess_->readAllStandardError());
 }

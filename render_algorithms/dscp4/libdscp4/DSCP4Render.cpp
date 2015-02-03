@@ -719,7 +719,9 @@ void DSCP4Render::renderLoop()
 
         if (eventCallback_ && renderOptions_->render_mode == DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE)
 		{
+#ifdef DSCP4_ENABLE_TRACE_LOG
 			renderPreviewData_.render_fps = 1.f / renderFrameDuration * 1000.f;
+#endif
 			eventCallback_(DSCP4_CALLBACK_TYPE_NEW_FRAME, parentCallback_, &renderPreviewData_);
 		}
 
