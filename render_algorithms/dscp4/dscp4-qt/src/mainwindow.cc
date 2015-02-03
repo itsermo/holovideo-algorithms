@@ -10,6 +10,8 @@
 
 #include <qmessagebox.h>
 
+unsigned char * g_renderPreviewData;
+
 MainWindow::MainWindow(QWidget *parent)
 : MainWindow(0, nullptr, parent)
 {
@@ -171,9 +173,9 @@ nvidiaSettingsProcess_(nullptr)
 	QObject::connect(ui->kernelsPathToolButton, SIGNAL(clicked()), this, SLOT(browseAndSetKernelsPath()));
 
 	// Log
-	QObject::connect(ui->clearLogButton, SIGNAL(clicked()), ui->logTextEdit, SLOT(clear()));
+	//QObject::connect(ui->clearLogButton, SIGNAL(clicked()), ui->logTextEdit, SLOT(clear()));
 #ifdef DSCP4_HAVE_LOG4CXX
-	QObject::connect(logAppenderPtr, SIGNAL(gotNewLogMessage(QString)), ui->logTextEdit, SLOT(append(QString)));
+	QObject::connect(logAppenderPtr, SIGNAL(gotNewLogMessage(QString)), ui->dscp4LogTextEdit, SLOT(append(QString)));
 #endif
 
 	//Controls
@@ -466,6 +468,8 @@ void MainWindow::startDSCP4()
 
 	algorithmContext_ = dscp4_CreateContext(renderOptions, algorithmOptions, displayOptions, logLevel, logAppender);
 
+	dscp4_SetEventCallback(algorithmContext_, MainWindow::dscp4RenderEvent, this);
+
 	if (!dscp4_InitRenderer(algorithmContext_))
 	{
 		LOG4CXX_FATAL(logger_, "Could not initialize DSCP4 lib")
@@ -535,8 +539,40 @@ void MainWindow::startDSCP4()
 		}
 	}
 
+
+
 	enableControlsUI();
 
+	g_renderPreviewData = new unsigned char[600 * 468*4];
+	for (int i = 0; i < 600 * 468; i++)
+	{
+		g_renderPreviewData[i] = 0;
+		g_renderPreviewData[i+1] = 0;
+		g_renderPreviewData[i+2] = 0;
+		g_renderPreviewData[i+3] = 255;
+	}
+
+	scene = new QGraphicsScene(this);
+
+	auto img = QImage(g_renderPreviewData, 600, 468, QImage::Format_ARGB32);
+	image = QPixmap::fromImage(img);
+
+	scene->addPixmap(image);
+	auto rect = image.rect();
+	scene->setSceneRect(image.rect());
+
+
+
+	this->ui->renderPreviewGraphicsView->setScene(scene);
+
+}
+
+void MainWindow::dscp4RenderEvent(callback_type_t evt, void * parent, void * userData)
+{
+	if (evt == DSCP4_CALLBACK_TYPE_NEW_FRAME)
+	{
+		auto frameData = (frame_data_t*)userData;
+	}
 }
 
 void MainWindow::stopDSCP4()

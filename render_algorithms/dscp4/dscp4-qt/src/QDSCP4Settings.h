@@ -121,9 +121,19 @@ public slots:
 	void setTemporalUpconvertRed(int temporalUpconvertRed)  { setValue<unsigned int>(temporalUpconvertRed, algorithmOptions_->temporal_upconvert_red, std::bind(&QDSCP4Settings::temporalUpconvertRedChanged, this, std::placeholders::_1)); }
 	void setTemporalUpconvertGreen(int temporalUpconvertGreen) { setValue<unsigned int>(temporalUpconvertGreen, algorithmOptions_->temporal_upconvert_green, std::bind(&QDSCP4Settings::temporalUpconvertGreenChanged, this, std::placeholders::_1)); }
 	void setTemporalUpconvertBlue(int temporalUpconvertBlue) { setValue<unsigned int>(temporalUpconvertBlue, algorithmOptions_->temporal_upconvert_blue, std::bind(&QDSCP4Settings::temporalUpconvertBlueChanged, this, std::placeholders::_1)); }
-	void setWavelengthRed_100nm(double wavelengthRed_100nm)  { setValue<float>((float)wavelengthRed_100nm / pow(10,7), algorithmOptions_->wavelength_red, std::bind(&QDSCP4Settings::wavelengthRed_100nmChanged, this, std::placeholders::_1)); }
-	void setWavelengthGreen_100nm(double wavelengthGreen_100nm)  { setValue<float>((float)wavelengthGreen_100nm / pow(10, 7), algorithmOptions_->wavelength_green, std::bind(&QDSCP4Settings::wavelengthGreen_100nmChanged, this, std::placeholders::_1)); }
-	void setWavelengthBlue_100nm(double wavelengthBlue_100nm) { setValue<float>((float)wavelengthBlue_100nm / pow(10, 7), algorithmOptions_->wavelength_blue, std::bind(&QDSCP4Settings::wavelengthBlue_100nmChanged, this, std::placeholders::_1)); }
+	void setWavelengthRed_100nm(double wavelengthRed_100nm)  { 
+		setValue<double>(wavelengthRed_100nm, wavelengthRed_100nm_, std::bind(&QDSCP4Settings::wavelengthRed_100nmChanged, this, std::placeholders::_1));
+		algorithmOptions_->wavelength_red = (float)(wavelengthRed_100nm_ / pow(10, 7));
+	}
+	void setWavelengthGreen_100nm(double wavelengthGreen_100nm)  { 
+		setValue<double>(wavelengthGreen_100nm, wavelengthGreen_100nm_, std::bind(&QDSCP4Settings::wavelengthGreen_100nmChanged, this, std::placeholders::_1));
+		algorithmOptions_->wavelength_green = (float)(wavelengthGreen_100nm_ / pow(10, 7));
+
+	}
+	void setWavelengthBlue_100nm(double wavelengthBlue_100nm) { 
+		setValue<double>(wavelengthBlue_100nm, wavelengthBlue_100nm_, std::bind(&QDSCP4Settings::wavelengthBlue_100nmChanged, this, std::placeholders::_1));
+		algorithmOptions_->wavelength_blue = (float)(wavelengthBlue_100nm_ / pow(10, 7));
+	}
 
 	// Display options
 	void setDisplayName(QString displayName) { 
@@ -263,6 +273,11 @@ private:
 
 	unsigned int computeBlockDimX_;
 	unsigned int computeBlockDimY_;
+
+	// backing store for wavelength
+	double wavelengthRed_100nm_;
+	double wavelengthBlue_100nm_;
+	double wavelengthGreen_100nm_;
 
 	int verbosity_;
 

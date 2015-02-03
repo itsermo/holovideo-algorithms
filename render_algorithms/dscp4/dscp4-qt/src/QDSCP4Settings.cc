@@ -93,14 +93,14 @@ void QDSCP4Settings::populateSettings()
 #endif
 		: 32);
 
-	this->setOpenCLKernelFileName(QString::fromStdString("BLAHEBEE.cl"));
+	this->setOpenCLKernelFileName(QString::fromStdString(programOptions_.getOpenCLKernelFileName()));
 	this->setRefBeamAngle_Deg((double)programOptions_.getReferenceBeamAngle());
 	this->setTemporalUpconvertRed(programOptions_.getTemporalUpconvertRed());
 	this->setTemporalUpconvertGreen(programOptions_.getTemporalUpconvertGreen());
 	this->setTemporalUpconvertBlue(programOptions_.getTemporalUpconvertBlue());
-	this->setWavelengthRed_100nm((double)(programOptions_.getWavelengthRed() * pow(10, 7)));
-	this->setWavelengthGreen_100nm((double)(programOptions_.getWavelengthGreen() * pow(10, 7)));
-	this->setWavelengthBlue_100nm((double)(programOptions_.getWavelengthBlue() * pow(10, 7)));
+	this->setWavelengthRed_100nm((double)(programOptions_.getWavelengthRed()) * pow(10,7));
+	this->setWavelengthGreen_100nm((double)(programOptions_.getWavelengthGreen())* pow(10, 7));
+	this->setWavelengthBlue_100nm((double)(programOptions_.getWavelengthBlue())* pow(10, 7));
 
 	//Display options
 	this->setDisplayName(QString::fromStdString(programOptions_.getDisplayName()));

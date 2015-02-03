@@ -138,6 +138,8 @@ namespace dscp4
 		bool isFullScreen() { return isFullScreen_.load(); }
 		void setFullScreen(bool fullscreen);
 
+		void setEventCallback(dscp4_event_cb_t eventCallback, void * parent = 0) { parentCallback_ = parent; eventCallback_ = eventCallback; }
+
 #ifdef DSCP4_HAVE_PNG
 		void saveScreenshotPNG();
 #endif
@@ -295,6 +297,11 @@ namespace dscp4
 		Camera camera_;
 		Lighting lighting_;
 		DrawMode drawMode_;
+
+		void * parentCallback_;
+		dscp4_event_cb_t eventCallback_;
+		frame_data_t renderPreviewData_;
+		unsigned char * renderPreviewBuffer_;
 
 #ifdef DSCP4_HAVE_LOG4CXX
 		log4cxx::LoggerPtr logger_ = log4cxx::Logger::getLogger("edu.mit.media.obmg.holovideo.dscp4.lib.renderer");

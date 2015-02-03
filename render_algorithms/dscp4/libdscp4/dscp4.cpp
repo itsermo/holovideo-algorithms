@@ -34,6 +34,11 @@ extern "C"
 		((dscp4::DSCP4Render*)renderContext)->deinit();
 	}
 
+	DSCP4_API void dscp4_SetEventCallback(dscp4_context_t renderContext, dscp4_event_cb_t eventCallback, void * parent)
+	{
+		((dscp4::DSCP4Render*)renderContext)->setEventCallback(eventCallback, parent);
+	}
+
 	DSCP4_API void dscp4_SetRenderMode(dscp4_context_t renderContext, render_mode_t renderMode)
 	{
 		((dscp4::DSCP4Render*)renderContext)->setRenderMode(renderMode);

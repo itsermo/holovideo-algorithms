@@ -125,6 +125,9 @@ DSCP4Render::DSCP4Render(render_options_t *renderOptions,
 	meshChanged_(false),
 	isFullScreen_(false),
 	drawMode_(DSCP4_DRAW_MODE_COLOR),
+	renderPreviewBuffer_(nullptr),
+	eventCallback_(nullptr),
+	parentCallback_(nullptr),
 	fringeContext_({ algorithmOptions, displayOptions, nullptr, 0, 0, 0, 0, 0, 0, 0, nullptr })
 {
 #ifdef DSCP4_HAVE_LOG4CXX
@@ -183,6 +186,7 @@ DSCP4Render::DSCP4Render(render_options_t *renderOptions,
 		LOG4CXX_WARN(logger_, "No shader path location specified, using current working path: " << boost::filesystem::current_path().string())
 			renderOptions_->shaders_path = (char*)boost::filesystem::current_path().string().c_str();
 	}
+
 }
 
 DSCP4Render::~DSCP4Render()
@@ -633,6 +637,14 @@ void DSCP4Render::renderLoop()
 	initLock.unlock();
 	isInitCV_.notify_all();
 
+	if (eventCallback_)
+	{
+		renderPreviewBuffer_ = new unsigned char[fringeContext_.algorithm_options->num_wafels_per_scanline * fringeContext_.algorithm_options->num_scanlines * 4];
+		renderPreviewData_.x_res = fringeContext_.algorithm_options->num_wafels_per_scanline;
+		renderPreviewData_.y_res = fringeContext_.algorithm_options->num_scanlines;
+		renderPreviewData_.buffer = renderPreviewBuffer_;
+	}
+
 	while (shouldRender_)
 	{
 
@@ -704,6 +716,15 @@ void DSCP4Render::renderLoop()
 		LOG4CXX_TRACE(logger_, "Rendering the frame took " << duration << " ms (" << 1.f / duration * 1000 << " fps)");
 #endif
 
+		if (eventCallback_ && renderOptions_->render_mode == DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE)
+		{
+			renderPreviewData_.render_fps = 1.f / duration * 1000;
+			glBindTexture(GL_TEXTURE_2D, fringeContext_.stereogram_gl_fbo_color);
+			glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, fringeContext_.algorithm_options->num_wafels_per_scanline, fringeContext_.algorithm_options->num_scanlines, GL_RGBA, GL_UNSIGNED_BYTE, renderPreviewBuffer_);
+			eventCallback_(DSCP4_CALLBACK_TYPE_NEW_FRAME, parentCallback_, &renderPreviewData_);
+			glBindTexture(GL_TEXTURE_2D, 0);
+		}
+
 	poll:
 		if(SDL_PollEvent(&event))
         {
@@ -753,10 +774,18 @@ void DSCP4Render::renderLoop()
 		lightingShader_ = nullptr;
 	}
 
+	if (renderPreviewBuffer_)
+	{
+		delete[] renderPreviewBuffer_;
+		renderPreviewBuffer_ = nullptr;
+	}
+
 	initLock.unlock();
 	isInitCV_.notify_all();
 
 	isInit_ = false;
+
+	eventCallback_(DSCP4_CALLBACK_TYPE_STOPPED, parentCallback_, nullptr);
 }
 
 // Builds stereogram views and lays them out in a NxN grid
@@ -1020,9 +1049,11 @@ void DSCP4Render::drawForFringe()
 #ifdef DSCP4_ENABLE_TRACE_LOG
 	duration = measureTime<>(std::bind(&DSCP4Render::computeHologram, this));
 	LOG4CXX_TRACE(logger_, "Compute hologram fringe pattern took " << duration << " ms (" << 1.f / duration * 1000 << " fps)")
+	renderPreviewData_.compute_fps = 1.f / duration * 1000.f;
 #else
 	computeHologram();
 #endif
+
 
 #ifdef DSCP4_ENABLE_TRACE_LOG
 	duration = measureTime<>(std::bind(&DSCP4Render::drawFringeTextures, this));
@@ -1030,7 +1061,6 @@ void DSCP4Render::drawForFringe()
 #else
 	drawFringeTextures();
 #endif
-
 
 }
 

@@ -307,6 +307,24 @@ extern "C"{
 		unsigned int * fringe_gl_tex_out;
 	} dscp4_fringe_context_t;
 
+	typedef enum
+	{
+		DSCP4_CALLBACK_TYPE_STOPPED,
+		DSCP4_CALLBACK_TYPE_NEW_FRAME
+	} callback_type_t;
+
+	typedef struct
+	{
+		double compute_fps;
+		double render_fps;
+		int x_res;
+		int y_res;
+		void * buffer;
+	} frame_data_t;
+
+	typedef void(*dscp4_event_cb_t)(const callback_type_t evt, void * parent, void *data);
+
+
 #ifdef __cplusplus
 };
 #endif

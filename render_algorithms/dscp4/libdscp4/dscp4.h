@@ -1,6 +1,7 @@
 #ifndef DSCP4_H
 #define DSCP4_H
 
+
 #ifdef WIN32
 #ifdef DSCP4_STATIC
 #define DSCP4_API
@@ -27,6 +28,8 @@ extern "C" {
 
 	DSCP4_API bool dscp4_InitRenderer(dscp4_context_t renderContext);
 	DSCP4_API void dscp4_DeinitRenderer(dscp4_context_t renderContext);
+
+	DSCP4_API void dscp4_SetEventCallback(dscp4_context_t renderContext, dscp4_event_cb_t eventCallback, void * parent = 0);
 
 	DSCP4_API void dscp4_SetRenderMode(dscp4_context_t renderContext, render_mode_t renderMode);
 	DSCP4_API void dscp4_SetShaderModel(dscp4_context_t renderContext, shader_model_t shadeModel);

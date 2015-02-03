@@ -38,7 +38,7 @@ assets_path = ${ASSETS_INSTALL_PATH}
 kernels_path = ${KERNELS_INSTALL_PATH}
 
 ; the default log level [0-6] least to most verbose
-verbosity = 3
+verbosity = 6
 
 [render]
 ; the render mode, acceptable values are:
@@ -98,8 +98,8 @@ opencl_local_workgroup_size_y = 4
 
 ; cuda algorithm options
 ; block dimension is the number of threads per block in X or Y
-cuda_block_dimension_x = 8
-cuda_block_dimension_y = 4
+cuda_block_dimension_x = 16
+cuda_block_dimension_y = 16
 
 ; angle of the reference beam, in degrees
 reference_beam_angle = 30.0

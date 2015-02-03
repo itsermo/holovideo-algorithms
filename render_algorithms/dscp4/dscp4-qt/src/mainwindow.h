@@ -19,6 +19,7 @@
 #include <QScopedPointer>
 #include "QDSCP4Settings.h"
 #include <qprocess.h>
+#include <qgraphicsscene.h>
 
 #include <assimp/Importer.hpp>      
 #include <assimp/scene.h>           
@@ -78,6 +79,8 @@ public slots:
 
 	void setSpinOn(bool spinOn);
 
+	static void dscp4RenderEvent(callback_type_t evt, void * parent, void * userData);
+
 signals:
 	void dscp4IsRunningChanged(bool isRunning);
 	void dscoUsRunningChangedRev(bool isRunning);
@@ -98,7 +101,7 @@ private:
 
 	log4cxx::LoggerPtr logger_;
 
-	// Turn on all controls when DSCP4 is runninng
+	// Turn on all controls when DSCP4 is running
 	QList<QWidget*> dscp4Controls_;
 
 	// Turn off all UI elements below while DSCP4 is running
@@ -109,6 +112,10 @@ private:
 
 	QProcess * x11Process_;
 	QProcess * nvidiaSettingsProcess_;
+
+	QGraphicsScene *scene;
+	QPixmap image;
+
 };
 
 #endif

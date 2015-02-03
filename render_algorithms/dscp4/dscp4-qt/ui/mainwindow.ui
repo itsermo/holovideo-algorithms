@@ -1540,22 +1540,6 @@
         <double>180.000000000000000</double>
        </property>
       </widget>
-      <widget class="QDoubleSpinBox" name="yFOVDoubleSpinBox">
-       <property name="geometry">
-        <rect>
-         <x>180</x>
-         <y>60</y>
-         <width>62</width>
-         <height>22</height>
-        </rect>
-       </property>
-       <property name="toolTip">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Sets the field of view in the Y-dimension (this only used in viewing mode)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-       </property>
-       <property name="maximum">
-        <double>180.000000000000000</double>
-       </property>
-      </widget>
       <widget class="QDoubleSpinBox" name="refBeamAngleDoubleSpinBox">
        <property name="geometry">
         <rect>
@@ -1644,6 +1628,9 @@
        <property name="maximum">
         <number>999999999</number>
        </property>
+       <property name="singleStep">
+        <number>10</number>
+       </property>
       </widget>
       <widget class="QSpinBox" name="blueUpconvertConstSpinbox">
        <property name="geometry">
@@ -1660,6 +1647,9 @@
        <property name="maximum">
         <number>999999999</number>
        </property>
+       <property name="singleStep">
+        <number>10</number>
+       </property>
       </widget>
       <widget class="QSpinBox" name="greenUpconvertConstSpinbox">
        <property name="geometry">
@@ -1675,6 +1665,9 @@
        </property>
        <property name="maximum">
         <number>999999999</number>
+       </property>
+       <property name="singleStep">
+        <number>10</number>
        </property>
       </widget>
       <widget class="QLabel" name="xViewsLabel">
@@ -1789,28 +1782,6 @@
         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
        </property>
       </widget>
-      <widget class="QDoubleSpinBox" name="zNearAlgorithmDoubleSpinBox">
-       <property name="geometry">
-        <rect>
-         <x>180</x>
-         <y>90</y>
-         <width>62</width>
-         <height>22</height>
-        </rect>
-       </property>
-       <property name="toolTip">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Sets the near clipping plane&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-       </property>
-       <property name="minimum">
-        <double>-999999999999.000000000000000</double>
-       </property>
-       <property name="maximum">
-        <double>999999999999.000000000000000</double>
-       </property>
-       <property name="singleStep">
-        <double>0.010000000000000</double>
-       </property>
-      </widget>
       <widget class="QLabel" name="zNearLabel">
        <property name="geometry">
         <rect>
@@ -1825,28 +1796,6 @@
        </property>
        <property name="alignment">
         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-       </property>
-      </widget>
-      <widget class="QDoubleSpinBox" name="zFarAlgorithmDoubleSpinBox">
-       <property name="geometry">
-        <rect>
-         <x>180</x>
-         <y>120</y>
-         <width>62</width>
-         <height>22</height>
-        </rect>
-       </property>
-       <property name="toolTip">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Sets the far clipping plane&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-       </property>
-       <property name="minimum">
-        <double>-999999999999.000000000000000</double>
-       </property>
-       <property name="maximum">
-        <double>999999999999.000000000000000</double>
-       </property>
-       <property name="singleStep">
-        <double>0.010000000000000</double>
        </property>
       </widget>
       <widget class="QLabel" name="redWavelengthLabel">
@@ -2176,6 +2125,72 @@
        </property>
        <property name="singleStep">
         <double>0.010000000000000</double>
+       </property>
+      </widget>
+      <widget class="QDoubleSpinBox" name="zNearAlgorithmDoubleSpinBox">
+       <property name="geometry">
+        <rect>
+         <x>180</x>
+         <y>90</y>
+         <width>51</width>
+         <height>22</height>
+        </rect>
+       </property>
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Sets the physical width dimension of the hologram plane, in meters&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <property name="buttonSymbols">
+        <enum>QAbstractSpinBox::PlusMinus</enum>
+       </property>
+       <property name="minimum">
+        <double>-9999.000000000000000</double>
+       </property>
+       <property name="maximum">
+        <double>9999.000000000000000</double>
+       </property>
+       <property name="singleStep">
+        <double>0.010000000000000</double>
+       </property>
+      </widget>
+      <widget class="QDoubleSpinBox" name="zFarAlgorithmDoubleSpinBox">
+       <property name="geometry">
+        <rect>
+         <x>180</x>
+         <y>120</y>
+         <width>51</width>
+         <height>22</height>
+        </rect>
+       </property>
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Sets the physical width dimension of the hologram plane, in meters&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <property name="buttonSymbols">
+        <enum>QAbstractSpinBox::PlusMinus</enum>
+       </property>
+       <property name="minimum">
+        <double>-9999.000000000000000</double>
+       </property>
+       <property name="maximum">
+        <double>9999.000000000000000</double>
+       </property>
+       <property name="singleStep">
+        <double>0.010000000000000</double>
+       </property>
+      </widget>
+      <widget class="QDoubleSpinBox" name="yFOVDoubleSpinBox">
+       <property name="geometry">
+        <rect>
+         <x>180</x>
+         <y>60</y>
+         <width>62</width>
+         <height>22</height>
+        </rect>
+       </property>
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Sets the field-of-view in X dimension&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <property name="maximum">
+        <double>180.000000000000000</double>
        </property>
       </widget>
      </widget>
@@ -2584,19 +2599,6 @@
      <attribute name="title">
       <string>&amp;Log</string>
      </attribute>
-     <widget class="QTextEdit" name="logTextEdit">
-      <property name="geometry">
-       <rect>
-        <x>10</x>
-        <y>10</y>
-        <width>611</width>
-        <height>521</height>
-       </rect>
-      </property>
-      <property name="readOnly">
-       <bool>true</bool>
-      </property>
-     </widget>
      <widget class="QPushButton" name="saveLogButton">
       <property name="geometry">
        <rect>
@@ -2628,6 +2630,73 @@
       <property name="text">
        <string>Clear Log</string>
       </property>
+     </widget>
+     <widget class="QTabWidget" name="whichLogTabWidget">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>10</y>
+        <width>611</width>
+        <height>521</height>
+       </rect>
+      </property>
+      <property name="currentIndex">
+       <number>0</number>
+      </property>
+      <widget class="QWidget" name="tab">
+       <attribute name="title">
+        <string>libdscp4</string>
+       </attribute>
+       <widget class="QTextEdit" name="dscp4LogTextEdit">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>10</y>
+          <width>581</width>
+          <height>471</height>
+         </rect>
+        </property>
+        <property name="readOnly">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </widget>
+      <widget class="QWidget" name="tab_3">
+       <attribute name="title">
+        <string>X</string>
+       </attribute>
+       <widget class="QTextEdit" name="x11LogTextEdit">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>10</y>
+          <width>581</width>
+          <height>471</height>
+         </rect>
+        </property>
+        <property name="readOnly">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </widget>
+      <widget class="QWidget" name="tab_2">
+       <attribute name="title">
+        <string>nvidia-settings</string>
+       </attribute>
+       <widget class="QTextEdit" name="nvidiaSettingsLogTextEdit">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>10</y>
+          <width>581</width>
+          <height>471</height>
+         </rect>
+        </property>
+        <property name="readOnly">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </widget>
      </widget>
     </widget>
    </widget>
@@ -2683,6 +2752,9 @@
     </property>
    </widget>
    <widget class="QPushButton" name="nvidiaSettingsToggleButton">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
     <property name="geometry">
      <rect>
       <x>150</x>
