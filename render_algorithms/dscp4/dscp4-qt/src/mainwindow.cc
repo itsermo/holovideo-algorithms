@@ -574,6 +574,7 @@ void MainWindow::pushNewRenderPreviewFrame(frame_data_t & frameData)
 void MainWindow::stopDSCP4()
 {
 	renderPreviewTimer_->stop();
+	ui->spinModelCheckBox->setChecked(false);
 
 	dscp4_DeinitRenderer(algorithmContext_);
 	dscp4_DestroyContext(&algorithmContext_);
