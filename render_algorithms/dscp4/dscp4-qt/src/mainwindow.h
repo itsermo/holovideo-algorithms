@@ -87,6 +87,9 @@ public slots:
 	void pushNewRenderPreviewFrame(frame_data_t & frameData);
 	static void dscp4RenderEvent(callback_type_t evt, void * parent, void * userData);
 
+	void logX11();
+	void logNVIDIASettings();
+
 signals:
 	void dscp4IsRunningChanged(bool isRunning);
 	void dscoUsRunningChangedRev(bool isRunning);

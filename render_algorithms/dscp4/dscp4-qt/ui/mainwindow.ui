@@ -45,7 +45,7 @@
      </rect>
     </property>
     <property name="currentIndex">
-     <number>0</number>
+     <number>1</number>
     </property>
     <property name="movable">
      <bool>false</bool>
@@ -833,13 +833,26 @@
       <property name="title">
        <string>Render Preview</string>
       </property>
+      <widget class="QLCDNumber" name="renderFPSCounter">
+       <property name="geometry">
+        <rect>
+         <x>220</x>
+         <y>270</y>
+         <width>64</width>
+         <height>16</height>
+        </rect>
+       </property>
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The total frame render speed, in FPS&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+      </widget>
       <widget class="QLabel" name="renderFPSLabel">
        <property name="geometry">
         <rect>
          <x>160</x>
-         <y>260</y>
+         <y>270</y>
          <width>55</width>
-         <height>21</height>
+         <height>16</height>
         </rect>
        </property>
        <property name="text">
@@ -853,9 +866,9 @@
        <property name="geometry">
         <rect>
          <x>20</x>
-         <y>260</y>
+         <y>270</y>
          <width>55</width>
-         <height>21</height>
+         <height>16</height>
         </rect>
        </property>
        <property name="text">
@@ -869,31 +882,10 @@
        <property name="geometry">
         <rect>
          <x>10</x>
-         <y>20</y>
-         <width>302</width>
-         <height>236</height>
+         <y>30</y>
+         <width>300</width>
+         <height>234</height>
         </rect>
-       </property>
-       <property name="styleSheet">
-        <string notr="true">background: black;</string>
-       </property>
-       <property name="frameShape">
-        <enum>QFrame::NoFrame</enum>
-       </property>
-       <property name="frameShadow">
-        <enum>QFrame::Plain</enum>
-       </property>
-       <property name="lineWidth">
-        <number>0</number>
-       </property>
-       <property name="verticalScrollBarPolicy">
-        <enum>Qt::ScrollBarAlwaysOff</enum>
-       </property>
-       <property name="horizontalScrollBarPolicy">
-        <enum>Qt::ScrollBarAlwaysOff</enum>
-       </property>
-       <property name="sizeAdjustPolicy">
-        <enum>QAbstractScrollArea::AdjustIgnored</enum>
        </property>
        <property name="backgroundBrush">
         <brush brushstyle="NoBrush">
@@ -916,57 +908,20 @@
        <property name="interactive">
         <bool>false</bool>
        </property>
-       <property name="alignment">
-        <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
-       </property>
       </widget>
       <widget class="QLCDNumber" name="computeFPSCounter">
        <property name="geometry">
         <rect>
          <x>80</x>
-         <y>260</y>
+         <y>270</y>
          <width>64</width>
-         <height>24</height>
+         <height>16</height>
         </rect>
        </property>
        <property name="toolTip">
         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The hologram computation speed, in FPS&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
-       <property name="styleSheet">
-        <string notr="true"> background: black;</string>
-       </property>
-       <property name="digitCount">
-        <number>4</number>
-       </property>
-       <property name="segmentStyle">
-        <enum>QLCDNumber::Flat</enum>
-       </property>
       </widget>
-      <widget class="QLCDNumber" name="renderFPSCounter">
-       <property name="geometry">
-        <rect>
-         <x>220</x>
-         <y>260</y>
-         <width>64</width>
-         <height>24</height>
-        </rect>
-       </property>
-       <property name="toolTip">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The total frame render speed, in FPS&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-       </property>
-       <property name="styleSheet">
-        <string notr="true"> background: black;</string>
-       </property>
-       <property name="segmentStyle">
-        <enum>QLCDNumber::Flat</enum>
-       </property>
-      </widget>
-      <zorder>renderFPSCounter</zorder>
-      <zorder>renderFPSLabel</zorder>
-      <zorder>computeFPSLabel</zorder>
-      <zorder>renderPreviewGraphicsView</zorder>
-      <zorder>computeFPSCounter</zorder>
-      <zorder>renderFPSCounter</zorder>
      </widget>
     </widget>
     <widget class="QWidget" name="settingsTab">
@@ -1718,7 +1673,7 @@
       <widget class="QLabel" name="xViewsLabel">
        <property name="geometry">
         <rect>
-         <x>20</x>
+         <x>30</x>
          <y>30</y>
          <width>51</width>
          <height>21</height>
@@ -1734,7 +1689,7 @@
       <widget class="QLabel" name="yViewsLabel">
        <property name="geometry">
         <rect>
-         <x>20</x>
+         <x>30</x>
          <y>60</y>
          <width>51</width>
          <height>21</height>
@@ -1750,14 +1705,14 @@
       <widget class="QLabel" name="numWafelsLabel">
        <property name="geometry">
         <rect>
-         <x>10</x>
+         <x>20</x>
          <y>90</y>
          <width>61</width>
          <height>21</height>
         </rect>
        </property>
        <property name="text">
-        <string># Wafels</string>
+        <string>Num. Wafels</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -1814,7 +1769,7 @@
       <widget class="QLabel" name="zFarLabel">
        <property name="geometry">
         <rect>
-         <x>140</x>
+         <x>150</x>
          <y>120</y>
          <width>31</width>
          <height>21</height>
@@ -1830,7 +1785,7 @@
       <widget class="QLabel" name="zNearLabel">
        <property name="geometry">
         <rect>
-         <x>140</x>
+         <x>150</x>
          <y>90</y>
          <width>31</width>
          <height>21</height>
@@ -2080,7 +2035,7 @@
       <widget class="QSpinBox" name="numWafelsSpinBox">
        <property name="geometry">
         <rect>
-         <x>80</x>
+         <x>90</x>
          <y>90</y>
          <width>51</width>
          <height>22</height>
@@ -2099,7 +2054,7 @@
       <widget class="QSpinBox" name="xViewsSpinBox">
        <property name="geometry">
         <rect>
-         <x>80</x>
+         <x>90</x>
          <y>30</y>
          <width>41</width>
          <height>22</height>
@@ -2118,7 +2073,7 @@
       <widget class="QSpinBox" name="yViewsSpinBox">
        <property name="geometry">
         <rect>
-         <x>80</x>
+         <x>90</x>
          <y>60</y>
          <width>41</width>
          <height>22</height>
@@ -2137,14 +2092,14 @@
       <widget class="QLabel" name="planeWidthLabel">
        <property name="geometry">
         <rect>
-         <x>0</x>
+         <x>20</x>
          <y>120</y>
-         <width>71</width>
+         <width>61</width>
          <height>21</height>
         </rect>
        </property>
        <property name="text">
-        <string>PlaneWidth</string>
+        <string>Plane Width</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -2153,7 +2108,7 @@
       <widget class="QDoubleSpinBox" name="planeWidthDoubleSpinBox">
        <property name="geometry">
         <rect>
-         <x>80</x>
+         <x>90</x>
          <y>120</y>
          <width>51</width>
          <height>22</height>
@@ -2175,7 +2130,7 @@
       <widget class="QDoubleSpinBox" name="zNearAlgorithmDoubleSpinBox">
        <property name="geometry">
         <rect>
-         <x>180</x>
+         <x>190</x>
          <y>90</y>
          <width>51</width>
          <height>22</height>
@@ -2200,7 +2155,7 @@
       <widget class="QDoubleSpinBox" name="zFarAlgorithmDoubleSpinBox">
        <property name="geometry">
         <rect>
-         <x>180</x>
+         <x>190</x>
          <y>120</y>
          <width>51</width>
          <height>22</height>
@@ -2767,7 +2722,7 @@
    <widget class="QPushButton" name="startButton">
     <property name="geometry">
      <rect>
-      <x>530</x>
+      <x>540</x>
       <y>620</y>
       <width>101</width>
       <height>28</height>

@@ -28,9 +28,9 @@ void QLogAppender::append(const spi::LoggingEventPtr& event, Pool& p)
 	LOG4CXX_DECODE_CHAR(fMsgStr, fMsg);
 
 #ifdef WIN32
-	emit gotNewLogMessage(QString::fromStdWString(fMsgStr.c_str()).remove("\r\n"));
+	emit gotNewLogMessage(QString::fromStdWString(fMsgStr.c_str()).remove("\r").remove("\n"));
 #else
-	emit gotNewLogMessage(QString::fromStdString(fMsgStr.c_str()).remove("\r\n"));
+	emit gotNewLogMessage(QString::fromStdString(fMsgStr.c_str()).remove("\r").remove("\n"));
 #endif
 
 }
