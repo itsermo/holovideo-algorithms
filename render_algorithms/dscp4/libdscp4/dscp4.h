@@ -56,6 +56,16 @@ extern "C" {
 	DSCP4_API void dscp4_ScaleObject(dscp4_context_t renderContext, const char* id, float x, float y, float z);
 	DSCP4_API void dscp4_RotateObject(dscp4_context_t renderContext, const char* id, float angle, float x, float y, float z);
 
+	DSCP4_API void dscp4_SetCameraView(dscp4_context_t renderContext, camera_t cameraView);
+	DSCP4_API void dscp4_GetCameraView(dscp4_context_t renderContext, camera_t *cameraView);
+
+	DSCP4_API void dscp4_GetRotateViewAngleX(dscp4_context_t renderContext, float* rotateViewAngleX);
+	DSCP4_API void dscp4_GetRotateViewAngleY(dscp4_context_t renderContext, float* rotateViewAngleY);
+	DSCP4_API void dscp4_GetRotateViewAngleZ(dscp4_context_t renderContext, float* rotateViewAngleZ);
+	DSCP4_API void dscp4_SetRotateViewAngleX(dscp4_context_t renderContext, float angleX);
+	DSCP4_API void dscp4_SetRotateViewAngleY(dscp4_context_t renderContext, float angleY);
+	DSCP4_API void dscp4_SetRotateViewAngleZ(dscp4_context_t renderContext, float angleZ);
+
 	DSCP4_API void dscp4_SetSpinOn(dscp4_context_t renderContext, int spinOn);
 	DSCP4_API int dscp4_GetSpinOn(dscp4_context_t renderContext);
 

@@ -119,8 +119,10 @@ namespace dscp4
 
 		float getRotateViewAngleX() { return rotateAngleX_; }
 		float getRotateViewAngleY() { return rotateAngleY_; }
+		float getRotateViewAngleZ() { return rotateAngleZ_; }
 		void setRotateViewAngleX(float angleX) { rotateAngleX_ = angleX; cameraChanged_ = true; }
 		void setRotateViewAngleY(float angleY) { rotateAngleY_ = angleY; cameraChanged_ = true; }
+		void setRotateViewAngleZ(float angleZ) { rotateAngleZ_ = angleZ; cameraChanged_ = true; }
 
 		Lighting getLighting() { std::lock_guard<std::mutex> lg(lightingMutex_); return lighting_; }
 		Camera getCameraView() { std::lock_guard<std::mutex> lg(cameraMutex_);  return camera_; }
@@ -140,11 +142,13 @@ namespace dscp4
 
 		void setEventCallback(dscp4_event_cb_t eventCallback, void * parent = 0) { parentCallback_ = parent; eventCallback_ = eventCallback; }
 
+		void saveScreenshot() { shouldSaveScreenshot_ = true; }
+
+	private:
+
 #ifdef DSCP4_HAVE_PNG
 		void saveScreenshotPNG();
 #endif
-
-	private:
 
 		// for testing
 		void drawCube();
@@ -239,10 +243,6 @@ namespace dscp4
 		void drawMesh(mesh_t& mesh);
 		void drawObjects();
 
-		// Renderer projection settings
-		//float zNear_;
-		//float zFar_;
-
 		std::atomic<bool> isFullScreen_;
 
 		std::mutex meshMutex_;
@@ -282,6 +282,7 @@ namespace dscp4
 
 		std::atomic<float> rotateAngleX_;
 		std::atomic<float> rotateAngleY_;
+		std::atomic<float> rotateAngleZ_;
 		std::atomic<float> rotateIncrement_;
 		std::atomic<bool> spinOn_;
 
@@ -302,6 +303,8 @@ namespace dscp4
 		dscp4_event_cb_t eventCallback_;
 		frame_data_t renderPreviewData_;
 		unsigned char * renderPreviewBuffer_;
+
+		std::atomic<bool> shouldSaveScreenshot_;
 
 #ifdef DSCP4_HAVE_LOG4CXX
 		log4cxx::LoggerPtr logger_ = log4cxx::Logger::getLogger("edu.mit.media.obmg.holovideo.dscp4.lib.renderer");

@@ -207,7 +207,10 @@ haveNewFrame_(false)
 	ui->displayGroupBox <<
 	ui->renderGroupBox <<
 	ui->startButton <<
-	ui->x11ToggleButton;
+	ui->x11ToggleButton <<
+	ui->numWafelsSpinBox <<
+	ui->xViewsSpinBox <<
+	ui->yViewsSpinBox;
 
 	// These UI items will be enabled while DSCP4 is running
 	dscp4Controls_ << ui->renderPreviewGroupBox << ui->controlGroupBox << ui->stopButton;
@@ -215,7 +218,6 @@ haveNewFrame_(false)
 	disableControlsUI();
 
 	ui->tabWidget->setCurrentIndex(0);
-
 
 	auto palette = ui->renderFPSCounter->palette();
 	palette.setColor(palette.WindowText, QColor(0, 255, 0));
@@ -564,7 +566,6 @@ void MainWindow::dscp4RenderEvent(callback_type_t evt, void * parent, void * use
 void MainWindow::pushNewRenderPreviewFrame(frame_data_t & frameData)
 {
 	std::unique_lock<std::mutex> dataLock(renderPreviewDataMutex_);
-	//memcpy(renderPreviewData_, frameData.buffer, frameData.x_res * frameData.y_res * 4);
 	frameData_ = frameData;
 	haveNewFrame_ = true;
 	dataLock.unlock();
@@ -677,42 +678,62 @@ void MainWindow::forceRedraw()
 
 void MainWindow::translateModelX(int x)
 {
-	dscp4_TranslateObject(algorithmContext_, "Mesh 0", x * 0.0005f, 0, 0);
-	forceRedraw();
+	camera_t cam = { 0 };
+	dscp4_GetCameraView(algorithmContext_, &cam);
+
+	cam.eye.x = x * 0.001f;
+	cam.center.x = x * 0.001f;
+
+	dscp4_SetCameraView(algorithmContext_, cam);
 }
 
 void MainWindow::translateModelY(int y)
 {
-	dscp4_TranslateObject(algorithmContext_, "Mesh 0", 0, y * 0.0005f, 0);
-	forceRedraw();
+	camera_t cam = { 0 };
+	dscp4_GetCameraView(algorithmContext_, &cam);
+
+	cam.eye.y = y * 0.001f;
+	cam.center.y = y * 0.001f;
+
+	dscp4_SetCameraView(algorithmContext_, cam);
 }
 
 void MainWindow::translateModelZ(int z)
 {
-	dscp4_TranslateObject(algorithmContext_, "Mesh 0", 0, 0, z * 0.0005f);
-	forceRedraw();
+	camera_t cam = { 0 };
+	dscp4_GetCameraView(algorithmContext_, &cam);
+
+	cam.eye.z = z * 0.001f;
+	cam.center.z = z * 0.001f;
+
+	dscp4_SetCameraView(algorithmContext_, cam);
 }
 
 void MainWindow::rotateModelX(int x)
 {
-	dscp4_RotateObject(algorithmContext_, "Mesh 0", 180.f * x * 0.01, 1, 0, 0);
-	forceRedraw();
+	dscp4_SetRotateViewAngleX(algorithmContext_, 180.f*x*0.001);
 }
 
 void MainWindow::rotateModelY(int y)
 {
-	dscp4_RotateObject(algorithmContext_, "Mesh 0", 180.f * y * 0.001, 0, 1, 0);
-	forceRedraw();
+	dscp4_SetRotateViewAngleY(algorithmContext_, 180.f*y*0.001);
 }
 
 void MainWindow::rotateModelZ(int z)
 {
-	dscp4_RotateObject(algorithmContext_, "Mesh 0", 180.f * z * 0.001, 0, 0, 1);
-	forceRedraw();
+	dscp4_SetRotateViewAngleZ(algorithmContext_, 180.0f*z*0.001);
 }
 
 void MainWindow::setSpinOn(bool spinOn)
 {
+	if (spinOn)
+	{
+		ui->yRotateHorizontalSlider->setValue(0);
+		ui->yRotateHorizontalSlider->setDisabled(true);
+	}
+	else
+		ui->xRotateHorizontalSlider->setDisabled(false);
+
 	dscp4_SetSpinOn(algorithmContext_, spinOn);
 	forceRedraw();
 }
@@ -743,6 +764,16 @@ void MainWindow::enableControlsUI()
 
 void MainWindow::disableControlsUI()
 {
+	ui->xTranslateHorizontalSlider->setValue(0);
+	ui->yTranslateHorizontalSlider->setValue(0);
+	ui->zTranslateHorizontalSlider->setValue(0);
+	ui->xRotateHorizontalSlider->setValue(0);
+	ui->yRotateHorizontalSlider->setValue(0);
+	ui->zRotateHorizontalSlider->setValue(0);
+	ui->redColorGainHorizontalSlider->setValue(0);
+	ui->greenColorGainHorizontalSlider->setValue(0);
+	ui->blueColorGainHorizontalSlider->setValue(0);
+	ui->spinModelCheckBox->setChecked(false);
 	for (QWidget* var : dscp4Controls_)
 	{
 		var->setEnabled(false);

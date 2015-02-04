@@ -12,20 +12,20 @@
   </property>
   <property name="minimumSize">
    <size>
-    <width>0</width>
-    <height>0</height>
+    <width>654</width>
+    <height>660</height>
    </size>
   </property>
   <property name="maximumSize">
    <size>
-    <width>1024</width>
-    <height>768</height>
+    <width>654</width>
+    <height>660</height>
    </size>
   </property>
   <property name="baseSize">
    <size>
-    <width>625</width>
-    <height>705</height>
+    <width>654</width>
+    <height>660</height>
    </size>
   </property>
   <property name="windowTitle">
@@ -1956,9 +1956,9 @@
       <widget class="QLabel" name="numWafelsLabel">
        <property name="geometry">
         <rect>
-         <x>20</x>
+         <x>0</x>
          <y>90</y>
-         <width>61</width>
+         <width>81</width>
          <height>21</height>
         </rect>
        </property>
@@ -2343,9 +2343,9 @@
       <widget class="QLabel" name="planeWidthLabel">
        <property name="geometry">
         <rect>
-         <x>20</x>
+         <x>10</x>
          <y>120</y>
-         <width>61</width>
+         <width>71</width>
          <height>21</height>
         </rect>
        </property>

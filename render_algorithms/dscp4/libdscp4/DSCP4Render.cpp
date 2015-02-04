@@ -111,6 +111,7 @@ DSCP4Render::DSCP4Render(render_options_t *renderOptions,
 	numWindows_(0),
 	rotateAngleX_(0),
 	rotateAngleY_(0),
+	rotateAngleZ_(0),
 	rotateIncrement_(1.0f),
 	spinOn_(false),
 	renderOptions_(renderOptions),
@@ -128,17 +129,12 @@ DSCP4Render::DSCP4Render(render_options_t *renderOptions,
 	renderPreviewBuffer_(nullptr),
 	eventCallback_(nullptr),
 	parentCallback_(nullptr),
+	shouldSaveScreenshot_(false),
 	fringeContext_({ algorithmOptions, displayOptions, nullptr, 0, 0, 0, 0, 0, 0, 0, nullptr })
 {
 #ifdef DSCP4_HAVE_LOG4CXX
 	
-	if (logAppender)
-	{
-		//auto appender = log4cxx::AppenderPtr((log4cxx::Appender*)logAppender);
-		//logger_->addAppender(appender);
-		//log4cxx::BasicConfigurator::configure(appender);
-	}
-	else
+	if (!logAppender)
 	{
 		log4cxx::BasicConfigurator::resetConfiguration();
 
@@ -151,6 +147,7 @@ DSCP4Render::DSCP4Render(render_options_t *renderOptions,
 		log4cxx::ConsoleAppenderPtr logAppenderPtr = new log4cxx::ConsoleAppender(logLayoutPtr);
 		log4cxx::BasicConfigurator::configure(logAppenderPtr);
 	}
+
 	switch (verbosity)
 	{
 	case 0:
@@ -731,7 +728,11 @@ void DSCP4Render::renderLoop()
 			inputStateChanged(&event);
         }
 
-
+		if (shouldSaveScreenshot_)
+		{
+			saveScreenshotPNG();
+			shouldSaveScreenshot_ = false;
+		}
 
 		updateAlgorithmOptionsCache();
 	}
@@ -847,6 +848,7 @@ void DSCP4Render::generateStereogram()
 		// Rotate the scene
 		viewMatrix_ = glm::rotate(viewMatrix_, rotateAngleX_ * DEG_TO_RAD, glm::vec3(1.0f, 0.0f, 0.0f));
 		viewMatrix_ = glm::rotate(viewMatrix_, rotateAngleY_ * DEG_TO_RAD, glm::vec3(0.0f, 1.0f, 0.0f));
+		viewMatrix_ = glm::rotate(viewMatrix_, rotateAngleZ_ * DEG_TO_RAD, glm::vec3(0.0f, 0.0f, 1.0f));
 
 		glLoadMatrixf(glm::value_ptr(viewMatrix_));
 

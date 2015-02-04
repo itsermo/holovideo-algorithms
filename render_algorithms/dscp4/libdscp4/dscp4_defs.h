@@ -140,6 +140,11 @@ extern "C"{
 
 	typedef struct
 	{
+		point3f_t eye, center, up;
+	} camera_t;
+
+	typedef struct
+	{
 		unsigned int gl_vertex_buf_id, gl_normal_buf_id, gl_color_buf_id;
 		mesh_transform_t transform;
 		//w is radius squared, xyz is center
