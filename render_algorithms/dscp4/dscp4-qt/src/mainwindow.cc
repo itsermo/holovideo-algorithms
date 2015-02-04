@@ -173,7 +173,7 @@ haveNewFrame_(false)
 	QObject::connect(ui->kernelsPathToolButton, SIGNAL(clicked()), this, SLOT(browseAndSetKernelsPath()));
 
 	// Log
-	//QObject::connect(ui->clearLogButton, SIGNAL(clicked()), ui->logTextEdit, SLOT(clear()));
+	QObject::connect(ui->clearLogButton, SIGNAL(clicked()), this, SLOT(clearLog()));
 #ifdef DSCP4_HAVE_LOG4CXX
 	QObject::connect(logAppenderPtr, SIGNAL(gotNewLogMessage(QString)), ui->dscp4LogTextEdit, SLOT(append(QString)));
 #endif
@@ -576,6 +576,7 @@ void MainWindow::stopDSCP4()
 {
 	renderPreviewTimer_->stop();
 	ui->spinModelCheckBox->setChecked(false);
+	disableControlsUI();
 
 	dscp4_DeinitRenderer(algorithmContext_);
 	dscp4_DestroyContext(&algorithmContext_);
@@ -583,7 +584,6 @@ void MainWindow::stopDSCP4()
 	assetImporter_.FreeScene();
 
 	enableUnchangeableUI();
-	disableControlsUI();
 
 	ui->stopButton->setDisabled(true);
 
@@ -732,7 +732,7 @@ void MainWindow::setSpinOn(bool spinOn)
 		ui->yRotateHorizontalSlider->setDisabled(true);
 	}
 	else
-		ui->xRotateHorizontalSlider->setDisabled(false);
+		ui->yRotateHorizontalSlider->setDisabled(false);
 
 	dscp4_SetSpinOn(algorithmContext_, spinOn);
 	forceRedraw();
@@ -807,4 +807,22 @@ void MainWindow::logX11()
 void MainWindow::logNVIDIASettings()
 {
 	ui->nvidiaSettingsLogTextEdit->insertPlainText(nvidiaSettingsProcess_->readAllStandardError());
+}
+
+void MainWindow::clearLog()
+{
+	switch (ui->whichLogTabWidget->currentIndex())
+	{
+	case 0:
+		ui->dscp4LogTextEdit->clear();
+		break;
+	case 1:
+		ui->x11LogTextEdit->clear();
+		break;
+	case 2:
+		ui->nvidiaSettingsLogTextEdit->clear();
+		break;
+	default:
+		break;
+	}
 }

@@ -390,7 +390,7 @@ __global__ void computeFringe(
 					const float4 color = tex2D(viewset_color_in, x, y);
 					const unsigned char c = (color_chan == 0 ? 255.f*color.x : color_chan == 1 ? 255.f*color.y : 255.f*color.z);
 
-					if (c != 0)
+					if (c != 0) 
 						for (int i = 0; i < NUM_SAMPLES_PER_WAFEL; i++)
 						{
 							double mycos = __cosf(k * sqrtf(pow(wafel_position[i] - temp_x,2) + pow(d,2)) - d + (global_x * NUM_SAMPLES_PER_WAFEL * SAMPLE_PITCH + temp_x) * (__sinf(REF_BEAM_ANGLE_RAD) + 2.f * 3.141592654 / k * spatial_upconvert_const));

@@ -90,6 +90,8 @@ public slots:
 	void logX11();
 	void logNVIDIASettings();
 
+	void clearLog();
+
 signals:
 	void dscp4IsRunningChanged(bool isRunning);
 	void dscoUsRunningChangedRev(bool isRunning);
