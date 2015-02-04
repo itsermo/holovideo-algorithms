@@ -205,13 +205,7 @@ extern "C" {
 			return nullptr;
 		}
 
-		//if (context->have_cl_gl_depth_images_extension)
-		//	context->kernel = clCreateKernel((cl_program)context->program, "computeFringe2", &ret);
-		//else
-		//	context->kernel = clCreateKernel((cl_program)context->program, "computeFringe", &ret);
-
-
-		context->kernel = clCreateKernel((cl_program)context->program, "computeFringeVar", &ret);
+		context->kernel = clCreateKernel((cl_program)context->program, "computeFringe", &ret);
 
 		CHECK_OPENCL_RC(ret, "Could not create OpenCL kernel object")
 
@@ -252,16 +246,17 @@ extern "C" {
 		ret = clSetKernelArg((cl_kernel)context->kernel, 8, sizeof(cl_uint), &context->fringe_context->algorithm_options->cache.stereogram_num_tiles_y);
 		ret = clSetKernelArg((cl_kernel)context->kernel, 9, sizeof(cl_uint), &context->fringe_context->algorithm_options->cache.fringe_buffer_res_x);
 		ret = clSetKernelArg((cl_kernel)context->kernel, 10, sizeof(cl_uint), &context->fringe_context->algorithm_options->cache.fringe_buffer_res_y);
-		ret = clSetKernelArg((cl_kernel)context->kernel, 11, context->fringe_context->algorithm_options->num_wafels_per_scanline*sizeof(cl_uchar), NULL);
-		ret = clSetKernelArg((cl_kernel)context->kernel, 12, context->fringe_context->algorithm_options->num_wafels_per_scanline*sizeof(cl_float), NULL);
 
-		ret = clSetKernelArg((cl_kernel)context->kernel, 19, sizeof(cl_uint), &context->fringe_context->algorithm_options->cache.num_samples_per_wafel);
-		ret = clSetKernelArg((cl_kernel)context->kernel, 20, sizeof(cl_float), &context->fringe_context->algorithm_options->cache.sample_pitch);
-		ret = clSetKernelArg((cl_kernel)context->kernel, 23, sizeof(cl_uint), &context->fringe_context->display_options.num_aom_channels);
-		ret = clSetKernelArg((cl_kernel)context->kernel, 24, sizeof(cl_uint), &context->fringe_context->display_options.head_res_y_spec);
-		ret = clSetKernelArg((cl_kernel)context->kernel, 25, sizeof(cl_uint), &context->fringe_context->algorithm_options->cache.num_fringe_buffers);
+		ret = clSetKernelArg((cl_kernel)context->kernel, 12, context->fringe_context->algorithm_options->num_wafels_per_scanline*sizeof(cl_uchar), NULL);
+		ret = clSetKernelArg((cl_kernel)context->kernel, 13, context->fringe_context->algorithm_options->num_wafels_per_scanline*sizeof(cl_float), NULL);
 
-		ret = clSetKernelArg((cl_kernel)context->kernel, 21, sizeof(cl_float), &context->fringe_context->algorithm_options->cache.z_span);
+		ret = clSetKernelArg((cl_kernel)context->kernel, 20, sizeof(cl_uint), &context->fringe_context->algorithm_options->cache.num_samples_per_wafel);
+		ret = clSetKernelArg((cl_kernel)context->kernel, 21, sizeof(cl_float), &context->fringe_context->algorithm_options->cache.sample_pitch);
+		ret = clSetKernelArg((cl_kernel)context->kernel, 22, sizeof(cl_float), &context->fringe_context->algorithm_options->cache.z_span);
+		ret = clSetKernelArg((cl_kernel)context->kernel, 24, sizeof(cl_uint), &context->fringe_context->display_options.num_aom_channels);
+		ret = clSetKernelArg((cl_kernel)context->kernel, 25, sizeof(cl_uint), &context->fringe_context->display_options.head_res_y_spec);
+		ret = clSetKernelArg((cl_kernel)context->kernel, 26, sizeof(cl_uint), &context->fringe_context->algorithm_options->cache.num_fringe_buffers);
+
 
 
 		return context;
@@ -296,6 +291,9 @@ extern "C" {
 		ret = clReleaseMemObject((cl_mem)(*openclContext)->stereogram_depth_opencl_resource);
 		CHECK_OPENCL_RC(ret, "Could not release stereogram DEPTH OpenCL memory resource")
 
+		ret = clReleaseMemObject((cl_mem)(*openclContext)->framebuffer_opencl_output);
+		CHECK_OPENCL_RC(ret, "Could not release mega buffer OpenCL memory resource")
+
 		ret = clReleaseCommandQueue((cl_command_queue)(*openclContext)->command_queue);
 		CHECK_OPENCL_RC(ret, "Could not release OpenCL command queue")
 
@@ -321,14 +319,14 @@ extern "C" {
 
 		for (unsigned int i = 0; i < num_fringe_buffers; i++)
 		{
-
-			ret = clSetKernelArg((cl_kernel)openclContext->kernel, 13, sizeof(cl_float), &openclContext->fringe_context->algorithm_options->cache.k_r);
-			ret = clSetKernelArg((cl_kernel)openclContext->kernel, 14, sizeof(cl_float), &openclContext->fringe_context->algorithm_options->cache.k_g);
-			ret = clSetKernelArg((cl_kernel)openclContext->kernel, 15, sizeof(cl_float), &openclContext->fringe_context->algorithm_options->cache.k_b);
-			ret = clSetKernelArg((cl_kernel)openclContext->kernel, 16, openclContext->have_cl_double_precision_extension ? sizeof(cl_double) : sizeof(cl_float), &openclContext->fringe_context->algorithm_options->cache.upconvert_const_r);
-			ret = clSetKernelArg((cl_kernel)openclContext->kernel, 17, openclContext->have_cl_double_precision_extension ? sizeof(cl_double) : sizeof(cl_float), &openclContext->fringe_context->algorithm_options->cache.upconvert_const_g);
-			ret = clSetKernelArg((cl_kernel)openclContext->kernel, 18, openclContext->have_cl_double_precision_extension ? sizeof(cl_double) : sizeof(cl_float), &openclContext->fringe_context->algorithm_options->cache.upconvert_const_b);
-			ret = clSetKernelArg((cl_kernel)openclContext->kernel, 22, sizeof(cl_float), &openclContext->fringe_context->algorithm_options->cache.z_offset);
+			ret = clSetKernelArg((cl_kernel)openclContext->kernel, 11, sizeof(cl_float), &openclContext->fringe_context->algorithm_options->cache.reference_beam_angle_rad);
+			ret = clSetKernelArg((cl_kernel)openclContext->kernel, 14, sizeof(cl_float), &openclContext->fringe_context->algorithm_options->cache.k_r);
+			ret = clSetKernelArg((cl_kernel)openclContext->kernel, 15, sizeof(cl_float), &openclContext->fringe_context->algorithm_options->cache.k_g);
+			ret = clSetKernelArg((cl_kernel)openclContext->kernel, 16, sizeof(cl_float), &openclContext->fringe_context->algorithm_options->cache.k_b);
+			ret = clSetKernelArg((cl_kernel)openclContext->kernel, 17, openclContext->have_cl_double_precision_extension ? sizeof(cl_double) : sizeof(cl_float), &openclContext->fringe_context->algorithm_options->cache.upconvert_const_r);
+			ret = clSetKernelArg((cl_kernel)openclContext->kernel, 18, openclContext->have_cl_double_precision_extension ? sizeof(cl_double) : sizeof(cl_float), &openclContext->fringe_context->algorithm_options->cache.upconvert_const_g);
+			ret = clSetKernelArg((cl_kernel)openclContext->kernel, 19, openclContext->have_cl_double_precision_extension ? sizeof(cl_double) : sizeof(cl_float), &openclContext->fringe_context->algorithm_options->cache.upconvert_const_b);
+			ret = clSetKernelArg((cl_kernel)openclContext->kernel, 23, sizeof(cl_float), &openclContext->fringe_context->algorithm_options->cache.z_offset);
 
 			ret = clEnqueueAcquireGLObjects((cl_command_queue)openclContext->command_queue, 1, (const cl_mem*)&openclContext->stereogram_rgba_opencl_resource, 0, NULL, NULL);
 			ret = clEnqueueAcquireGLObjects((cl_command_queue)openclContext->command_queue, 1, (const cl_mem*)&openclContext->stereogram_depth_opencl_resource, 0, NULL, NULL);
