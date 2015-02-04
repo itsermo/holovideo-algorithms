@@ -1,4 +1,26 @@
-#pragma OPENCL EXTENSION cl_khr_fp64: enable
+#if CONFIG_USE_DOUBLE
+
+#if defined(cl_khr_fp64)  // Khronos extension available?
+#pragma OPENCL EXTENSION cl_khr_fp64 : enable
+#elif defined(cl_amd_fp64)  // AMD extension available?
+#pragma OPENCL EXTENSION cl_amd_fp64 : enable
+#endif
+
+// double
+typedef double real_t;
+typedef double2 real2_t;
+#define FFT_PI 3.14159265358979323846
+#define FFT_SQRT_1_2 0.70710678118654752440
+
+#else
+
+// float
+typedef float real_t;
+typedef float2 real2_t;
+#define FFT_PI       3.14159265359f
+#define FFT_SQRT_1_2 0.707106781187f
+
+#endif
 
 __constant sampler_t sampler =
 CLK_NORMALIZED_COORDS_FALSE
@@ -209,9 +231,9 @@ __kernel void computeFringeVar(
 	const float K_R,
 	const float K_G,
 	const float K_B,
-	const double SPATIAL_UPCONVERT_CONST_R,
-	const double SPATIAL_UPCONVERT_CONST_G,
-	const double SPATIAL_UPCONVERT_CONST_B,
+	const real_t SPATIAL_UPCONVERT_CONST_R,
+	const real_t SPATIAL_UPCONVERT_CONST_G,
+	const real_t SPATIAL_UPCONVERT_CONST_B,
 	const unsigned int NUM_SAMPLES_PER_WAFEL,
 	const float SAMPLE_PITCH,
 	const float Z_SPAN,

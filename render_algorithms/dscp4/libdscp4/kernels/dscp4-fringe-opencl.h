@@ -23,6 +23,7 @@ extern "C" {
 		void * logger;
 		bool have_cl_gl_depth_images_extension;
 		bool have_cl_gl_sharing_extension;
+		bool have_cl_double_precision_extension;
 	} dscp4_fringe_opencl_context_t;
 
 	dscp4_fringe_opencl_context_t* dscp4_fringe_opencl_CreateContext(dscp4_fringe_context_t *fringeContext, int *glContext);
