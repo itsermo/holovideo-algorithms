@@ -26,14 +26,11 @@ displayOptions_("Display options")
 		boost::program_options::value<bool>()->default_value(DSCP4_INPUT_DEFAULT_TRIANGULATE_MESH),
 		"triangulates the mesh (if it is made of quads or something else");
 
-#if defined(DSCP4_HAVE_OPENCL) && defined(DSCP4_HAVE_CUDA)
 	algorithmOptions_.add_options()
 		("compute-method,c",
 		boost::program_options::value<std::string>(),
 		"chooses the hologram computation method. valid options are 'cuda' and 'opencl'");
-#endif
 
-#ifdef DSCP4_HAVE_CUDA
 	algorithmOptions_.add_options()
 		("cuda-block-dim-x",
 		boost::program_options::value<unsigned int>(),
@@ -41,9 +38,7 @@ displayOptions_("Display options")
 		("cuda-block-dim-y",
 		boost::program_options::value<unsigned int>(),
 		"sets the CUDA kernel block Y dimension (number of threads per block)");
-#endif
 
-#ifdef DSCP4_HAVE_OPENCL
 	algorithmOptions_.add_options()
 		("opencl-kernel-filename,k",
 		boost::program_options::value<std::string>(),
@@ -55,7 +50,6 @@ displayOptions_("Display options")
 		boost::program_options::value<unsigned int>(),
 		"the local workgroup size for the OpenCL fringe computation kernel in the Y-dimension (e.g. 64)")
 		;
-#endif
 
 	algorithmOptions_.add_options()
 		("reference-beam-angle,r",
@@ -73,12 +67,10 @@ displayOptions_("Display options")
 		boost::program_options::value<std::string>(),
 		"sets the render mode. valid options are 'viewing', 'stereogram', 'aerial', and 'holovideo'");
 
-#ifdef DSCP4_HAVE_X11
 	displayOptions_.add_options()
 				("display-env,d",
 				boost::program_options::value<std::string>(),
 				"sets the display environment variable for X11 window output");
-#endif
 
 	allOptions_.add(generalOptions_).add(inputOptions_).add(algorithmOptions_).add(renderOptions_).add(displayOptions_);
 }
