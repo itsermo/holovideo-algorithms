@@ -393,7 +393,7 @@ __global__ void computeFringe(
 					if (c != 0) 
 						for (int i = 0; i < NUM_SAMPLES_PER_WAFEL; i++)
 						{
-							double mycos = __cosf(k * sqrtf(pow(wafel_position[i] - temp_x,2) + pow(d,2)) - d + (global_x * NUM_SAMPLES_PER_WAFEL * SAMPLE_PITCH + temp_x) * (__sinf(REF_BEAM_ANGLE_RAD) + 2.f * 3.141592654 / k * spatial_upconvert_const));
+							double mycos = __cosf(k * sqrtf(pow(wafel_position[i] - temp_x, 2) + pow(d, 2)) - d + (global_x * NUM_SAMPLES_PER_WAFEL * SAMPLE_PITCH + temp_x) * (__sinf(REF_BEAM_ANGLE_RAD) + 2.f * 3.14159265359f / k * spatial_upconvert_const));
 							wafel_buffer[i] += (unsigned char)(c * (mycos + 1.f)*0.5f);
 						}
 
