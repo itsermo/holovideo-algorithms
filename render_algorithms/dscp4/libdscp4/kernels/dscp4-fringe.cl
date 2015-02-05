@@ -30,7 +30,11 @@ CLK_NORMALIZED_COORDS_FALSE
 __kernel void computeFringe(
 	__global unsigned char* framebuffer_out,
 	__read_only image2d_t viewset_color_in,
+#ifdef CONFIG_USE_DEPTH_TEXTURE
+	__read_only image2d_t viewset_depth_in,
+#else
 	__global __read_only float* viewset_depth_in,
+#endif
 	const uint num_wafels_per_scanline,
 	const uint num_scanlines,
 	const uint viewset_res_x,
@@ -86,7 +90,12 @@ __kernel void computeFringe(
 				for (unsigned int vx = 0; vx < viewset_num_tiles_x; vx++, idx++)
 				{
 					// Check later
+#ifdef CONFIG_USE_DEPTH_TEXTURE
+					float4 depth = read_imagef(viewset_depth_in, sampler, (int2)(x,y));
+					float d = depth.x;
+#else
 					float d = (viewset_depth_in[y * viewset_res_x + x] - 0.5f) * Z_SPAN + Z_OFFSET;
+#endif
 					float temp_x = d * native_tan(REF_BEAM_ANGLE_RAD * (idx - num_views *0.5)) + NUM_SAMPLES_PER_WAFEL * SAMPLE_PITCH *0.5;
 					float4 color = read_imagef(viewset_color_in, sampler, (int2)(x,y));
 					unsigned char c = (color_chan == 0 ? 255.f*color.x : color_chan == 1 ? 255.f*color.y : 255.f*color.z);

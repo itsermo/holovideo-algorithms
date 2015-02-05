@@ -739,8 +739,6 @@ void DSCP4Render::renderLoop()
 
 	initLock.lock();
 
-	//SDL_DelEventWatch(DSCP4Render::inputStateChanged, this);
-
 	std::unique_lock<std::mutex> meshLock(meshMutex_);
 	for (auto it = meshes_.begin(); it != meshes_.end(); it++)
 		glDeleteBuffers(3, &it->second.info.gl_vertex_buf_id);
@@ -788,7 +786,8 @@ void DSCP4Render::renderLoop()
 
 	isInit_ = false;
 
-	eventCallback_(DSCP4_CALLBACK_TYPE_STOPPED, parentCallback_, nullptr);
+	if (eventCallback_)
+		eventCallback_(DSCP4_CALLBACK_TYPE_STOPPED, parentCallback_, nullptr);
 }
 
 // Builds stereogram views and lays them out in a NxN grid

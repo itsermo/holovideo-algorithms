@@ -124,9 +124,6 @@ extern "C" {
 				context->have_cl_double_precision_extension = true;
 		}
 
-		//for testing
-		context->have_cl_gl_depth_images_extension = false;
-
 		delete[] extensions;
 
 		LOG4CXX_DEBUG(DSCP4_OPENCL_LOGGER, "Found " << numDevices << " OpenCL GPU devices")
@@ -186,7 +183,9 @@ extern "C" {
 
 		std::string buildOptions;
 		if (context->have_cl_double_precision_extension)
-			buildOptions = "-D CONFIG_USE_DOUBLE";
+			buildOptions += " -D CONFIG_USE_DOUBLE";
+		if (context->have_cl_gl_depth_images_extension)
+			buildOptions += " -D CONFIG_USE_DEPTH_TEXTURE";
 
 		ret = clBuildProgram((cl_program)context->program, 1, &deviceID, buildOptions.c_str(), NULL, NULL);
 		CHECK_OPENCL_RC(ret, "Could not build OpenCL program from source")
@@ -336,6 +335,11 @@ extern "C" {
 
 			ret = clEnqueueNDRangeKernel((cl_command_queue)openclContext->command_queue, (cl_kernel)openclContext->kernel, 2, NULL,
 				(const size_t*)openclContext->fringe_context->algorithm_options->cache.opencl_global_workgroup_size, (const size_t*)openclContext->fringe_context->algorithm_options->opencl_local_workgroup_size, 1, &event[i*num_fringe_buffers], &event[i*num_fringe_buffers+1]);
+
+			ret = clFlush((cl_command_queue)(openclContext)->command_queue);
+			CHECK_OPENCL_RC(ret, "Could not flush OpenCL command queue")
+			ret = clFinish((cl_command_queue)(openclContext)->command_queue);
+			CHECK_OPENCL_RC(ret, "Could not finish OpenCL command queue")
 
 			for (unsigned int j = 0; j < openclContext->fringe_context->display_options.num_heads; j++)
 			{
