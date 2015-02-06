@@ -45,7 +45,7 @@
      </rect>
     </property>
     <property name="currentIndex">
-     <number>2</number>
+     <number>0</number>
     </property>
     <property name="movable">
      <bool>false</bool>
@@ -3007,6 +3007,90 @@
    </widget>
   </widget>
  </widget>
+ <tabstops>
+  <tabstop>tabWidget</tabstop>
+  <tabstop>x11ToggleButton</tabstop>
+  <tabstop>nvidiaSettingsToggleButton</tabstop>
+  <tabstop>startButton</tabstop>
+  <tabstop>stopButton</tabstop>
+  <tabstop>inputFileComboBox</tabstop>
+  <tabstop>inputFileToolButton</tabstop>
+  <tabstop>triangulateMeshCheckBox</tabstop>
+  <tabstop>generateNormalsComboBox</tabstop>
+  <tabstop>openclKernelFileComboBox</tabstop>
+  <tabstop>openclKernelFileToolButton</tabstop>
+  <tabstop>autoscaleModelCheckBox</tabstop>
+  <tabstop>shaderModelComboBox</tabstop>
+  <tabstop>x11DisplayEnvLineEdit</tabstop>
+  <tabstop>renderPreviewGraphicsView</tabstop>
+  <tabstop>redColorGainHorizontalSlider</tabstop>
+  <tabstop>greenColorGainHorizontalSlider</tabstop>
+  <tabstop>blueColorGainHorizontalSlider</tabstop>
+  <tabstop>xTranslateHorizontalSlider</tabstop>
+  <tabstop>yTranslateHorizontalSlider</tabstop>
+  <tabstop>zTranslateHorizontalSlider</tabstop>
+  <tabstop>xRotateHorizontalSlider</tabstop>
+  <tabstop>yRotateHorizontalSlider</tabstop>
+  <tabstop>zRotateHorizontalSlider</tabstop>
+  <tabstop>spinModelCheckBox</tabstop>
+  <tabstop>forceRedrawButton</tabstop>
+  <tabstop>saveScreenshotButton</tabstop>
+  <tabstop>installPathLineEdit</tabstop>
+  <tabstop>installPathToolButton</tabstop>
+  <tabstop>binPathLineEdit</tabstop>
+  <tabstop>binPathToolButton</tabstop>
+  <tabstop>modelsPathLineEdit</tabstop>
+  <tabstop>modelPathToolButton</tabstop>
+  <tabstop>libPathLineEdit</tabstop>
+  <tabstop>libPathToolButton</tabstop>
+  <tabstop>shadersPathLineEdit</tabstop>
+  <tabstop>shadersPathToolButton</tabstop>
+  <tabstop>kernelsPathLineEdit</tabstop>
+  <tabstop>kernelsPathToolButton</tabstop>
+  <tabstop>verbosityComboBox</tabstop>
+  <tabstop>renderModeComboBox</tabstop>
+  <tabstop>shaderFileNameComboBox</tabstop>
+  <tabstop>shaderFileNameToolButton</tabstop>
+  <tabstop>lightPositionXDoubleSpinBox</tabstop>
+  <tabstop>lightPositionYDoubleSpinBox</tabstop>
+  <tabstop>lightPositionZDoubleSpinBox</tabstop>
+  <tabstop>friendlyNameLineEdit</tabstop>
+  <tabstop>numHeadsSpinBox</tabstop>
+  <tabstop>xHeadResSpinBox</tabstop>
+  <tabstop>numHeadsPerGPUSpinBox</tabstop>
+  <tabstop>yHeadResSpinBox</tabstop>
+  <tabstop>numAOMChannelsSpinBox</tabstop>
+  <tabstop>xHeadResSpecSpinBox</tabstop>
+  <tabstop>yHeadResSpecSpinBox</tabstop>
+  <tabstop>numScanlinesSpinBox</tabstop>
+  <tabstop>clockRateSpinBox</tabstop>
+  <tabstop>numSamplesPerHololineSpinBox</tabstop>
+  <tabstop>nvidiaSettingsLogTextEdit</tabstop>
+  <tabstop>xViewsSpinBox</tabstop>
+  <tabstop>yViewsSpinBox</tabstop>
+  <tabstop>numWafelsSpinBox</tabstop>
+  <tabstop>planeWidthDoubleSpinBox</tabstop>
+  <tabstop>xFOVDoubleSpinBox</tabstop>
+  <tabstop>yFOVDoubleSpinBox</tabstop>
+  <tabstop>zNearAlgorithmDoubleSpinBox</tabstop>
+  <tabstop>zFarAlgorithmDoubleSpinBox</tabstop>
+  <tabstop>refBeamAngleDoubleSpinBox</tabstop>
+  <tabstop>redWavelengthDoubleSpinBox</tabstop>
+  <tabstop>greenWavelengthDoubleSpinBox</tabstop>
+  <tabstop>blueWavelengthDoubleSpinBox</tabstop>
+  <tabstop>redUpconvertConstSpinbox</tabstop>
+  <tabstop>greenUpconvertConstSpinbox</tabstop>
+  <tabstop>blueUpconvertConstSpinbox</tabstop>
+  <tabstop>computeMethodComboBox</tabstop>
+  <tabstop>computeXBlockSizeSpinBox</tabstop>
+  <tabstop>computeYBlockSizeSpinBox</tabstop>
+  <tabstop>restoreDefaultSettingsButton</tabstop>
+  <tabstop>saveSettingsButton</tabstop>
+  <tabstop>whichLogTabWidget</tabstop>
+  <tabstop>dscp4LogTextEdit</tabstop>
+  <tabstop>clearLogButton</tabstop>
+  <tabstop>x11LogTextEdit</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

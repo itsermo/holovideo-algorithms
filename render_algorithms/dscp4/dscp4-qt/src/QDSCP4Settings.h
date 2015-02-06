@@ -18,7 +18,6 @@ public:
 	QDSCP4Settings(QWidget *parent = 0);
 	QDSCP4Settings(int argc, const char **argv, QWidget *parent = 0);
 
-	void restoreDefaultSettings();
 	void populateSettings();
 
 	algorithm_options_t* getAlgorithmOptions() { return algorithmOptions_; }
@@ -160,6 +159,8 @@ public slots:
 	void setHologramPlaneWidth(double hologramPlaneWidth) { setValue<float>(hologramPlaneWidth, displayOptions_.hologram_plane_width, std::bind(&QDSCP4Settings::hologramPlaneWidthChanged, this, std::placeholders::_1)); }
 	void setNumScanlines(int numScanlines) { setValue<unsigned int>(numScanlines, algorithmOptions_->num_scanlines, std::bind(&QDSCP4Settings::numScanlinesChanged, this, std::placeholders::_1)); }
 
+	void saveSettings();
+	void restoreDefaultSettings();
 
 signals:
 	void installPathChanged(QString newInstallPath);

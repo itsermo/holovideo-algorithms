@@ -47,6 +47,9 @@ haveNewFrame_(false)
 
 	ui->setupUi(this);
 
+	QObject::connect(this->ui->saveSettingsButton, SIGNAL(clicked()), settings_, SLOT(saveSettings()));
+	QObject::connect(this->ui->restoreDefaultSettingsButton, SIGNAL(clicked()), settings_, SLOT(restoreDefaultSettings()));
+
 	// General/Input options
 	QObject::connect(settings_, SIGNAL(objectFileNameChanged(QString)), ui->inputFileComboBox, SLOT(setCurrentText(QString)));
 	QObject::connect(ui->inputFileComboBox, SIGNAL(currentTextChanged(QString)), settings_, SLOT(setObjectFileName(QString)));
@@ -589,6 +592,8 @@ void MainWindow::stopDSCP4()
 
 	delete renderPreviewScene_;
 	renderPreviewScene_ = nullptr;
+
+	haveNewFrame_ = false;
 }
 
 void MainWindow::startX11()

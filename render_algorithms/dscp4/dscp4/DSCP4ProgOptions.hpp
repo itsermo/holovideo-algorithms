@@ -83,16 +83,12 @@ public:
 
 	std::string getComputeMethod() { return traverseOption<std::string>("compute-method", "algorithm.compute_method"); }
 
-#ifdef DSCP4_HAVE_CUDA
 	unsigned int getCUDABlockDimensionX() { return traverseOption<unsigned int>("cuda-block-dim-x", "algorithm.cuda_block_dimension_x"); }
 	unsigned int getCUDABlockDimensionY() { return traverseOption<unsigned int>("cuda-block-dim-y", "algorithm.cuda_block_dimension_y"); }
-#endif
 
-#ifdef DSCP4_HAVE_OPENCL
 	std::string getOpenCLKernelFileName() { return traverseOption<std::string>("opencl-kernel-filename", "algorithm.opencl_kernel_filename"); }
 	size_t getOpenCLKernelWorksizeX() { return static_cast<size_t>(traverseOption<unsigned int>("opencl-worksize-x", "algorithm.opencl_local_workgroup_size_x")); }
 	size_t getOpenCLKernelWorksizeY() { return static_cast<size_t>(traverseOption<unsigned int>("opencl-worksize-y", "algorithm.opencl_local_workgroup_size_y")); }
-#endif
 
 	float getReferenceBeamAngle() { return traverseOption<float>("reference-beam-angle", "algorithm.reference_beam_angle"); }
 	int getTemporalUpconvertRed() { return pt_.get<int>("algorithm.temporal_upconvert_red"); }
@@ -115,9 +111,7 @@ public:
 	float getHologramPlaneWidth() { return pt_.get<float>("display.hologram_plane_width"); }
 	unsigned int getPixelClockRate() { return pt_.get<unsigned int>("display.pixel_clock_rate"); }
 
-#ifdef DSCP4_HAVE_X11
 	std::string getX11DisplayEnvironmentVar() { return traverseOption<std::string>("display-env", "display.x11_display_env_arg"); }
-#endif
 
 private:
 	// looks for option on the cmd line first, if no cmd line options,
