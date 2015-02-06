@@ -26,8 +26,9 @@
   * ASSIMP 3.1.1+ (optional, for importing 3D object files, like .ply files)
   * zLib 1.2.2+ (optional, for PNG screenshots)
   * libpng 1.2 (optional, for PNG screenshots)
+  * Qt 5.4 (optional, for building dscp4-qt, a GUI controller for libdscp4)
   
- DSCP4 is a CMAKE package, that is composed of two C++11 projects:
+ DSCP4 is a CMAKE package, that is composed of three C++11 projects:
  
   * libdscp4 - the render library that implements DSCP and computes fringe
                patterns. libdscp4 is built as a shared library with C-linkage.
@@ -45,6 +46,10 @@
                stuff on the holovideo display, you'll have toi use this or
                write your own program that references libdscp4 and feeds it 3d
                model vertices, colors, normals, etc.
+
+  * dscp4-qt - the GUI version of "dscp4" test program. this is built with Qt
+               and allows you to control all aspects of libdscp4 with a GUI,
+               optional, but highly recommended install.
 		
  CMAKE is a cross-platform make tool that allows one to generate make projects
  for specific compilers.  For example, we can use CMAKE to generate a
@@ -68,7 +73,8 @@
  a) Install the dependenices using the command below:
  
 	sudo apt-get install cmake g++ libboost-all-dev libglew-dev libpng-dev \
-	zlib1g-dev libglm-dev libsdl2-dev libassimp-dev liblog4cxx10-dev
+	zlib1g-dev libglm-dev libsdl2-dev libassimp-dev liblog4cxx10-dev \
+	qt5base-dev
  
  c) Install CUDA 6.5 by navigating to 
     https://developer.nvidia.com/cuda-downloads
@@ -123,6 +129,8 @@
  -DWITH_CUDA={YES|NO}	    (Turns on NVIDIA CUDA fringe computation)
 
  -DWITH_PNG={YES|NO}	    (Turns on screenshot capability)
+
+ -DBUILD_DSCP4_QT_APP=NO    (Turns off dscp4-qt app building)
 
  These can be used like so:
 

@@ -26,7 +26,6 @@ displayOptions_("Display options")
 		boost::program_options::value<bool>()->default_value(DSCP4_INPUT_DEFAULT_TRIANGULATE_MESH),
 		"triangulates the mesh (if it is made of quads or something else");
 
-
 	algorithmOptions_.add_options()
 		("compute-method,c",
 		boost::program_options::value<std::string>(),
@@ -68,12 +67,10 @@ displayOptions_("Display options")
 		boost::program_options::value<std::string>(),
 		"sets the render mode. valid options are 'viewing', 'stereogram', 'aerial', and 'holovideo'");
 
-
 	displayOptions_.add_options()
 				("display-env,d",
 				boost::program_options::value<std::string>(),
 				"sets the display environment variable for X11 window output");
-
 
 	allOptions_.add(generalOptions_).add(inputOptions_).add(algorithmOptions_).add(renderOptions_).add(displayOptions_);
 }
