@@ -94,7 +94,7 @@ compute_method = ${DEFAULT_COMPUTE_METHOD}
 ; opencl algorithm options
 opencl_kernel_filename = dscp4-fringe.cl
 opencl_local_workgroup_size_x = 8
-opencl_local_workgroup_size_y = 8
+opencl_local_workgroup_size_y = 16
 
 ; cuda algorithm options
 ; block dimension is the number of threads per block in X or Y

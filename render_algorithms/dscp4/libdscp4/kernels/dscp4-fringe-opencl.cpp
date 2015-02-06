@@ -182,6 +182,10 @@ extern "C" {
 		CHECK_OPENCL_RC(ret, "Could not create OpenCL program from source")
 
 		std::string buildOptions;
+
+		// Optimizations (they don't appear to do much, just 2-3 fps increase)
+		buildOptions += "-cl-mad-enable -cl-no-signed-zeros -cl-unsafe-math-optimizations -cl-finite-math-only -cl-fast-relaxed-math ";
+
 		if (context->have_cl_double_precision_extension)
 			buildOptions += " -D CONFIG_USE_DOUBLE";
 		if (context->have_cl_gl_depth_images_extension)
