@@ -188,25 +188,27 @@ void QDSCP4Settings::saveSettings()
 	homeSettings.put("algorithm.z_near", algorithmOptions_->z_near);
 	homeSettings.put("algorithm.z_far", algorithmOptions_->z_far);
 
-	std::string computeMethodStr;
 	switch (algorithmOptions_->compute_method)
 	{
 	case DSCP4_COMPUTE_METHOD_CUDA:
-		computeMethodStr = "cuda";
+		homeSettings.put("algorithm.compute_method", "cuda");
+		homeSettings.put("algorithm.cuda_block_dimension_x", algorithmOptions_->cuda_block_dimensions[0]);
+		homeSettings.put("algorithm.cuda_block_dimension_y", algorithmOptions_->cuda_block_dimensions[1]);
+		homeSettings.put("algorithm.opencl_local_workgroup_size_x", algorithmOptions_->cuda_block_dimensions[0]);
+		homeSettings.put("algorithm.opencl_local_workgroup_size_y", algorithmOptions_->cuda_block_dimensions[1]);
 		break;
 	case DSCP4_COMPUTE_METHOD_OPENCL:
-		computeMethodStr = "opencl";
+		homeSettings.put("algorithm.compute_method", "opencl");
+		homeSettings.put("algorithm.cuda_block_dimension_x", algorithmOptions_->opencl_local_workgroup_size[0]);
+		homeSettings.put("algorithm.cuda_block_dimension_y", algorithmOptions_->opencl_local_workgroup_size[1]);
+		homeSettings.put("algorithm.opencl_local_workgroup_size_x", algorithmOptions_->opencl_local_workgroup_size[0]);
+		homeSettings.put("algorithm.opencl_local_workgroup_size_y", algorithmOptions_->opencl_local_workgroup_size[1]);
 		break;
 	default:
 		break;
 	}
 
-	homeSettings.put("algorithm.compute_method", computeMethodStr);
 	homeSettings.put("algorithm.opencl_kernel_filename", algorithmOptions_->opencl_kernel_filename);
-	homeSettings.put("algorithm.opencl_local_workgroup_size_x", algorithmOptions_->opencl_local_workgroup_size[0]);
-	homeSettings.put("algorithm.opencl_local_workgroup_size_y", algorithmOptions_->opencl_local_workgroup_size[1]);
-	homeSettings.put("algorithm.cuda_block_dimension_x", algorithmOptions_->cuda_block_dimensions[0]);
-	homeSettings.put("algorithm.cuda_block_dimension_y", algorithmOptions_->cuda_block_dimensions[1]);
 	homeSettings.put("algorithm.reference_beam_angle", algorithmOptions_->reference_beam_angle);
 	homeSettings.put("algorithm.temporal_upconvert_red", algorithmOptions_->temporal_upconvert_red);
 	homeSettings.put("algorithm.temporal_upconvert_green", algorithmOptions_->temporal_upconvert_green);
