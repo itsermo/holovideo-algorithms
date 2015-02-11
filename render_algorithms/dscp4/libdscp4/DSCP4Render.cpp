@@ -912,6 +912,7 @@ void DSCP4Render::generateView()
 		// Rotate the scene
 		viewMatrix_ = glm::rotate(viewMatrix_, rotateAngleX_ * DEG_TO_RAD, glm::vec3(1.0f, 0.0f, 0.0f));
 		viewMatrix_ = glm::rotate(viewMatrix_, rotateAngleY_ * DEG_TO_RAD, glm::vec3(0.0f, 1.0f, 0.0f));
+		viewMatrix_ = glm::rotate(viewMatrix_, rotateAngleZ_ * DEG_TO_RAD, glm::vec3(0.0f, 0.0f, 1.0f));
 
 		glLoadMatrixf(glm::value_ptr(viewMatrix_));
 		cameraChanged_ = false;
@@ -1220,22 +1221,31 @@ void DSCP4Render::addMesh(const char *id, int numIndecies, int numVertices, floa
 
 	if (renderOptions_->auto_scale_enabled)
 	{
-		// create a 2D array for miniball algorithm
-		float **ap = new float*[numVertices];
-		float * pv = vertices;
-		for (int i = 0; i < numVertices; ++i) {
-			ap[i] = pv;
-			pv += numVertexDimensions;
-		}
+#ifdef DSCP4_ENABLE_TRACE_LOG
+		auto duration = measureTime<>([&](){
+#endif
+			// create a 2D array for miniball algorithm
+			float **ap = new float*[numVertices];
+			float * pv = vertices;
+			for (int i = 0; i < numVertices; ++i) {
+				ap[i] = pv;
+				pv += numVertexDimensions;
+			}
 
-		// miniball uses a quick method of determining the bounding sphere of all the vertices
-		auto miniball3f = Miniball::Miniball<Miniball::CoordAccessor<float**, float*>>(3, (float**)ap, (float**)(ap + numVertices));
-		mesh.info.bounding_sphere.x = miniball3f.center()[0];
-		mesh.info.bounding_sphere.y = miniball3f.center()[1];
-		mesh.info.bounding_sphere.z = miniball3f.center()[2];
-		mesh.info.bounding_sphere.w = miniball3f.squared_radius();
 
-		delete[] ap;
+			// miniball uses a quick method of determining the bounding sphere of all the vertices
+			auto miniball3f = Miniball::Miniball<Miniball::CoordAccessor<float**, float*>>(3, (float**)ap, (float**)(ap + numVertices));
+			mesh.info.bounding_sphere.x = miniball3f.center()[0];
+			mesh.info.bounding_sphere.y = miniball3f.center()[1];
+			mesh.info.bounding_sphere.z = miniball3f.center()[2];
+			mesh.info.bounding_sphere.w = miniball3f.squared_radius();
+
+			delete[] ap;
+
+#ifdef DSCP4_ENABLE_TRACE_LOG
+		});
+		LOG4CXX_TRACE(logger_, "Getting bounding sphere for '" << id << "' took " << duration << " ms (" << 1.f / duration * 1000 << " fps)")
+#endif
 	}
 
 	std::unique_lock<std::mutex> meshLock(meshMutex_);
