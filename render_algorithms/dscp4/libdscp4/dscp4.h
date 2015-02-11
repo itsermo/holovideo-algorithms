@@ -35,7 +35,10 @@ extern "C" {
 	DSCP4_API void dscp4_SetShaderModel(dscp4_context_t renderContext, shader_model_t shadeModel);
 	DSCP4_API void dscp4_SetAutoScaleEnabled(dscp4_context_t renderContext, bool autoScaleEnabled);
 	
-	DSCP4_API void dscp4_AddMesh(dscp4_context_t renderContext, const char *id,
+	DSCP4_API void dscp4_AddMesh(
+		dscp4_context_t renderContext,
+		const char *id,
+		unsigned int numIndecies,
 		unsigned int numVertices,
 		float *vertices,
 		float *normals = 0,
@@ -43,14 +46,6 @@ extern "C" {
 		);
 
 	DSCP4_API void dscp4_RemoveMesh(dscp4_context_t renderContext, const char *id);
-
-	DSCP4_API void dscp4_AddPointCloud(dscp4_context_t renderContext,
-		const char *id,
-		unsigned int numPoints,
-		float *points,
-		float pointSize = 1.0f);
-
-	DSCP4_API void dscp4_RemovePointCloud(dscp4_context_t renderContext, const char *id);
 
 	DSCP4_API void dscp4_TranslateObject(dscp4_context_t renderContext, const char *id, float x, float y, float z);
 	DSCP4_API void dscp4_ScaleObject(dscp4_context_t renderContext, const char* id, float x, float y, float z);

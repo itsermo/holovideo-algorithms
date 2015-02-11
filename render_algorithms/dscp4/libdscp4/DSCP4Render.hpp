@@ -96,13 +96,8 @@ namespace dscp4
 		void deinit();
 
 		// Finds the bounding sphere of a mesh, centers the mesh and scales it down or up to radius == 1.0
-		void addMesh(const char *id, int numVertices, float *vertices, float * normals = nullptr, float *colors = nullptr, unsigned int numVertexDimensions = 3, unsigned int numColorChannels = 4);
+		void addMesh(const char *id, int numIndecies, int numVertices, float *vertices, float * normals = nullptr, float *colors = nullptr, unsigned int numVertexDimensions = 3, unsigned int numColorChannels = 4);
 		void removeMesh(const char *id);
-
-		//Expects PCL point cloud data type, or array of struct { float x,y,z,w; uchar r,g,b,a; }
-		//You can simply pass the pointer to the PCL::PointCloudPtr->Data[] array
-		void addPointCloud(const char *id, float *points, int numPoints, float pointSize, bool hasColorData = true);
-		void removePointCloud(const char *id) { this->removeMesh(id); }
 
 		void setRenderMode(render_mode_t renderMode) { renderOptions_->render_mode = renderMode; }
 		void setShadingModel(shader_model_t shadeModel) { renderOptions_->shader_model = shadeModel; }

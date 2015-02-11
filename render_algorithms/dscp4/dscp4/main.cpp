@@ -420,12 +420,12 @@ int main(int argc, const char* argv[])
 			if (objectScene->mMeshes[m]->HasVertexColors(0))
 			{
 				LOG4CXX_INFO(logger, meshID << " has vertex colors")
-				dscp4_AddMesh(renderContext, meshID.c_str(), objectScene->mMeshes[m]->mNumVertices, (float*)objectScene->mMeshes[m]->mVertices, (float*)objectScene->mMeshes[m]->mNormals, (float*)objectScene->mMeshes[m]->mColors[0]);
+					dscp4_AddMesh(renderContext, meshID.c_str(), objectScene->mMeshes[m]->mFaces[0].mNumIndices, objectScene->mMeshes[m]->mNumVertices, (float*)objectScene->mMeshes[m]->mVertices, (float*)objectScene->mMeshes[m]->mNormals, (float*)objectScene->mMeshes[m]->mColors[0]);
 			}
 			else
 			{
 				LOG4CXX_WARN(logger, meshID << " does not have vertex colors--it may look dull")
-				dscp4_AddMesh(renderContext, meshID.c_str(), objectScene->mMeshes[m]->mNumVertices, (float*)objectScene->mMeshes[m]->mVertices, (float*)objectScene->mMeshes[m]->mNormals);
+					dscp4_AddMesh(renderContext, meshID.c_str(), objectScene->mMeshes[m]->mFaces[0].mNumIndices, objectScene->mMeshes[m]->mNumVertices, (float*)objectScene->mMeshes[m]->mVertices, (float*)objectScene->mMeshes[m]->mNormals);
 			}
 				
 		}
@@ -434,30 +434,6 @@ int main(int argc, const char* argv[])
 			LOG4CXX_DEBUG(logger, "Found mesh " << m << " with no faces.  Treating vertecies as point cloud")
 		}
 	}
-
-	for (unsigned int m = 0; m < objectScene->mNumMaterials; m++)
-	{
-		aiString key;
-		for (unsigned int p = 0; p < objectScene->mMaterials[m]->mNumProperties; p++)
-		{
-			key = objectScene->mMaterials[m]->mProperties[p]->mKey;
-		}
-
-		aiColor3D color;
-		objectScene->mMaterials[m]->Get(AI_MATKEY_COLOR_DIFFUSE, color);
-
-		// if it has faces, treat as mesh, otherwise as point cloud
-		if (true)
-		{
-			//LOG4CXX_DEBUG(logger, "Found mesh " << m << " with " << objectScene->mMeshes[m]->mNumFaces << " faces from 3D object file...");
-			//AddMesh((float*)objectScene->mMeshes[m]->mVertices, objectScene->mMeshes[m]->mNumVertices);
-		}
-		else
-		{
-			LOG4CXX_DEBUG(logger, "Found Mesh " << m << " with no faces.  Treating vertecies as point cloud")
-		}
-	}
-
 
 	//for (size_t i = 0; i < 5; i++)
 	while (shouldRun)

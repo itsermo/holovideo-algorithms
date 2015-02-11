@@ -151,7 +151,9 @@ extern "C"{
 		point4f_t bounding_sphere;
 		unsigned int num_vertices, num_points_per_vertex, num_color_channels;
 		unsigned int vertex_stride, color_stride;
-		bool is_point_cloud;
+
+		// determines whether we are dealing with points, lines, triangles, or quads
+		unsigned int num_indecies;
 	} mesh_header_t;
 
 	typedef struct

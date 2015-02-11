@@ -205,6 +205,8 @@ void QDSCP4Settings::saveSettings()
 	homeSettings.put("algorithm.opencl_kernel_filename", algorithmOptions_->opencl_kernel_filename);
 	homeSettings.put("algorithm.opencl_local_workgroup_size_x", algorithmOptions_->opencl_local_workgroup_size[0]);
 	homeSettings.put("algorithm.opencl_local_workgroup_size_y", algorithmOptions_->opencl_local_workgroup_size[1]);
+	homeSettings.put("algorithm.cuda_block_dimension_x", algorithmOptions_->cuda_block_dimensions[0]);
+	homeSettings.put("algorithm.cuda_block_dimension_y", algorithmOptions_->cuda_block_dimensions[1]);
 	homeSettings.put("algorithm.reference_beam_angle", algorithmOptions_->reference_beam_angle);
 	homeSettings.put("algorithm.temporal_upconvert_red", algorithmOptions_->temporal_upconvert_red);
 	homeSettings.put("algorithm.temporal_upconvert_green", algorithmOptions_->temporal_upconvert_green);

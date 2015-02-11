@@ -54,24 +54,14 @@ extern "C"
 		((dscp4::DSCP4Render*)renderContext)->setAutoScaleEnabled(autoScaleEnabled);
 	}
 
-	DSCP4_API void dscp4_AddMesh(dscp4_context_t renderContext, const char *id, unsigned int numVertices, float *vertices, float *normals, float *colors)
+	DSCP4_API void dscp4_AddMesh(dscp4_context_t renderContext, const char *id, unsigned int numIndecies, unsigned int numVertices, float *vertices, float *normals, float *colors)
 	{
-		((dscp4::DSCP4Render*)renderContext)->addMesh(id, numVertices, vertices, normals, colors);
+		((dscp4::DSCP4Render*)renderContext)->addMesh(id, numIndecies, numVertices, vertices, normals, colors);
 	}
 
 	DSCP4_API void dscp4_RemoveMesh(dscp4_context_t renderContext, const char *id)
 	{
 		((dscp4::DSCP4Render*)renderContext)->removeMesh(id);
-	}
-
-	DSCP4_API void dscp4_AddPointCloud(dscp4_context_t renderContext, const char *id, unsigned int numPoints, float *points, float pointSize)
-	{
-
-	}
-
-	DSCP4_API void dscp4_RemovePointCloud(dscp4_context_t renderContext, const char *id)
-	{
-
 	}
 
 	DSCP4_API void dscp4_TranslateObject(dscp4_context_t renderContext, const char *id, float x, float y, float z)

@@ -1155,7 +1155,17 @@ void DSCP4Render::drawMesh(mesh_t& mesh)
 		glNormalPointer(GL_FLOAT, mesh.info.vertex_stride, 0);
 	}
 
-	glDrawArrays(GL_TRIANGLES, 0, mesh.info.num_vertices);
+	GLenum faceMode = 0;
+	switch (mesh.info.num_indecies)
+	{
+	case 1: faceMode = GL_POINTS; break;
+	case 2: faceMode = GL_LINES; break;
+	case 3: faceMode = GL_TRIANGLES; break;
+	case 4: faceMode = GL_QUADS; break;
+	default: faceMode = GL_POLYGON; break;
+	}
+
+	glDrawArrays(faceMode, 0, mesh.info.num_vertices);
 	glDisableClientState(GL_VERTEX_ARRAY);
 	glDisableClientState(GL_NORMAL_ARRAY);
 	glDisableClientState(GL_COLOR_ARRAY);
@@ -1190,7 +1200,7 @@ void DSCP4Render::drawAllMeshes()
 	}
 }
 
-void DSCP4Render::addMesh(const char *id, int numVertices, float *vertices, float * normals, float *colors, unsigned int numVertexDimensions, unsigned int numColorChannels)
+void DSCP4Render::addMesh(const char *id, int numIndecies, int numVertices, float *vertices, float * normals, float *colors, unsigned int numVertexDimensions, unsigned int numColorChannels)
 {
 	mesh_t mesh = { 0 };
 	mesh.vertices = vertices;
@@ -1201,7 +1211,9 @@ void DSCP4Render::addMesh(const char *id, int numVertices, float *vertices, floa
 	mesh.info.vertex_stride = numVertexDimensions * sizeof(float);
 	mesh.info.color_stride = numColorChannels * sizeof(float);
 	mesh.info.num_vertices = numVertices;
-	mesh.info.is_point_cloud = false;
+
+	mesh.info.num_indecies = numIndecies;
+
 	mesh.info.gl_color_buf_id = -1;
 	mesh.info.gl_vertex_buf_id = -1;
 	mesh.info.gl_normal_buf_id = -1;
@@ -1240,43 +1252,6 @@ void DSCP4Render::removeMesh(const char *id)
 	meshes_.erase(id);
 	meshChanged_ = true;
 	meshLock.unlock();
-}
-
-void DSCP4Render::addPointCloud(const char *id, float *points, int numPoints, float pointSize, bool hasColorData)
-{
-	// create a 2D array for miniball algorithm
-	//float** ap = new float*[numPoints];
-	//float * pv = points;
-	//for (int i = 0; i<numPoints; ++i) {
-	//	ap[i] = pv;
-	//	pv += 4;
-	//}
-
-	// miniball uses a quick method of determining the bounding sphere of all the vertices
-	//auto miniball3f = Miniball::Miniball<Miniball::CoordAccessor<float**, float*>>(3, (float**)ap, (float**)(ap + numPoints));
-
-	mesh_t mesh = { 0 };
-	mesh.vertices = points;
-	mesh.colors = &points[3];
-	mesh.info.num_color_channels = 4;
-	mesh.info.num_points_per_vertex = 3;
-	mesh.info.vertex_stride = 3 * sizeof(float)+ 4 * sizeof(char);
-	mesh.info.color_stride = 3 * sizeof(float)+ 4 * sizeof(char);
-	mesh.info.num_vertices = numPoints;
-	//mesh.info.center_x = miniball3f.center()[0];
-	//mesh.info.center_y = miniball3f.center()[1];
-	//mesh.info.center_z = miniball3f.center()[2];
-	//mesh.info.sq_radius = miniball3f.squared_radius();
-	mesh.info.is_point_cloud = false;
-
-	std::unique_lock<std::mutex> meshLock(meshMutex_);
-	meshes_[id] = mesh;
-	meshLock.unlock();
-
-	//need to optimize this
-	//for (int i = 0; i<numVertices; ++i)
-	//	delete[] ap[i];
-	//delete[] ap;
 }
 
 void DSCP4Render::translateMesh(std::string meshID, float x, float y, float z)
