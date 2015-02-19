@@ -87,7 +87,8 @@
 	Fedora/RedHat:
 
 	sudo yum install gcc gcc-c++ automake autoconf cmake boost-devel \
-	glew-devel libpng-devel glm-devel SDL2-devel assimp-devel log4cxx-devel\	qt5-qtbase-devel
+	glew-devel libpng-devel glm-devel SDL2-devel assimp-devel \
+	log4cxx-devel qt5-qtbase-devel
  
  c) Install CUDA 6.5 by navigating to 
     https://developer.nvidia.com/cuda-downloads
