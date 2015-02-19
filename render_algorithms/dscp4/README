@@ -67,14 +67,27 @@
  
  a) Sync your package manager with the latest packages:
 	
+	Ubuntu/Debian:
+	
 	sudo apt-get update
 	sudo apt-get upgrade
+
+	Fedora/RedHat:
+
+	sudo yum update
  
  a) Install the dependenices using the command below:
+
+	Ubuntu/Debian:
  
 	sudo apt-get install cmake g++ libboost-all-dev libglew-dev libpng-dev \
 	zlib1g-dev libglm-dev libsdl2-dev libassimp-dev liblog4cxx10-dev \
 	qt5base-dev
+
+	Fedora/RedHat:
+
+	sudo yum install gcc gcc-c++ automake autoconf cmake boost-devel \
+	glew-devel libpng-devel glm-devel SDL2-devel assimp-devel log4cxx-devel\	qt5-qtbase-devel
  
  c) Install CUDA 6.5 by navigating to 
     https://developer.nvidia.com/cuda-downloads
