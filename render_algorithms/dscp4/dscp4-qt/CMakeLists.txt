@@ -13,9 +13,9 @@ set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
 
-find_package(Qt5Widgets REQUIRED)
+find_package(Qt5Widgets QUIET)
 
-find_package(Boost 1.54 COMPONENTS "system" "program_options" "filesystem" REQUIRED)
+find_package(Boost 1.54 COMPONENTS "system" "program_options" "filesystem" QUIET)
 include_directories(${Boost_INCLUDE_DIR})
 if(BOOST_DISABLE_AUTOLINK)
 	add_definitions(-DBOOST_ALL_NO_LIB)
