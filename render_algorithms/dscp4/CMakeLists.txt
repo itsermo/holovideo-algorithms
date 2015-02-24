@@ -49,7 +49,7 @@ option(BUILD_DSCP4_QT_APP "Builds the QT GUI application for testing the DSCP4 a
 option(BUILD_DSCP4_STATIC "Builds the DSCP4 lib as a static lib" ${WIN32})
 option(WITH_CUDA "Enables CUDA compute building" ${CUDA_FOUND})
 option(WITH_LIBLOG4CXX "Uses Log4Cxx library for logging status and error messages" ${LIBLOG4CXX_FOUND})
-option(WITH_TRACE_LOG "Enables trace log to resolve code performance and behavior, such as showing FPS calculations in the log. Requires liblog4cxx" OFF)
+option(WITH_TRACE_LOG "Enables trace log to resolve code performance and behavior, such as showing FPS calculations in the log. Requires liblog4cxx" ON)
 option(WITH_OPENCL "Enables OpenCL compute building" ${OPENCL_FOUND})
 option(WITH_PNG "Enables screenshot functionality (saving render buffer to PNG)" ${PNG_FOUND})
 
