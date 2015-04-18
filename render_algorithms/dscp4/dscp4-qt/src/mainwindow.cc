@@ -153,6 +153,9 @@ haveNewFrame_(false)
 	QObject::connect(ui->planeWidthDoubleSpinBox, SIGNAL(valueChanged(double)), settings_, SLOT(setHologramPlaneWidth(double)));
 	QObject::connect(settings_, SIGNAL(numSamplesPerHololineChanged(int)), ui->numSamplesPerHololineSpinBox, SLOT(setValue(int)));
 	QObject::connect(ui->numSamplesPerHololineSpinBox, SIGNAL(valueChanged(int)), settings_, SLOT(setNumSamplesPerHololine(int)));
+	QObject::connect(ui->redColorGainHorizontalSlider, SIGNAL(valueChanged(int)), settings_, SLOT(setRedGain(int)));
+	QObject::connect(ui->greenColorGainHorizontalSlider, SIGNAL(valueChanged(int)), settings_, SLOT(setGreenGain(int)));
+	QObject::connect(ui->blueColorGainHorizontalSlider, SIGNAL(valueChanged(int)), settings_, SLOT(setBlueGain(int)));
 
 	settings_->populateSettings();
 
@@ -752,9 +755,9 @@ void MainWindow::disableControlsUI()
 	ui->xRotateHorizontalSlider->setValue(0);
 	ui->yRotateHorizontalSlider->setValue(0);
 	ui->zRotateHorizontalSlider->setValue(0);
-	ui->redColorGainHorizontalSlider->setValue(0);
-	ui->greenColorGainHorizontalSlider->setValue(0);
-	ui->blueColorGainHorizontalSlider->setValue(0);
+	ui->redColorGainHorizontalSlider->setValue(100);
+	ui->greenColorGainHorizontalSlider->setValue(100);
+	ui->blueColorGainHorizontalSlider->setValue(100);
 	ui->spinModelCheckBox->setChecked(false);
 	for (QWidget* var : dscp4Controls_)
 	{

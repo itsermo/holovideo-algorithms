@@ -48,6 +48,9 @@
 #define DSCP4_DEFAULT_ALGORITHM_WAVELENGTH_R		0.0000000633
 #define DSCP4_DEFAULT_ALGORITHM_WAVELENGTH_G		0.0000000532
 #define DSCP4_DEFAULT_ALGORITHM_WAVELENGTH_B		0.0000000445
+#define DSCP4_DEFAULT_ALGORITHM_GAIN_R				1.f
+#define DSCP4_DEFAULT_ALGORITHM_GAIN_G				1.f
+#define DSCP4_DEFAULT_ALGORITHM_GAIN_B				1.f
 #define DSCP4_DEFAULT_DISPLAY_NAME					"MIT Mark IV"
 #define DSCP4_DEFAULT_DISPLAY_X11_ENV_VAR			":0"
 #define DSCP4_DEFAULT_DISPLAY_NUM_HEADS				6
@@ -249,6 +252,10 @@ extern "C"{
 		float wavelength_red;
 		float wavelength_green;
 		float wavelength_blue;
+
+		float red_gain;
+		float green_gain;
+		float blue_gain;
 
 		float z_near;
 		float z_far;

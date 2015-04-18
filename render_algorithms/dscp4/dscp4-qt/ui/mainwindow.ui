@@ -45,7 +45,7 @@
      </rect>
     </property>
     <property name="currentIndex">
-     <number>1</number>
+     <number>0</number>
     </property>
     <property name="movable">
      <bool>false</bool>
@@ -308,13 +308,19 @@
         </rect>
        </property>
        <property name="minimum">
-        <number>-100</number>
+        <number>0</number>
        </property>
        <property name="maximum">
-        <number>100</number>
+        <number>200</number>
        </property>
        <property name="singleStep">
         <number>1</number>
+       </property>
+       <property name="value">
+        <number>100</number>
+       </property>
+       <property name="sliderPosition">
+        <number>100</number>
        </property>
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
@@ -333,15 +339,15 @@
         </rect>
        </property>
        <property name="minimum">
-        <number>-1000</number>
+        <number>0</number>
        </property>
        <property name="maximum">
-        <number>1000</number>
+        <number>200</number>
        </property>
        <property name="singleStep">
         <number>1</number>
        </property>
-       <property name="pageStep">
+       <property name="value">
         <number>100</number>
        </property>
        <property name="orientation">
@@ -367,15 +373,18 @@
         </rect>
        </property>
        <property name="minimum">
-        <number>-1000</number>
+        <number>0</number>
        </property>
        <property name="maximum">
-        <number>1000</number>
+        <number>200</number>
        </property>
        <property name="singleStep">
         <number>1</number>
        </property>
        <property name="pageStep">
+        <number>10</number>
+       </property>
+       <property name="value">
         <number>100</number>
        </property>
        <property name="orientation">

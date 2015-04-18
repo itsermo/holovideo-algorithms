@@ -127,11 +127,22 @@ public slots:
 	void setWavelengthGreen_100nm(double wavelengthGreen_100nm)  { 
 		setValue<double>(wavelengthGreen_100nm, wavelengthGreen_100nm_, std::bind(&QDSCP4Settings::wavelengthGreen_100nmChanged, this, std::placeholders::_1));
 		algorithmOptions_->wavelength_green = (float)(wavelengthGreen_100nm_ / pow(10, 7));
-
 	}
 	void setWavelengthBlue_100nm(double wavelengthBlue_100nm) { 
 		setValue<double>(wavelengthBlue_100nm, wavelengthBlue_100nm_, std::bind(&QDSCP4Settings::wavelengthBlue_100nmChanged, this, std::placeholders::_1));
 		algorithmOptions_->wavelength_blue = (float)(wavelengthBlue_100nm_ / pow(10, 7));
+	}
+
+	void setRedGain(int redGain){
+		setValue<float>(redGain * 0.01f, algorithmOptions_->red_gain, std::bind(&QDSCP4Settings::redGainChanged, this, std::placeholders::_1));
+	}
+
+	void setGreenGain(int greenGain){
+		setValue<float>(greenGain* 0.01f, algorithmOptions_->green_gain, std::bind(&QDSCP4Settings::greenGainChanged, this, std::placeholders::_1));
+	}
+
+	void setBlueGain(int blueGain){
+		setValue<float>(blueGain* 0.01f, algorithmOptions_->blue_gain, std::bind(&QDSCP4Settings::blueGainChanged, this, std::placeholders::_1));
 	}
 
 	// Display options
@@ -204,6 +215,9 @@ signals:
 	void wavelengthRed_100nmChanged(double newWavelengthRed_100nm);
 	void wavelengthGreen_100nmChanged(double newWavelengthGreen_100nm);
 	void wavelengthBlue_100nmChanged(double newWavelengthBlue_100nm);
+	void redGainChanged(double newRedGain);
+	void greenGainChanged(double newRedGain);
+	void blueGainChanged(double newRedGain);
 
 	// Display options
 	void displayNameChanged(QString newDisplayName);
@@ -279,6 +293,10 @@ private:
 	double wavelengthRed_100nm_;
 	double wavelengthBlue_100nm_;
 	double wavelengthGreen_100nm_;
+
+	float redGain_;
+	float greenGain_;
+	float blueGain_;
 
 	int verbosity_;
 

@@ -62,7 +62,7 @@ extern "C" {
 	DSCP4_API void dscp4_SetRotateViewAngleZ(dscp4_context_t renderContext, float angleZ);
 
 	DSCP4_API void dscp4_SetSpinOn(dscp4_context_t renderContext, int spinOn);
-	DSCP4_API int dscp4_GetSpinOn(dscp4_context_t renderContext);
+	DSCP4_API int  dscp4_GetSpinOn(dscp4_context_t renderContext);
 
 	DSCP4_API void dscp4_SaveFrameBufferToPNG(dscp4_context_t renderContext);
 	DSCP4_API void dscp4_ForceRedraw(dscp4_context_t renderContext);

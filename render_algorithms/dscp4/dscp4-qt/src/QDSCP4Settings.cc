@@ -105,6 +105,9 @@ void QDSCP4Settings::populateSettings()
 	this->setWavelengthRed_100nm((double)(programOptions_.getWavelengthRed()) * pow(10,7));
 	this->setWavelengthGreen_100nm((double)(programOptions_.getWavelengthGreen())* pow(10, 7));
 	this->setWavelengthBlue_100nm((double)(programOptions_.getWavelengthBlue())* pow(10, 7));
+	this->setRedGain(100);
+	this->setGreenGain(100);
+	this->setBlueGain(100);
 
 	//Display options
 	this->setDisplayName(QString::fromStdString(programOptions_.getDisplayName()));

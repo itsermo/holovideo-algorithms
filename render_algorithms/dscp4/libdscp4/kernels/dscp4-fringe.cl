@@ -28,36 +28,39 @@ CLK_NORMALIZED_COORDS_FALSE
 | CLK_FILTER_NEAREST;
 
 __kernel void computeFringe(
-	__global unsigned char* framebuffer_out,
-	__read_only image2d_t viewset_color_in,
+	__global unsigned char* framebuffer_out,	//0
+	__read_only image2d_t viewset_color_in,		//1
 #ifdef CONFIG_USE_DEPTH_TEXTURE
-	__read_only image2d_t viewset_depth_in,
+	__read_only image2d_t viewset_depth_in,		//2
 #else
 	__global __read_only float* viewset_depth_in,
 #endif
-	const uint num_wafels_per_scanline,
-	const uint num_scanlines,
-	const uint viewset_res_x,
-	const uint viewset_res_y,
-	const uint viewset_num_tiles_x,
-	const uint viewset_num_tiles_y,
-	const uint framebuffer_res_x,
-	const uint framebuffer_res_y,
-	const float REF_BEAM_ANGLE_RAD,
-	__local float* wafel_position,
-	const float K_R,
-	const float K_G,
-	const float K_B,
-	const real_t SPATIAL_UPCONVERT_CONST_R,
-	const real_t SPATIAL_UPCONVERT_CONST_G,
-	const real_t SPATIAL_UPCONVERT_CONST_B,
-	const unsigned int NUM_SAMPLES_PER_WAFEL,
-	const float SAMPLE_PITCH,
-	const float Z_SPAN,
-	const float Z_OFFSET,
-	const unsigned int NUM_AOM_CHANNELS,
-	const unsigned int HEAD_RES_Y_SPEC,
-	const unsigned int NUM_BUFFERS
+	const uint num_wafels_per_scanline,			//3
+	const uint num_scanlines,					//4
+	const uint viewset_res_x,					//5
+	const uint viewset_res_y,					//6
+	const uint viewset_num_tiles_x,				//7
+	const uint viewset_num_tiles_y,				//8
+	const uint framebuffer_res_x,				//9
+	const uint framebuffer_res_y,				//10
+	const float redGain,						//11
+	const float greenGain,						//12
+	const float blueGain,						//13
+	const float REF_BEAM_ANGLE_RAD,				//14
+	__local float* wafel_position,				//15
+	const float K_R,							//16
+	const float K_G,							//17
+	const float K_B,							//18
+	const real_t SPATIAL_UPCONVERT_CONST_R,		//19
+	const real_t SPATIAL_UPCONVERT_CONST_G,		//20
+	const real_t SPATIAL_UPCONVERT_CONST_B,		//21
+	const unsigned int NUM_SAMPLES_PER_WAFEL,	//22
+	const float SAMPLE_PITCH,					//23
+	const float Z_SPAN,							//24
+	const float Z_OFFSET,						//25
+	const unsigned int NUM_AOM_CHANNELS,		//26
+	const unsigned int HEAD_RES_Y_SPEC,			//27
+	const unsigned int NUM_BUFFERS				//28
 	)
 {
 	const unsigned int global_x = get_global_id(0);
@@ -98,7 +101,7 @@ __kernel void computeFringe(
 #endif
 					float temp_x = d * native_tan(REF_BEAM_ANGLE_RAD * (idx - num_views *0.5f)) + NUM_SAMPLES_PER_WAFEL * SAMPLE_PITCH *0.5f;
 					float4 color = read_imagef(viewset_color_in, sampler, (int2)(x,y));
-					unsigned char c = (color_chan == 0 ? 255.f*color.x : color_chan == 1 ? 255.f*color.y : 255.f*color.z);
+					unsigned char c = (color_chan == 0 ? 255.f*color.x*redGain : color_chan == 1 ? 255.f*color.y*greenGain : 255.f*color.z*blueGain);
 
 					if(c != 0)
 						for (int i = 0; i < NUM_SAMPLES_PER_WAFEL; i++)

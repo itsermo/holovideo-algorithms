@@ -25,6 +25,9 @@ __global__ void computeFringe(
 	const unsigned int viewset_num_tiles_y,
 	const unsigned int framebuffer_res_x,
 	const unsigned int framebuffer_res_y,
+	const float redGain,
+	const float greenGain,
+	const float blueGain,
 	const float REF_BEAM_ANGLE_RAD,
 	const float K_R,
 	const float K_G,
@@ -249,6 +252,9 @@ void dscp4_fringe_cuda_ComputeFringe(dscp4_fringe_cuda_context_t* cudaContext)
 			cudaContext->fringe_context->algorithm_options->cache.stereogram_num_tiles_y,
 			cudaContext->fringe_context->algorithm_options->cache.fringe_buffer_res_x,
 			cudaContext->fringe_context->algorithm_options->cache.fringe_buffer_res_y,
+			cudaContext->fringe_context->algorithm_options->red_gain,
+			cudaContext->fringe_context->algorithm_options->green_gain,
+			cudaContext->fringe_context->algorithm_options->blue_gain,
 			cudaContext->fringe_context->algorithm_options->cache.reference_beam_angle_rad,
 			cudaContext->fringe_context->algorithm_options->cache.k_r,
 			cudaContext->fringe_context->algorithm_options->cache.k_g,
@@ -334,6 +340,9 @@ __global__ void computeFringe(
 	const unsigned int viewset_num_tiles_y,
 	const unsigned int framebuffer_res_x,
 	const unsigned int framebuffer_res_y,
+	const float redGain,
+	const float greenGain,
+	const float blueGain,
 	const float REF_BEAM_ANGLE_RAD,
 	const float K_R,
 	const float K_G,
@@ -388,7 +397,7 @@ __global__ void computeFringe(
 					const float d = (viewset_depth_in[y * viewset_res_x + x] - 0.5f) * Z_SPAN + Z_OFFSET;
 					const float temp_x = d * tan(REF_BEAM_ANGLE_RAD * (idx - num_views / 2)) + NUM_SAMPLES_PER_WAFEL * SAMPLE_PITCH *0.5f;
 					const float4 color = tex2D(viewset_color_in, x, y);
-					const unsigned char c = (color_chan == 0 ? 255.f*color.x : color_chan == 1 ? 255.f*color.y : 255.f*color.z);
+					const unsigned char c = (color_chan == 0 ? 255.f*color.x*redGain : color_chan == 1 ? 255.f*color.y*greenGain : 255.f*color.z*blueGain);
 
 					if (c != 0) 
 						for (int i = 0; i < NUM_SAMPLES_PER_WAFEL; i++)
