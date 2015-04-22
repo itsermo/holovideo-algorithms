@@ -297,6 +297,9 @@ int main(int argc, const char* argv[])
 		algorithmOptions.wavelength_red = options.getWavelengthRed();
 		algorithmOptions.wavelength_green = options.getWavelengthGreen();
 		algorithmOptions.wavelength_blue = options.getWavelengthBlue();
+		algorithmOptions.red_gain = options.getRedGain();
+		algorithmOptions.green_gain = options.getGreenGain();
+		algorithmOptions.blue_gain = options.getBlueGain();
 
 		if (options.getComputeMethod() == "opencl")
 		{

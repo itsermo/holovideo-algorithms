@@ -98,6 +98,10 @@ public:
 	float getWavelengthGreen() { return pt_.get<float>("algorithm.wavelength_green"); }
 	float getWavelengthBlue() { return pt_.get<float>("algorithm.wavelength_blue"); }
 
+	float getRedGain() { return pt_.get<float>("algorithm.red_gain"); }
+	float getGreenGain() { return pt_.get<float>("algorithm.green_gain"); }
+	float getBlueGain() { return pt_.get<float>("algorithm.blue_gain"); }
+
 	//Display options
 	std::string getDisplayName() { return pt_.get<std::string>("display.display_name"); }
 	unsigned int getNumHeads() { return pt_.get<unsigned int>("display.num_heads"); }

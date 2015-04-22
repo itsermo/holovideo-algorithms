@@ -23,6 +23,7 @@ ui(new Ui::MainWindow),
 algorithmContext_(nullptr), 
 x11Process_(nullptr),
 nvidiaSettingsProcess_(nullptr),
+x11vncProcess_(nullptr),
 haveNewFrame_(false)
 {
 
@@ -154,8 +155,12 @@ haveNewFrame_(false)
 	QObject::connect(settings_, SIGNAL(numSamplesPerHololineChanged(int)), ui->numSamplesPerHololineSpinBox, SLOT(setValue(int)));
 	QObject::connect(ui->numSamplesPerHololineSpinBox, SIGNAL(valueChanged(int)), settings_, SLOT(setNumSamplesPerHololine(int)));
 	QObject::connect(ui->redColorGainHorizontalSlider, SIGNAL(valueChanged(int)), settings_, SLOT(setRedGain(int)));
+	QObject::connect(settings_, SIGNAL(redGainChangedInt(int)), ui->redColorGainHorizontalSlider, SLOT(setValue(int)));
 	QObject::connect(ui->greenColorGainHorizontalSlider, SIGNAL(valueChanged(int)), settings_, SLOT(setGreenGain(int)));
+	QObject::connect(settings_, SIGNAL(greenGainChangedInt(int)), ui->greenColorGainHorizontalSlider, SLOT(setValue(int)));
 	QObject::connect(ui->blueColorGainHorizontalSlider, SIGNAL(valueChanged(int)), settings_, SLOT(setBlueGain(int)));
+	QObject::connect(settings_, SIGNAL(blueGainChangedInt(int)), ui->blueColorGainHorizontalSlider, SLOT(setValue(int)));
+
 
 	settings_->populateSettings();
 
@@ -243,6 +248,12 @@ MainWindow::~MainWindow()
 	{
 		nvidiaSettingsProcess_->kill();
 		delete nvidiaSettingsProcess_;
+	}
+
+	if (x11vncProcess_)
+	{
+		x11vncProcess_->kill();
+		delete x11vncProcess_;
 	}
 
 	if (x11Process_)
@@ -591,6 +602,7 @@ void MainWindow::startX11()
 		QObject::connect(ui->x11ToggleButton, SIGNAL(clicked()), this, SLOT(stopX11()));
 		ui->x11ToggleButton->setText("Stop X11");
 		ui->nvidiaSettingsToggleButton->setEnabled(true);
+		ui->x11vncToggleButton->setEnabled(true);
 	}
 	else
 	{
@@ -599,6 +611,29 @@ void MainWindow::startX11()
 		message.append(command);
 		message.append("\"");
 		QMessageBox::critical(this, "Error Launching X11", message, QMessageBox::Ok);
+	}
+}
+
+void MainWindow::startX11Vnc()
+{
+	x11vncProcess_ = new QProcess(this);
+	QObject::connect(x11vncProcess_, SIGNAL(readyReadStandardError()), this, SLOT(logX11Vnc()));
+	QString command("x11vnc -display ");
+	command.append(ui->x11DisplayEnvLineEdit->text()); // set the display env. variable
+	x11vncProcess_->start(command);
+	if (x11vncProcess_->waitForStarted())
+	{
+		QObject::disconnect(ui->x11ToggleButton, SIGNAL(clicked()), this, SLOT(startX11Vnc()));
+		QObject::connect(ui->x11ToggleButton, SIGNAL(clicked()), this, SLOT(stopX11Vnc()));
+		ui->x11vncToggleButton->setText("Stop x11vnc");
+	}
+	else
+	{
+		QString message("Please check that x11vnc package is installed on your system.\n");
+		message.append("Launch command used: \"");
+		message.append(command);
+		message.append("\"");
+		QMessageBox::critical(this, "Error Launching x11vnc", message, QMessageBox::Ok);
 	}
 }
 
@@ -613,6 +648,9 @@ void MainWindow::stopX11()
 
 	QObject::disconnect(ui->x11ToggleButton, SIGNAL(clicked()), this, SLOT(stopX11()));
 
+	if (x11vncProcess_)
+		QObject::disconnect(x11vncProcess_, SIGNAL(readyReadStandardError()), this, SLOT(logX11Vnc()));
+
 	if(nvidiaSettingsProcess_)
 		QObject::disconnect(nvidiaSettingsProcess_, SIGNAL(readyReadStandardError()), this, SLOT(logNVIDIASettings()));
 
@@ -620,6 +658,22 @@ void MainWindow::stopX11()
 	ui->x11ToggleButton->setText("Start X11");
 
 	ui->nvidiaSettingsToggleButton->setEnabled(false);
+	ui->x11vncToggleButton->setEnabled(false);
+}
+
+void MainWindow::stopX11Vnc()
+{
+	x11vncProcess_->close();
+	x11vncProcess_->waitForFinished();
+	QObject::disconnect(x11Process_, SIGNAL(readyReadStandardError()), this, SLOT(logX11Vnc()));
+
+	delete x11vncProcess_;
+	x11vncProcess_ = nullptr;
+
+	QObject::disconnect(ui->x11vncToggleButton, SIGNAL(clicked()), this, SLOT(stopX11Vnc()));
+
+	QObject::connect(ui->x11vncToggleButton, SIGNAL(clicked()), this, SLOT(startX11Vnc()));
+	ui->x11ToggleButton->setText("Start x11vnc");
 }
 
 void MainWindow::startNVIDIASettings()
@@ -644,9 +698,6 @@ void MainWindow::startNVIDIASettings()
 			message.append("\"");
 			QMessageBox::critical(this, "Error Launching NVIDIA Settings", message, QMessageBox::Ok);
 		}
-
-
-
 	}
 }
 
@@ -755,9 +806,6 @@ void MainWindow::disableControlsUI()
 	ui->xRotateHorizontalSlider->setValue(0);
 	ui->yRotateHorizontalSlider->setValue(0);
 	ui->zRotateHorizontalSlider->setValue(0);
-	ui->redColorGainHorizontalSlider->setValue(100);
-	ui->greenColorGainHorizontalSlider->setValue(100);
-	ui->blueColorGainHorizontalSlider->setValue(100);
 	ui->spinModelCheckBox->setChecked(false);
 	for (QWidget* var : dscp4Controls_)
 	{
@@ -792,6 +840,11 @@ void MainWindow::logX11()
 void MainWindow::logNVIDIASettings()
 {
 	ui->nvidiaSettingsLogTextEdit->insertPlainText(nvidiaSettingsProcess_->readAllStandardError());
+}
+
+void MainWindow::logX11Vnc()
+{
+	ui->x11vncLogTextEdit->insertPlainText(x11vncProcess_->readAllStandardError());
 }
 
 void MainWindow::clearLog()

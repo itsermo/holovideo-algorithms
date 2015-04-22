@@ -114,6 +114,11 @@ wavelength_red   = 0.000000633
 wavelength_green = 0.000000532
 wavelength_blue  = 0.000000445
 
+; red/green/blue gain
+red_gain = 1.0
+green_gain = 1.0
+blue_gain = 1.0
+
 [display]
 ; friendly name of the display
 display_name = MIT Mark IV

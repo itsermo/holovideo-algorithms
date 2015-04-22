@@ -2941,6 +2941,24 @@
         </property>
        </widget>
       </widget>
+      <widget class="QWidget" name="tab_4">
+       <attribute name="title">
+        <string>x11vnc</string>
+       </attribute>
+       <widget class="QTextEdit" name="x11vncLogTextEdit">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>10</y>
+          <width>581</width>
+          <height>471</height>
+         </rect>
+        </property>
+        <property name="readOnly">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </widget>
      </widget>
     </widget>
    </widget>
@@ -3003,7 +3021,7 @@
      <rect>
       <x>150</x>
       <y>620</y>
-      <width>121</width>
+      <width>101</width>
       <height>28</height>
      </rect>
     </property>
@@ -3012,6 +3030,25 @@
     </property>
     <property name="text">
      <string>NVIDIA Settings</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="x11vncToggleButton">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
+    <property name="geometry">
+     <rect>
+      <x>260</x>
+      <y>620</y>
+      <width>91</width>
+      <height>28</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Launches x11vnc server on the X11 Env. socket.  This allows you to connect to the X11 session via VNC client to see the framebuffer data.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    </property>
+    <property name="text">
+     <string>Start x11vnc</string>
     </property>
    </widget>
   </widget>

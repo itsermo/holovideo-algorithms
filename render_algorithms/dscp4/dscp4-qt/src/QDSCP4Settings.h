@@ -135,14 +135,17 @@ public slots:
 
 	void setRedGain(int redGain){
 		setValue<float>(redGain * 0.01f, algorithmOptions_->red_gain, std::bind(&QDSCP4Settings::redGainChanged, this, std::placeholders::_1));
+		redGainChangedInt(redGain);
 	}
 
 	void setGreenGain(int greenGain){
 		setValue<float>(greenGain* 0.01f, algorithmOptions_->green_gain, std::bind(&QDSCP4Settings::greenGainChanged, this, std::placeholders::_1));
+		greenGainChangedInt(greenGain);
 	}
 
 	void setBlueGain(int blueGain){
 		setValue<float>(blueGain* 0.01f, algorithmOptions_->blue_gain, std::bind(&QDSCP4Settings::blueGainChanged, this, std::placeholders::_1));
+		blueGainChangedInt(blueGain);
 	}
 
 	// Display options
@@ -218,6 +221,9 @@ signals:
 	void redGainChanged(double newRedGain);
 	void greenGainChanged(double newRedGain);
 	void blueGainChanged(double newRedGain);
+	void redGainChangedInt(int newRedGain);
+	void greenGainChangedInt(int newRedGain);
+	void blueGainChangedInt(int newRedGain);
 
 	// Display options
 	void displayNameChanged(QString newDisplayName);
@@ -293,10 +299,6 @@ private:
 	double wavelengthRed_100nm_;
 	double wavelengthBlue_100nm_;
 	double wavelengthGreen_100nm_;
-
-	float redGain_;
-	float greenGain_;
-	float blueGain_;
 
 	int verbosity_;
 

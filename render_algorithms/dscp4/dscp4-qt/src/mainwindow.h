@@ -64,6 +64,9 @@ public slots:
 	void stopDSCP4();
 	void startX11();
 	void stopX11();
+	void startX11Vnc();
+	void stopX11Vnc();
+
 	void startNVIDIASettings();
 
 	void enableUnchangeableUI();
@@ -89,6 +92,7 @@ public slots:
 
 	void logX11();
 	void logNVIDIASettings();
+	void logX11Vnc();
 
 	void clearLog();
 
@@ -98,6 +102,7 @@ signals:
 
 	void x11IsRunningChanged(bool isRunning);
 	void nvidiaSettingsIsRunningChanged(bool isRunning);
+	void x11vncIsRunningChanged(bool isRunning);
 
 private:
 
@@ -122,6 +127,7 @@ private:
 
 	QProcess * x11Process_;
 	QProcess * nvidiaSettingsProcess_;
+	QProcess * x11vncProcess_;
 
 	QGraphicsScene *renderPreviewScene_;
 	QPixmap renderPreviewImage_;

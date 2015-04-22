@@ -105,9 +105,9 @@ void QDSCP4Settings::populateSettings()
 	this->setWavelengthRed_100nm((double)(programOptions_.getWavelengthRed()) * pow(10,7));
 	this->setWavelengthGreen_100nm((double)(programOptions_.getWavelengthGreen())* pow(10, 7));
 	this->setWavelengthBlue_100nm((double)(programOptions_.getWavelengthBlue())* pow(10, 7));
-	this->setRedGain(100);
-	this->setGreenGain(100);
-	this->setBlueGain(100);
+	this->setRedGain(static_cast<int>(programOptions_.getRedGain() * 100));
+	this->setGreenGain(static_cast<int>(programOptions_.getGreenGain() * 100));
+	this->setBlueGain(static_cast<int>(programOptions_.getBlueGain() * 100));
 
 	//Display options
 	this->setDisplayName(QString::fromStdString(programOptions_.getDisplayName()));
@@ -219,6 +219,10 @@ void QDSCP4Settings::saveSettings()
 	homeSettings.put("algorithm.wavelength_red", algorithmOptions_->wavelength_red);
 	homeSettings.put("algorithm.wavelength_green", algorithmOptions_->wavelength_green);
 	homeSettings.put("algorithm.wavelength_blue", algorithmOptions_->wavelength_blue);
+	
+	homeSettings.put("algorithm.red_gain", algorithmOptions_->red_gain);
+	homeSettings.put("algorithm.green_gain", algorithmOptions_->green_gain);
+	homeSettings.put("algorithm.blue_gain", algorithmOptions_->blue_gain);
 
 	homeSettings.put("display.display_name", displayOptions_.name);
 	homeSettings.put("display.num_heads", displayOptions_.num_heads);
