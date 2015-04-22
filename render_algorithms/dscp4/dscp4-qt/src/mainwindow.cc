@@ -674,7 +674,7 @@ void MainWindow::stopX11Vnc()
 	QObject::disconnect(ui->x11vncToggleButton, SIGNAL(clicked()), this, SLOT(stopX11Vnc()));
 
 	QObject::connect(ui->x11vncToggleButton, SIGNAL(clicked()), this, SLOT(startX11Vnc()));
-	ui->x11ToggleButton->setText("Start x11vnc");
+	ui->x11vncToggleButton->setText("Stop x11vnc");
 }
 
 void MainWindow::startNVIDIASettings()
