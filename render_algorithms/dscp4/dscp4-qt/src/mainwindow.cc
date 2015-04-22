@@ -624,8 +624,8 @@ void MainWindow::startX11Vnc()
 	x11vncProcess_->start(command);
 	if (x11vncProcess_->waitForStarted())
 	{
-		QObject::disconnect(ui->x11ToggleButton, SIGNAL(clicked()), this, SLOT(startX11Vnc()));
-		QObject::connect(ui->x11ToggleButton, SIGNAL(clicked()), this, SLOT(stopX11Vnc()));
+		QObject::disconnect(ui->x11vncToggleButton, SIGNAL(clicked()), this, SLOT(startX11Vnc()));
+		QObject::connect(ui->x11vncToggleButton, SIGNAL(clicked()), this, SLOT(stopX11Vnc()));
 		ui->x11vncToggleButton->setText("Stop x11vnc");
 	}
 	else

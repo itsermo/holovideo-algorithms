@@ -3002,7 +3002,7 @@
      <rect>
       <x>20</x>
       <y>620</y>
-      <width>121</width>
+      <width>101</width>
       <height>28</height>
      </rect>
     </property>
@@ -3019,9 +3019,9 @@
     </property>
     <property name="geometry">
      <rect>
-      <x>150</x>
+      <x>130</x>
       <y>620</y>
-      <width>101</width>
+      <width>111</width>
       <height>28</height>
      </rect>
     </property>
@@ -3038,14 +3038,14 @@
     </property>
     <property name="geometry">
      <rect>
-      <x>260</x>
+      <x>250</x>
       <y>620</y>
       <width>91</width>
       <height>28</height>
      </rect>
     </property>
     <property name="toolTip">
-     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Launches x11vnc server on the X11 Env. socket.  This allows you to connect to the X11 session via VNC client to see the framebuffer data.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Launches x11vnc server. This allows you to connect to the X11 session via VNC client to peek at the framebuffer data (for debugging purposes).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
     </property>
     <property name="text">
      <string>Start x11vnc</string>
