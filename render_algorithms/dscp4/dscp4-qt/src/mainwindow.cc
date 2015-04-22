@@ -193,6 +193,7 @@ haveNewFrame_(false)
 	QObject::connect(ui->startButton, SIGNAL(clicked()), this, SLOT(startDSCP4()));
 	QObject::connect(ui->stopButton, SIGNAL(clicked()), this, SLOT(stopDSCP4()));
 	QObject::connect(ui->x11ToggleButton, SIGNAL(clicked()), this, SLOT(startX11()));
+	QObject::connect(ui->x11vncToggleButton, SIGNAL(clicked()), this, SLOT(startX11Vnc()));
 	QObject::connect(ui->nvidiaSettingsToggleButton, SIGNAL(clicked()), this, SLOT(startNVIDIASettings()));
 	QObject::connect(ui->saveScreenshotButton, SIGNAL(clicked()), this, SLOT(dumpFramebufferToPNG()));
 	QObject::connect(ui->forceRedrawButton, SIGNAL(clicked()), this, SLOT(forceRedraw()));
