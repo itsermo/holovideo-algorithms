@@ -46,7 +46,7 @@ file(GLOB DSCP4_LIB_SRC
 	"*.cpp"
 )
 
-set(DSCP4_LIB ${PROJECT_NAME}-lib)
+set(DSCP4_LIB dscp4-lib)
 
 if(BUILD_DSCP4_STATIC)
 	add_definitions(-DDSCP4_STATIC)
@@ -57,7 +57,7 @@ endif()
 
 target_include_directories(${DSCP4_LIB} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-set_target_properties(${DSCP4_LIB} PROPERTIES OUTPUT_NAME ${PROJECT_NAME} CLEAN_DIRECT_OUTPUT 1)
+set_target_properties(${DSCP4_LIB} PROPERTIES OUTPUT_NAME libdscp4 CLEAN_DIRECT_OUTPUT 1)
 
 target_link_libraries(${DSCP4_LIB} ${Boost_LIBRARIES} ${OPENGL_gl_LIBRARY} ${GLEW_LIBRARY} ${SDL2_LIBRARY})
 

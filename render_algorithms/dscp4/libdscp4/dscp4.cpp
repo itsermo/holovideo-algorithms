@@ -17,6 +17,12 @@ extern "C"
 			);
 	}
 
+	DSCP4_API dscp4_context_t dscp4_CreateContextDefault()
+	{
+		return (dscp4_context_t*)(new dscp4::DSCP4Render);
+	}
+
+
 	DSCP4_API void dscp4_DestroyContext(dscp4_context_t* renderContext)
 	{
 		delete (dscp4_context_t*)*renderContext;
@@ -57,6 +63,16 @@ extern "C"
 	DSCP4_API void dscp4_AddMesh(dscp4_context_t renderContext, const char *id, unsigned int numIndecies, unsigned int numVertices, float *vertices, float *normals, float *colors)
 	{
 		((dscp4::DSCP4Render*)renderContext)->addMesh(id, numIndecies, numVertices, vertices, normals, colors);
+	}
+
+	DSCP4_API void dscp4_AddPointCloud(
+		dscp4_context_t renderContext,
+		const char *id,
+		unsigned int numPoints,
+		void *cloudData
+		)
+	{
+		((dscp4::DSCP4Render*)renderContext)->addPointCloud(id, numPoints, cloudData);
 	}
 
 	DSCP4_API void dscp4_RemoveMesh(dscp4_context_t renderContext, const char *id)

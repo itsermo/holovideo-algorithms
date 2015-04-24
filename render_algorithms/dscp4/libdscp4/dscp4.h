@@ -24,6 +24,8 @@ extern "C" {
 		display_options_t display_options,
 		unsigned int verbosity, void * logAppender = nullptr);
 
+	DSCP4_API dscp4_context_t dscp4_CreateContextDefault();
+
 	DSCP4_API void dscp4_DestroyContext(dscp4_context_t* renderContext);
 
 	DSCP4_API bool dscp4_InitRenderer(dscp4_context_t renderContext);
@@ -43,6 +45,13 @@ extern "C" {
 		float *vertices,
 		float *normals = 0,
 		float *colors = 0
+		);
+
+	DSCP4_API void dscp4_AddPointCloud(
+		dscp4_context_t renderContext,
+		const char *id,
+		unsigned int numPoints,
+		void *cloudData
 		);
 
 	DSCP4_API void dscp4_RemoveMesh(dscp4_context_t renderContext, const char *id);

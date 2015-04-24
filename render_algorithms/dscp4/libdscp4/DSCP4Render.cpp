@@ -733,7 +733,9 @@ void DSCP4Render::renderLoop()
 
 		if (shouldSaveScreenshot_)
 		{
+#ifdef DSCP4_HAVE_PNG
 			saveScreenshotPNG();
+#endif
 			shouldSaveScreenshot_ = false;
 		}
 
@@ -1114,69 +1116,114 @@ void DSCP4Render::deinit()
 
 void DSCP4Render::drawMesh(mesh_t& mesh)
 {
+
+	const int CLOUD_PT_SIZE = 32;
+
 	// This will put the mesh in the vertex array buffer
 	// If it is not in there already
 	if (mesh.info.gl_vertex_buf_id == -1)
 	{
-		glGenBuffers(3, &mesh.info.gl_vertex_buf_id);
+		if (!mesh.info.is_pcl_cloud)
+		{
+			glGenBuffers(3, &mesh.info.gl_vertex_buf_id);
+			glBindBuffer(GL_ARRAY_BUFFER, mesh.info.gl_vertex_buf_id);
+			glBufferData(GL_ARRAY_BUFFER, mesh.info.vertex_stride * mesh.info.num_vertices, mesh.vertices, GL_STATIC_DRAW);
+			if (mesh.normals)
+			{
+				glBindBuffer(GL_ARRAY_BUFFER, mesh.info.gl_normal_buf_id);
+				glBufferData(GL_ARRAY_BUFFER, mesh.info.vertex_stride * mesh.info.num_vertices, mesh.normals, GL_STATIC_DRAW);
+			}
+
+			if (mesh.colors)
+			{
+				glBindBuffer(GL_ARRAY_BUFFER, mesh.info.gl_color_buf_id);
+				glBufferData(GL_ARRAY_BUFFER, mesh.info.color_stride * mesh.info.num_vertices, mesh.colors, GL_STATIC_DRAW);
+			}
+		}
+		else
+		{
+			glGenBuffers(3, &mesh.info.gl_vertex_buf_id);
+		}
+	}
+
+
+
+	if (!mesh.info.is_pcl_cloud)
+	{
+		glEnable(GL_COLOR_MATERIAL);
+		glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
+		glEnable(GL_NORMALIZE);
 
 		glBindBuffer(GL_ARRAY_BUFFER, mesh.info.gl_vertex_buf_id);
-		glBufferData(GL_ARRAY_BUFFER, mesh.info.vertex_stride * mesh.info.num_vertices, mesh.vertices, GL_STATIC_DRAW);
-		if (mesh.normals)
-		{
-			glBindBuffer(GL_ARRAY_BUFFER, mesh.info.gl_normal_buf_id);
-			glBufferData(GL_ARRAY_BUFFER, mesh.info.vertex_stride * mesh.info.num_vertices, mesh.normals, GL_STATIC_DRAW);
-		}
+		glEnableClientState(GL_VERTEX_ARRAY);
+		glVertexPointer(mesh.info.num_points_per_vertex, GL_FLOAT, mesh.info.vertex_stride, 0);
 
 		if (mesh.colors)
 		{
 			glBindBuffer(GL_ARRAY_BUFFER, mesh.info.gl_color_buf_id);
-			glBufferData(GL_ARRAY_BUFFER, mesh.info.color_stride * mesh.info.num_vertices, mesh.colors, GL_STATIC_DRAW);
+			glEnableClientState(GL_COLOR_ARRAY);
+			glColorPointer(mesh.info.num_color_channels, GL_FLOAT, mesh.info.color_stride, 0);
 		}
-	}
+		else
+			glColor4f(0.5f, 0.5f, 0.5f, 1.0f);
 
-	glEnable(GL_COLOR_MATERIAL);
-	glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
-	glEnable(GL_NORMALIZE);
+		if (mesh.normals)
+		{
+			glBindBuffer(GL_ARRAY_BUFFER, mesh.info.gl_normal_buf_id);
+			glEnableClientState(GL_NORMAL_ARRAY);
+			glNormalPointer(GL_FLOAT, mesh.info.vertex_stride, 0);
+		}
 
-	glBindBuffer(GL_ARRAY_BUFFER, mesh.info.gl_vertex_buf_id);
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glVertexPointer(mesh.info.num_points_per_vertex, GL_FLOAT, mesh.info.vertex_stride, 0);
+		GLenum faceMode = 0;
+		switch (mesh.info.num_indecies)
+		{
+		case 1: faceMode = GL_POINTS; break;
+		case 2: faceMode = GL_LINES; break;
+		case 3: faceMode = GL_TRIANGLES; break;
+		case 4: faceMode = GL_QUADS; break;
+		default: faceMode = GL_POLYGON; break;
+		}
 
-	if (mesh.colors)
-	{
-		glBindBuffer(GL_ARRAY_BUFFER, mesh.info.gl_color_buf_id);
-		glEnableClientState(GL_COLOR_ARRAY);
-		glColorPointer(mesh.info.num_color_channels, GL_FLOAT, mesh.info.color_stride, 0);
+		glDrawArrays(faceMode, 0, mesh.info.num_vertices);
+		glDisableClientState(GL_VERTEX_ARRAY);
+		glDisableClientState(GL_NORMAL_ARRAY);
+		glDisableClientState(GL_COLOR_ARRAY);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+		glDisable(GL_NORMALIZE);
+		glDisable(GL_COLOR_MATERIAL);
 	}
 	else
-		glColor4f(0.5f, 0.5f, 0.5f, 1.0f);
-
-	if (mesh.normals)
 	{
-		glBindBuffer(GL_ARRAY_BUFFER, mesh.info.gl_normal_buf_id);
-		glEnableClientState(GL_NORMAL_ARRAY);
-		glNormalPointer(GL_FLOAT, mesh.info.vertex_stride, 0);
+		glDisable(GL_LIGHTING);
+		//glEnable(GL_COLOR_MATERIAL);
+		//glEnable(GL_POINT_SMOOTH);
+		glPointSize(6.f);
+
+		//glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
+
+		glBindBuffer(GL_ARRAY_BUFFER, mesh.info.gl_vertex_buf_id);
+		glBufferData(GL_ARRAY_BUFFER, mesh.info.num_vertices * CLOUD_PT_SIZE, mesh.vertices, GL_STREAM_DRAW);
+
+		glEnableClientState(GL_VERTEX_ARRAY);
+		glEnableClientState(GL_COLOR_ARRAY);
+
+		glVertexPointer(3, GL_FLOAT, CLOUD_PT_SIZE, 0);
+		glColorPointer(4, GL_UNSIGNED_BYTE, CLOUD_PT_SIZE, (void*)(sizeof(float)* 4));
+
+		glDrawArrays(GL_POINTS, 0, mesh.info.num_vertices);
+
+		glDisableClientState(GL_VERTEX_ARRAY);
+		glDisableClientState(GL_COLOR_ARRAY);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+		glDisable(GL_NORMALIZE);
+		glDisable(GL_COLOR_MATERIAL);
+		glEnable(GL_LIGHTING);
+		//glDisable(GL_POINT_SMOOTH);
 	}
 
-	GLenum faceMode = 0;
-	switch (mesh.info.num_indecies)
-	{
-	case 1: faceMode = GL_POINTS; break;
-	case 2: faceMode = GL_LINES; break;
-	case 3: faceMode = GL_TRIANGLES; break;
-	case 4: faceMode = GL_QUADS; break;
-	default: faceMode = GL_POLYGON; break;
-	}
 
-	glDrawArrays(faceMode, 0, mesh.info.num_vertices);
-	glDisableClientState(GL_VERTEX_ARRAY);
-	glDisableClientState(GL_NORMAL_ARRAY);
-	glDisableClientState(GL_COLOR_ARRAY);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-	glDisable(GL_NORMALIZE);
-	glDisable(GL_COLOR_MATERIAL);
 }
 
 void DSCP4Render::drawAllMeshes()
@@ -1190,12 +1237,22 @@ void DSCP4Render::drawAllMeshes()
 
 		modelMatrix_ = glm::mat4();
 		modelMatrix_ *= viewMatrix_;
-		modelMatrix_ = glm::scale(modelMatrix_, glm::vec3(scaleFactor + transform.scale.x, scaleFactor + transform.scale.y, scaleFactor + transform.scale.z));
+
+		modelMatrix_ = glm::scale(modelMatrix_, glm::vec3(mesh.info.transform.scale.x, mesh.info.transform.scale.y, mesh.info.transform.scale.z));
+
+		if (renderOptions_->auto_scale_enabled)
+			modelMatrix_ = glm::scale(modelMatrix_, glm::vec3(scaleFactor, scaleFactor, scaleFactor));
 
 		modelMatrix_ = glm::translate(modelMatrix_, glm::vec3(
-			-mesh.info.bounding_sphere.x + transform.translate.x,
-			-mesh.info.bounding_sphere.y + transform.translate.y,
-			-mesh.info.bounding_sphere.z + transform.translate.z));
+			mesh.info.transform.translate.x,
+			mesh.info.transform.translate.y,
+			mesh.info.transform.translate.z));
+
+		if (renderOptions_->auto_scale_enabled)
+			modelMatrix_ = glm::translate(modelMatrix_, glm::vec3(
+				-mesh.info.bounding_sphere.x,
+				-mesh.info.bounding_sphere.y,
+				-mesh.info.bounding_sphere.z));
 
 		glLoadMatrixf(glm::value_ptr(modelMatrix_));
 
@@ -1218,9 +1275,15 @@ void DSCP4Render::addMesh(const char *id, int numIndecies, int numVertices, floa
 
 	mesh.info.num_indecies = numIndecies;
 
+	mesh.info.is_pcl_cloud = false;
+
 	mesh.info.gl_color_buf_id = -1;
 	mesh.info.gl_vertex_buf_id = -1;
 	mesh.info.gl_normal_buf_id = -1;
+
+	mesh.info.transform.scale.x = 1.f;
+	mesh.info.transform.scale.y = 1.f;
+	mesh.info.transform.scale.z = 1.f;
 
 	if (renderOptions_->auto_scale_enabled)
 	{
@@ -1252,6 +1315,53 @@ void DSCP4Render::addMesh(const char *id, int numIndecies, int numVertices, floa
 	}
 
 	std::unique_lock<std::mutex> meshLock(meshMutex_);
+
+	if (meshes_.find(id) != meshes_.end())
+	{
+		auto m = meshes_[id];
+		if (m.info.gl_vertex_buf_id != -1)
+			glDeleteBuffers(3, &m.info.gl_vertex_buf_id);
+		meshes_.erase(id);
+	}
+
+	meshes_[id] = mesh;
+	meshChanged_ = true;
+	meshLock.unlock();
+}
+
+void DSCP4Render::addPointCloud(const char *id, unsigned int numPoints, void * cloudData)
+{
+	mesh_t mesh = { 0 };
+	mesh.vertices = new unsigned char[numPoints * 32];
+	memcpy(mesh.vertices, cloudData, numPoints * 32);
+	mesh.info.is_pcl_cloud = true;
+	mesh.info.num_color_channels = 4;
+	mesh.info.num_points_per_vertex = 3;
+	mesh.info.vertex_stride = 3 * sizeof(float);
+	mesh.info.color_stride = mesh.info.num_color_channels * sizeof(char);
+	mesh.info.num_vertices = numPoints;
+
+	mesh.info.num_indecies = 3;
+
+	mesh.info.gl_color_buf_id = -1;
+	mesh.info.gl_vertex_buf_id = -1;
+	mesh.info.gl_normal_buf_id = -1;
+
+	mesh.info.transform.scale.x = 5.0f;
+	mesh.info.transform.scale.y = 5.0f;
+	mesh.info.transform.scale.z = -3.7f;
+
+	mesh.info.transform.translate.z = -0.75f;
+
+	std::unique_lock<std::mutex> meshLock(meshMutex_);
+	if (meshes_.find(id) != meshes_.end())
+	{
+		auto m = meshes_[id];
+		delete[] (unsigned char*)m.vertices;
+		mesh.info.gl_vertex_buf_id = m.info.gl_vertex_buf_id;
+		meshes_.erase(id);
+	}
+
 	meshes_[id] = mesh;
 	meshChanged_ = true;
 	meshLock.unlock();
