@@ -92,7 +92,8 @@ DSCP4Render::DSCP4Render() :
 						DSCP4_DEFAULT_DISPLAY_HEAD_RES_Y_SPEC,
 						DSCP4_DEFAULT_DISPLAY_NUM_AOM_CHANNELS,
 						DSCP4_DEFAULT_DISPLAY_NUM_SAMPLES_PER_HOLOLINE,
-						DSCP4_DEFAULT_DISPLAY_HOLOGRAM_PLANE_WIDTH
+						DSCP4_DEFAULT_DISPLAY_HOLOGRAM_PLANE_WIDTH,
+						DSCP4_DEFAULT_DISPLAY_PIXEL_CLOCK_RATE
 						},
 						DSCP4_DEFAULT_LOG_VERBOSITY, nullptr)
 {
@@ -1240,7 +1241,7 @@ void DSCP4Render::drawAllMeshes()
 
 		modelMatrix_ = glm::scale(modelMatrix_, glm::vec3(mesh.info.transform.scale.x, mesh.info.transform.scale.y, mesh.info.transform.scale.z));
 
-		if (renderOptions_->auto_scale_enabled)
+		if (renderOptions_->auto_scale_enabled && !mesh.info.is_pcl_cloud)
 			modelMatrix_ = glm::scale(modelMatrix_, glm::vec3(scaleFactor, scaleFactor, scaleFactor));
 
 		modelMatrix_ = glm::translate(modelMatrix_, glm::vec3(
@@ -1248,7 +1249,7 @@ void DSCP4Render::drawAllMeshes()
 			mesh.info.transform.translate.y,
 			mesh.info.transform.translate.z));
 
-		if (renderOptions_->auto_scale_enabled)
+		if (renderOptions_->auto_scale_enabled && !mesh.info.is_pcl_cloud)
 			modelMatrix_ = glm::translate(modelMatrix_, glm::vec3(
 				-mesh.info.bounding_sphere.x,
 				-mesh.info.bounding_sphere.y,

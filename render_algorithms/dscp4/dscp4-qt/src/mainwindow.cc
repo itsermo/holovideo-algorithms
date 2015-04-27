@@ -492,6 +492,7 @@ void MainWindow::startDSCP4()
 	auto logAppenders = logger_->getAllAppenders();
 	auto logAppender = logAppenders[0];
 
+	//algorithmContext_ = dscp4_CreateContextDefault();
 	algorithmContext_ = dscp4_CreateContext(renderOptions, algorithmOptions, displayOptions, logLevel, logAppender);
 
 	dscp4_SetEventCallback(algorithmContext_, MainWindow::dscp4RenderEvent, this);
