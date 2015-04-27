@@ -127,6 +127,8 @@ namespace dscp4
 		void setCameraView(Camera cameraView) { std::lock_guard<std::mutex> lg(cameraMutex_);  camera_ = cameraView; cameraChanged_ = true; }
 		void setLighting(Lighting lighting) { std::lock_guard<std::mutex> lg(lightingMutex_);  lighting_ = lighting; lightingChanged_ = true; }
 
+		void setPlaneZOffset(float zOffset) { planeZOffset_ = zOffset; cameraChanged_ = true; }
+
 		// For viewing, or stereogram mode, shows either color or depth to the window
 		void setDrawMode(DrawMode drawMode) { drawMode_ = drawMode; }
 		DrawMode getDrawMode() { return drawMode_; }
@@ -302,6 +304,7 @@ namespace dscp4
 		unsigned char * renderPreviewBuffer_;
 
 		std::atomic<bool> shouldSaveScreenshot_;
+		std::atomic<float> planeZOffset_;
 
 #ifdef DSCP4_HAVE_LOG4CXX
 		log4cxx::LoggerPtr logger_ = log4cxx::Logger::getLogger("edu.mit.media.obmg.holovideo.dscp4.lib.renderer");

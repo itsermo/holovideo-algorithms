@@ -134,6 +134,7 @@ DSCP4Render::DSCP4Render(render_options_t *renderOptions,
 	eventCallback_(nullptr),
 	parentCallback_(nullptr),
 	shouldSaveScreenshot_(false),
+	planeZOffset_(0.f),
 	fringeContext_({ algorithmOptions, displayOptions, nullptr, 0, 0, 0, 0, 0, 0, 0, nullptr })
 {
 #ifdef DSCP4_HAVE_LOG4CXX
@@ -2240,7 +2241,7 @@ void DSCP4Render::updateAlgorithmOptionsCache()
 
 #endif
 
-	fringeContext_.algorithm_options->cache.z_offset = 0.f;
+	fringeContext_.algorithm_options->cache.z_offset = planeZOffset_;
 	fringeContext_.algorithm_options->cache.z_span = 0.5f;
 
 }

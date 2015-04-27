@@ -85,6 +85,8 @@ public slots:
 	void rotateModelY(int y);
 	void rotateModelZ(int z);
 
+	void setPlaneZOffset(int zOffset);
+
 	void setSpinOn(bool spinOn);
 	void setRenderPreview();
 	void pushNewRenderPreviewFrame(frame_data_t & frameData);

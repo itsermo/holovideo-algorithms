@@ -70,6 +70,8 @@ extern "C" {
 	DSCP4_API void dscp4_SetRotateViewAngleY(dscp4_context_t renderContext, float angleY);
 	DSCP4_API void dscp4_SetRotateViewAngleZ(dscp4_context_t renderContext, float angleZ);
 
+	DSCP4_API void dscp4_SetPlaneZOffset(dscp4_context_t renderContext, float zOffset);
+
 	DSCP4_API void dscp4_SetSpinOn(dscp4_context_t renderContext, int spinOn);
 	DSCP4_API int  dscp4_GetSpinOn(dscp4_context_t renderContext);
 
