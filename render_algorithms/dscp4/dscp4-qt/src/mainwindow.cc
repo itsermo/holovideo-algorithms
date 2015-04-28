@@ -204,6 +204,11 @@ haveNewFrame_(false)
 	QObject::connect(ui->xRotateHorizontalSlider, SIGNAL(valueChanged(int)), this, SLOT(rotateModelX(int)));
 	QObject::connect(ui->yRotateHorizontalSlider, SIGNAL(valueChanged(int)), this, SLOT(rotateModelY(int)));
 	QObject::connect(ui->zRotateHorizontalSlider, SIGNAL(valueChanged(int)), this, SLOT(rotateModelZ(int)));
+	QObject::connect(ui->zOffsetHorizontalSlider, SIGNAL(valueChanged(int)), this, SLOT(setPlaneZOffset(int)));
+
+	QObject::connect(ui->redColorGainHorizontalSlider, SIGNAL(valueChanged(int)), this, SLOT(forceRedraw()));
+	QObject::connect(ui->greenColorGainHorizontalSlider, SIGNAL(valueChanged(int)), this, SLOT(forceRedraw()));
+	QObject::connect(ui->blueColorGainHorizontalSlider, SIGNAL(valueChanged(int)), this, SLOT(forceRedraw()));
 
 	LOG4CXX_INFO(logger_, "Logger initialized")
 
@@ -741,7 +746,7 @@ void MainWindow::translateModelZ(int z)
 	camera_t cam = { 0 };
 	dscp4_GetCameraView(algorithmContext_, &cam);
 
-	cam.eye.z = z * 0.001f;
+	cam.eye.z = 0.5 + z * 0.001f;
 	cam.center.z = z * 0.001f;
 
 	dscp4_SetCameraView(algorithmContext_, cam);
@@ -760,6 +765,11 @@ void MainWindow::rotateModelY(int y)
 void MainWindow::rotateModelZ(int z)
 {
 	dscp4_SetRotateViewAngleZ(algorithmContext_, 180.0f*z*0.001);
+}
+
+void MainWindow::setPlaneZOffset(int zOffset)
+{
+	dscp4_SetPlaneZOffset(algorithmContext_, zOffset * 0.001);
 }
 
 void MainWindow::setSpinOn(bool spinOn)

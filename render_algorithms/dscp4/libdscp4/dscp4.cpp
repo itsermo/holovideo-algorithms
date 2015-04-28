@@ -148,6 +148,11 @@ extern "C"
 		((dscp4::DSCP4Render*)renderContext)->setRotateViewAngleZ(angleZ);
 	}
 
+	DSCP4_API void dscp4_SetPlaneZOffset(dscp4_context_t renderContext, float zOffset)
+	{
+		((dscp4::DSCP4Render*)renderContext)->setPlaneZOffset(zOffset);
+	}
+
 	DSCP4_API void dscp4_SetSpinOn(dscp4_context_t renderContext, int spinOn)
 	{
 		((dscp4::DSCP4Render*)renderContext)->setSpinOn(spinOn);

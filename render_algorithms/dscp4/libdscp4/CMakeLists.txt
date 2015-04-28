@@ -94,8 +94,8 @@ file(GLOB KERNEL_FILES
 )
 
 install(TARGETS ${DSCP4_LIB} DESTINATION lib)
-install(FILES dscp4.h DESTINATION include)
-install(FILES dscp4_defs.h DESTINATION include)
+install(FILES dscp4.h DESTINATION include/${PROJECT_NAME})
+install(FILES dscp4_defs.h DESTINATION include/${PROJECT_NAME})
 install(FILES ${SHADER_FILES} DESTINATION share/${PROJECT_NAME}/shaders)
 install(FILES ${KERNEL_FILES} DESTINATION share/${PROJECT_NAME}/kernels)
 
