@@ -1200,7 +1200,7 @@ void DSCP4Render::drawMesh(mesh_t& mesh)
 		glDisable(GL_LIGHTING);
 		//glEnable(GL_COLOR_MATERIAL);
 		//glEnable(GL_POINT_SMOOTH);
-		glPointSize(6.f);
+		glPointSize(static_cast<float>(mesh.info.voxelSize));
 
 		//glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
 
@@ -1331,7 +1331,7 @@ void DSCP4Render::addMesh(const char *id, int numIndecies, int numVertices, floa
 	meshLock.unlock();
 }
 
-void DSCP4Render::addPointCloud(const char *id, unsigned int numPoints, void * cloudData)
+void DSCP4Render::addPointCloud(const char *id, unsigned int numPoints, unsigned int voxelSize, void * cloudData)
 {
 	mesh_t mesh = { 0 };
 	mesh.vertices = new unsigned char[numPoints * 32];
@@ -1354,6 +1354,8 @@ void DSCP4Render::addPointCloud(const char *id, unsigned int numPoints, void * c
 	mesh.info.transform.scale.z = -3.7f;
 
 	mesh.info.transform.translate.z = -0.75f;
+
+	mesh.info.voxelSize = voxelSize;
 
 	std::unique_lock<std::mutex> meshLock(meshMutex_);
 	if (meshes_.find(id) != meshes_.end())

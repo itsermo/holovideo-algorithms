@@ -99,7 +99,7 @@ namespace dscp4
 		void addMesh(const char *id, int numIndecies, int numVertices, float *vertices, float * normals = nullptr, float *colors = nullptr, unsigned int numVertexDimensions = 3, unsigned int numColorChannels = 4);
 		void removeMesh(const char *id);
 
-		void addPointCloud(const char *id, unsigned int numPoints, void * cloudData);
+		void addPointCloud(const char *id, unsigned int numPoints, unsigned int voxelSize, void * cloudData);
 
 		void setRenderMode(render_mode_t renderMode) { renderOptions_->render_mode = renderMode; }
 		void setShadingModel(shader_model_t shadeModel) { renderOptions_->shader_model = shadeModel; }

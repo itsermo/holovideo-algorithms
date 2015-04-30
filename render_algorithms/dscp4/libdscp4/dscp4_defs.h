@@ -159,6 +159,7 @@ extern "C"{
 		unsigned int num_indecies;
 
 		bool is_pcl_cloud;
+		unsigned int voxelSize;
 	} mesh_header_t;
 
 	typedef struct
