@@ -55,6 +55,12 @@ extern "C" {
 		void *cloudData
 		);
 
+	DSCP4_API void dscp4_UpdatePointCloud(
+		dscp4_context_t renderContext,
+		const char *id,
+		unsigned int voxelSize,
+		void * cloudData);
+
 	DSCP4_API void dscp4_RemoveMesh(dscp4_context_t renderContext, const char *id);
 
 	DSCP4_API void dscp4_TranslateObject(dscp4_context_t renderContext, const char *id, float x, float y, float z);

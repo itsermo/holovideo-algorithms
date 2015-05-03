@@ -76,6 +76,15 @@ extern "C"
 		((dscp4::DSCP4Render*)renderContext)->addPointCloud(id, numPoints, voxelSize, cloudData);
 	}
 
+	DSCP4_API void dscp4_UpdatePointCloud(
+		dscp4_context_t renderContext,
+		const char *id,
+		unsigned int voxelSize,
+		void * cloudData)
+	{
+		((dscp4::DSCP4Render*)renderContext)->updatePointCloud(id, voxelSize, cloudData);
+	}
+
 	DSCP4_API void dscp4_RemoveMesh(dscp4_context_t renderContext, const char *id)
 	{
 		((dscp4::DSCP4Render*)renderContext)->removeMesh(id);

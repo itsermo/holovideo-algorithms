@@ -119,7 +119,6 @@ DSCP4Render::DSCP4Render(render_options_t *renderOptions,
 	rotateIncrement_(1.0f),
 	spinOn_(false),
 	renderOptions_(renderOptions),
-	lightingShader_(nullptr),
 	projectionMatrix_(),
 	viewMatrix_(),
 	modelMatrix_(),
@@ -399,36 +398,6 @@ void DSCP4Render::deinitWindow(SDL_Window*& window, SDL_GLContext& glContext, in
 		SDL_DestroyWindow(window);
 		window = nullptr;
 	}
-
-}
-
-bool DSCP4Render::initLightingShader(int which)
-{
-	lightingShader_[which].init();
-	lightingShader_[which].loadShader(VSShaderLib::VERTEX_SHADER,
-		(boost::filesystem::path(renderOptions_->shaders_path) /
-		boost::filesystem::path(std::string((const char*)renderOptions_->shader_filename_prefix).append(".vert"))).string()
-		);
-
-	lightingShader_[which].loadShader(VSShaderLib::FRAGMENT_SHADER,
-		(boost::filesystem::path(renderOptions_->shaders_path) /
-		boost::filesystem::path(std::string((const char*)renderOptions_->shader_filename_prefix).append(".frag"))).string()
-		);
-
-	lightingShader_[which].setProgramOutput(0, "outputF");
-	lightingShader_[which].setVertexAttribName(VSShaderLib::VERTEX_COORD_ATTRIB, "position");
-	lightingShader_[which].setVertexAttribName(VSShaderLib::NORMAL_ATTRIB, "normal");
-	lightingShader_[which].setVertexAttribName(VSShaderLib::TEXTURE_COORD_ATTRIB, "texCoord");
-	lightingShader_[which].prepareProgram();
-
-	lightingShader_[which].setUniform("texUnit", 0);
-	float f3 = 0.90f;
-	lightingShader_[which].setBlockUniform("Lights", "l_spotCutOff", &f3);
-	return lightingShader_[which].isProgramValid();
-}
-
-void DSCP4Render::deinitLightingShader(int which)
-{
 
 }
 
@@ -774,12 +743,6 @@ void DSCP4Render::renderLoop()
 	{
 		SDL_GL_MakeCurrent(windows_[i], glContexts_[i]);
 		deinitWindow(windows_[i], glContexts_[i], i);
-	}
-
-	if (lightingShader_)
-	{
-		delete[] lightingShader_;
-		lightingShader_ = nullptr;
 	}
 
 	if (renderPreviewBuffer_)
@@ -1349,11 +1312,11 @@ void DSCP4Render::addPointCloud(const char *id, unsigned int numPoints, unsigned
 	mesh.info.gl_vertex_buf_id = -1;
 	mesh.info.gl_normal_buf_id = -1;
 
-	mesh.info.transform.scale.x = 5.0f;
-	mesh.info.transform.scale.y = 5.0f;
-	mesh.info.transform.scale.z = -3.7f;
+	//mesh.info.transform.scale.x = 5.0f;
+	//mesh.info.transform.scale.y = 5.0f;
+	//mesh.info.transform.scale.z = -3.7f;
 
-	mesh.info.transform.translate.z = -0.75f;
+	//mesh.info.transform.translate.z = -0.75f;
 
 	mesh.info.voxelSize = voxelSize;
 
@@ -1368,6 +1331,22 @@ void DSCP4Render::addPointCloud(const char *id, unsigned int numPoints, unsigned
 
 	meshes_[id] = mesh;
 	meshChanged_ = true;
+	meshLock.unlock();
+}
+
+void DSCP4Render::updatePointCloud(const char *id, unsigned int voxelSize, void * cloudData)
+{	std::unique_lock<std::mutex> meshLock(meshMutex_);
+	if (meshes_.find(id) != meshes_.end())
+	{
+		auto m = &meshes_[id];
+		memcpy(m->vertices, cloudData, m->info.num_vertices * 32);
+		m->info.voxelSize = voxelSize;
+		//delete[](unsigned char*)m.vertices;
+		//mesh.info.gl_vertex_buf_id = m.info.gl_vertex_buf_id;
+		//meshes_.erase(id);
+		meshChanged_ = true;
+	}
+
 	meshLock.unlock();
 }
 

@@ -49,7 +49,6 @@
 #include <map>
 
 #include "dscp4_defs.h"  // Some standard definitions for vector data types
-#include "vsShaderLib.h"  // Shader class to make it easy to create GLSL shader objects
 #include "Miniball.hpp"  // For calculating the bounding sphere of 3D mesh
 
 #include <boost/filesystem.hpp>
@@ -100,6 +99,7 @@ namespace dscp4
 		void removeMesh(const char *id);
 
 		void addPointCloud(const char *id, unsigned int numPoints, unsigned int voxelSize, void * cloudData);
+		void updatePointCloud(const char *id, unsigned int voxelSize, void * cloudData);
 
 		void setRenderMode(render_mode_t renderMode) { renderOptions_->render_mode = renderMode; }
 		void setShadingModel(shader_model_t shadeModel) { renderOptions_->shader_model = shadeModel; }
@@ -152,6 +152,8 @@ namespace dscp4
 		// for testing
 		void drawCube();
 
+		// Returns the look-at frustum for generating the stereogram views (shearing orthographic projection matrix)
+		// Derived by Quinn in original DSCP algorithm
 		static glm::mat4 buildOrthoXPerspYProjMat(
 			float left,
 			float right,
@@ -164,11 +166,9 @@ namespace dscp4
 
 		bool isRunning() { return isInit_; }
 
+		// Initializes the OpenGL window given an existing OpenGL context
 		bool initWindow(SDL_Window*& window, SDL_GLContext& glContext, int thisWindowNum);
 		void deinitWindow(SDL_Window*& window, SDL_GLContext& glContext, int thisWindowNum);
-
-		bool initLightingShader(int which);
-		void deinitLightingShader(int which);
 
 		// Initializes textures for storing generated view color
 		// and depth (for viewing render mode)
@@ -276,8 +276,6 @@ namespace dscp4
 		int inputStateChanged(SDL_Event* event);
 
 		std::map<std::string, mesh_t> meshes_;
-
-		VSShaderLib* lightingShader_;
 
 		std::atomic<float> rotateAngleX_;
 		std::atomic<float> rotateAngleY_;

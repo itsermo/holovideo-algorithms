@@ -45,7 +45,7 @@
      </rect>
     </property>
     <property name="currentIndex">
-     <number>0</number>
+     <number>1</number>
     </property>
     <property name="movable">
      <bool>false</bool>
@@ -1806,6 +1806,9 @@
        </property>
       </widget>
       <widget class="QToolButton" name="shaderFileNameToolButton">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
        <property name="geometry">
         <rect>
          <x>230</x>
@@ -1819,6 +1822,9 @@
        </property>
       </widget>
       <widget class="QComboBox" name="shaderFileNameComboBox">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
        <property name="geometry">
         <rect>
          <x>20</x>
@@ -1831,7 +1837,7 @@
         <bool>false</bool>
        </property>
        <property name="toolTip">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Sets the shader filename prefix (shader must have .vert and .frag files)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Sets the shader filename prefix (shader must have .vert and .frag files).  This is not implemented, using default OpenGL rendering pipeline.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
        <property name="editable">
         <bool>true</bool>
