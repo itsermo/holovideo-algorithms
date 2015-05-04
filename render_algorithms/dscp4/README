@@ -15,8 +15,8 @@
   * GNU Make or equivalent.
   * GCC-4.8.2+ C++11 capable compiler.
   * Boost C++ Libraries v1.54+ [HEADERS and LIBRARIES] (system, filesystem, program_options)
-  * OpenGL 3.1+ (for GLSL support, must have GPU that has OpenGL 3.1+ support)
-  * GLEW 1.11.0+ (OpenGL Extension Wrangler, required for running GLSL shaders)
+  * OpenGL 3.1+ (must have GPU that has OpenGL 3.1+ support)
+  * GLEW 1.11.0+ (OpenGL Extension Wrangler, required)
   * GLM 0.9.6.1+ (header-only library for common OpenGL math functions,
 	such as matrix multiplication)
   * SDL 2.0.1+ (takes care of window management, OpenGL render contexts)
@@ -119,7 +119,7 @@
  If you're comfortable with CMAKE, feel free to generate and compile like so:
  
 	cd build
-	cmake ..
+	cmake .. -DCMAKE_BUILD_TYPE=Release
 	make
  
  NOTE: Users of CMake may believe that the top-level Makefile has been

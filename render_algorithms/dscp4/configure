@@ -1,2 +1,2 @@
 #! /bin/bash
-(cd build >/dev/null 2>&1 && cmake .. "$@")
+(cd build >/dev/null 2>&1 && cmake .. -DCMAKE_BUILD_TYPE=Release "$@")
