@@ -6,6 +6,7 @@ if(WITH_CUDA)
 	set(DSCP4_FRINGE_CUDA_LIB "${PROJECT_NAME}" PARENT_SCOPE)
 	set(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE ON)
 	if(CMAKE_COMPILER_IS_GNUCC)
+		set(CUDA_HOST_COMPILATION_CPP OFF)
 		set(CUDA_NVCC_FLAGS -Xcompiler -fpic)
 	endif()
 	
@@ -20,7 +21,6 @@ if(WITH_CUDA)
 			-gencode=arch=compute_50,code=\"sm_50,compute_50\"
 			-gencode=arch=compute_52,code=\"sm_52,compute_52\")
 	else()
-		set(CUDA_HOST_COMPILATION_CPP OFF)
 		set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};
 			-gencode=arch=compute_13,code=\"sm_13,compute_13\"
 			-gencode=arch=compute_20,code=\"sm_20,compute_20\"
@@ -47,7 +47,6 @@ if(WITH_CUDA)
 		RELEASE -O3 --use_fast_math -DNDEBUG
 		DEBUG -g -G -DDEBUG
 		)
-		
 endif()
 
 if(WITH_OPENCL)
@@ -77,6 +76,4 @@ if(WITH_OPENCL)
 		target_include_directories(${PROJECT_NAME} PUBLIC ${LIBLOG4CXX_INCLUDE_DIRS})
 		target_link_libraries(${PROJECT_NAME} LINK_PUBLIC ${LIBLOG4CXX_LIBRARIES})
 	endif()
-
-	
 endif()
