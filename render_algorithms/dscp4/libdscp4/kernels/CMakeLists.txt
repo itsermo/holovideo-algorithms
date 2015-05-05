@@ -5,17 +5,29 @@ if(WITH_CUDA)
 
 	set(DSCP4_FRINGE_CUDA_LIB "${PROJECT_NAME}" PARENT_SCOPE)
 	set(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE ON)
-	set(CUDA_HOST_COMPILATION_CPP OFF)
+	#set(CUDA_HOST_COMPILATION_CPP OFF)
 	if(CMAKE_COMPILER_IS_GNUCC)
-		set(CUDA_NVCC_FLAGS -Xcompiler -fpic)
+		set(CUDA_NVCC_FLAGS -Xcompiler -fpic -Xcompiler -std=c99)
 	endif()
 	
-	set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};
-		-gencode=arch=compute_13,code=\"sm_13,compute_13\"
-		-gencode=arch=compute_20,code=\"sm_20,compute_20\"
-		-gencode=arch=compute_30,code=\"sm_30,compute_30\"
-		-gencode=arch=compute_35,code=\"sm_35,compute_35\"
-		-gencode=arch=compute_50,code=\"sm_50,compute_50\")
+	# Do not set compute_13 architecture for CUDA 7
+	# CUDA 7 has removed support for compute_13
+	# Which means no FX5800 support!
+	if(${CUDA_VERSION_MAJOR} GREATER 6)
+		set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};
+			-gencode=arch=compute_20,code=\"sm_20,compute_20\"
+			-gencode=arch=compute_30,code=\"sm_30,compute_30\"
+			-gencode=arch=compute_35,code=\"sm_35,compute_35\"
+			-gencode=arch=compute_50,code=\"sm_50,compute_50\"
+			-gencode=arch=compute_52,code=\"sm_52,compute_52\")
+	else()
+		set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};
+			-gencode=arch=compute_13,code=\"sm_13,compute_13\"
+			-gencode=arch=compute_20,code=\"sm_20,compute_20\"
+			-gencode=arch=compute_30,code=\"sm_30,compute_30\"
+			-gencode=arch=compute_35,code=\"sm_35,compute_35\"
+			-gencode=arch=compute_50,code=\"sm_50,compute_50\")
+	endif()
 
 	set(BUILD_SHARED_LIBS OFF)
 

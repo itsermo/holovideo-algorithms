@@ -1479,11 +1479,19 @@ int DSCP4Render::inputStateChanged(SDL_Event* event)
 				camera_.eye[0] += 0.1f;
 				camera_.center[0] += 0.1f;
 				break;
+			case SDL_Scancode::SDL_SCANCODE_LEFTBRACKET:
+				camera_.eye[2] += 0.1f;
+				camera_.center[2] += 0.1f;
+				break;
+			case SDL_Scancode::SDL_SCANCODE_RIGHTBRACKET:
+				camera_.eye[2] -= 0.1f;
+				camera_.center[2] -= 0.1f;
+				break;
 			case SDL_Scancode::SDL_SCANCODE_EQUALS:
-				//zFar_ += 0.01f;
+				fringeContext_.algorithm_options->z_far += 0.01f;
 				break;
 			case SDL_Scancode::SDL_SCANCODE_MINUS:
-				//zFar_ -= 0.01f;
+				fringeContext_.algorithm_options->z_far -= 0.01f;
 				break;
 			default:
 				break;
@@ -1509,6 +1517,10 @@ int DSCP4Render::inputStateChanged(SDL_Event* event)
 			case  SDL_Scancode::SDL_SCANCODE_DOWN:
 			case  SDL_Scancode::SDL_SCANCODE_LEFT:
 			case SDL_Scancode::SDL_SCANCODE_RIGHT:
+			case SDL_Scancode::SDL_SCANCODE_EQUALS:
+			case SDL_Scancode::SDL_SCANCODE_MINUS:
+			case SDL_Scancode::SDL_SCANCODE_RIGHTBRACKET:
+			case SDL_Scancode::SDL_SCANCODE_LEFTBRACKET:
 				cameraChanged_ = true;
 				break;
 			default:
@@ -1586,12 +1598,6 @@ int DSCP4Render::inputStateChanged(SDL_Event* event)
 			case SDL_Scancode::SDL_SCANCODE_Q:
 				shouldRender_ = false;
 				break;
-			case SDL_Scancode::SDL_SCANCODE_EQUALS:
-				//zNear_ += 0.01f;
-				break;
-			case SDL_Scancode::SDL_SCANCODE_MINUS:
-				//zNear_ -= 0.01f;
-				break;
 			case SDL_Scancode::SDL_SCANCODE_SPACE:
 				if (drawMode_ == DSCP4_DRAW_MODE_COLOR)
 					drawMode_ = DSCP4_DRAW_MODE_DEPTH;
@@ -1600,6 +1606,14 @@ int DSCP4Render::inputStateChanged(SDL_Event* event)
 				Update();
 				break;
 			case SDL_Scancode::SDL_SCANCODE_U:
+				Update();
+				break;
+			case SDL_Scancode::SDL_SCANCODE_EQUALS:
+				fringeContext_.algorithm_options->z_near += 0.01f;
+				Update();
+				break;
+			case SDL_Scancode::SDL_SCANCODE_MINUS:
+				fringeContext_.algorithm_options->z_near -= 0.01f;
 				Update();
 				break;
 			default:
