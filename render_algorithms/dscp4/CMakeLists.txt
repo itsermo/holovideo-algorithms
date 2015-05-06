@@ -124,6 +124,16 @@ else()
 	set(DEFAULT_COMPUTE_METHOD "none")
 endif()
 
+if(BUILD_COPY_MODELS)
+	file(GLOB MODEL_FILES
+		"models/*.*"
+		)
+	install(FILES ${MODEL_FILES} DESTINATION share/${PROJECT_NAME}/models)
+	set(MODELS_INSTALL_PATH "${CMAKE_INSTALL_PREFIX}/share/${PROJECT_NAME}/models")
+else()
+	set(MODELS_INSTALL_PATH "NOT_INSTALLED")
+endif()
+
 configure_file(dscp4.conf.in dscp4.conf)
 
 if(UNIX)
@@ -138,16 +148,6 @@ if(UNIX)
 	install(FILES ${CMAKE_BINARY_DIR}/dscp4.conf DESTINATION /etc/dscp4)
 elseif(WIN32)
 	install(FILES ${CMAKE_BINARY_DIR}/dscp4.conf DESTINATION $ENV{PROGRAMDATA}/dscp4)
-endif()
-
-if(BUILD_COPY_MODELS)
-	file(GLOB MODEL_FILES
-		"models/*.*"
-		)
-	install(FILES ${MODEL_FILES} DESTINATION share/${PROJECT_NAME}/models)
-	set(MODELS_INSTALL_PATH "${CMAKE_INSTALL_PREFIX}/share/${PROJECT_NAME}/models")
-else()
-	set(MODELS_INSTALL_PATH "NOT_INSTALLED")
 endif()
 
 # uninstall target
