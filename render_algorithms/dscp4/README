@@ -13,47 +13,66 @@
  This project requires:
   * Cross-platform Make (CMake) v2.8.2+
   * GNU Make or equivalent.
-  * GCC-4.8.2+ C++11 capable compiler.
-  * Boost C++ Libraries v1.54+ [HEADERS and LIBRARIES] (system, filesystem, program_options)
-  * OpenGL 3.1+ (must have GPU that has OpenGL 3.1+ support)
+  * GCC-4.8.2 C++11 capable compiler.
+	(CUDA 6.5 is only compatible with GCC <= 4.8)
+	(CUDA 7.0 supports GCC 4.9 but has removed kepler support)
+  * Boost C++ Libraries v1.54+ [HEADERS and LIBRARIES]
+    (system, filesystem, program_options)
+  * OpenGL 3.1 (must have GPU that has OpenGL 3.1 support)
   * GLEW 1.11.0+ (OpenGL Extension Wrangler, required)
   * GLM 0.9.6.1+ (header-only library for common OpenGL math functions,
 	such as matrix multiplication)
   * SDL 2.0.1+ (takes care of window management, OpenGL render contexts)
   * CUDA 6.5 (optional, fringe computation is done in CUDA)
-  * OpenCL 1.1 (optional, fringe computation done with OpenCL)
+  * OpenCL 1.1 (optional, fringe computation done in OpenCL)
   * Log4Cxx v0.10.0+ (optional, for logging errors and info)
   * ASSIMP 3.1.1+ (optional, for importing 3D object files, like .ply files)
   * zLib 1.2.2+ (optional, for PNG screenshots)
   * libpng 1.2 (optional, for PNG screenshots)
   * Qt 5.4 (optional, for building dscp4-qt, a GUI controller for libdscp4)
   
- DSCP4 is a CMAKE package, that is composed of three C++11 projects:
+ dscp4 is a CMAKE package, that is composed of three C++11 projects:
  
-  * libdscp4 - the render library that implements DSCP and computes fringe
+  * libdscp4 - the render library that implements DSCP4 and computes fringe
                patterns. libdscp4 is built as a shared library with C-linkage.
                It generates libdscp4.so and dscp4.h files, which are installed
-               to /usr/local/lib and /usr/local/include respectively. The
-               dscp4.h file includes functions to turn initialize the renderer,
+               to /usr/local/lib and /usr/local/include/dscp4 respectively.
+               The dscp4.h file includes functions to initialize the renderer,
                change renderer settings, add 3d model vertices and color, and
                manipulate 3d models in the renderer.
-
+			   
+			   libdscp4 has 4 modes of operation:
+				* "model viewing" - Opens an OpenGL window and shows the
+				  models with normal, perspective projection.
+				* "stereogram view" - Opens an OpenGL window and shows models
+				  with orthographic shearing projection (aka panoramagrams).
+				  Use this mode to debug and see what panoramagram is
+				  generated before fringe computation.
+				* "aerial" - Opens a fullscreen window for every monitor,
+				  with each window displaying a horizontal parallax shift.
+				  This mode is for projector setups where discrete views are
+				  shown for each parallax shift.
+				* "holovideo" - Computes the fringe pattern from the
+				  panoramagram and writes the fringe pattern to a textured
+				  fullscreen OpenGL window for every GPU.  Each window spans
+				  multiple heads per GPU (one window per GPU).  This requires
+				  Xinerama mode to be enabled in the X11 configuration.
+				  
   * dscp4    - the "test" program that loads 3D model files and feeds 3D model 
                data to libdscp4 and controls the rendering through libdscp4.
                This program builds as an executable and is installed to
                /usr/local/bin, and can be run anywhere from the command line.
                This program can be built optionally, but if you want to see
-               stuff on the holovideo display, you'll have toi use this or
-               write your own program that references libdscp4 and feeds it 3d
-               model vertices, colors, normals, etc.
+               stuff on the holovideo display, you'll have to use this
+			   or dscp4-qt, the GUI version.
 
-  * dscp4-qt - the GUI version of "dscp4" test program. this is built with Qt
-               and allows you to control all aspects of libdscp4 with a GUI,
+  * dscp4-qt - the GUI version of "dscp4" test program. This is built with Qt
+               and allows one to control all aspects of libdscp4 with a GUI,
                optional, but highly recommended install.
 		
  CMAKE is a cross-platform make tool that allows one to generate make projects
  for specific compilers.  For example, we can use CMAKE to generate a
- Visual Studio, Eclipse, Xcode or standard GNU Make project which then can be
+ Visual Studio, Eclipse, XCode or standard GNU Make project which then can be
  compiled, debugged or installed from the respective OS and toolchain.
 
  This readme will show you how to generate a GNU Make project, that can be
@@ -135,16 +154,18 @@
                             or can't install liblog4cxx, this can turn off all 
                             dependencies to log4cxx and turn off logging)
 
- -DWITH_TRACE_LOG={YES|NO}  (Turns on performance logging. Use with "-v 6" 
-			     command option)
+ -DWITH_TRACE_LOG={YES|NO}  (Toggles performance logging. Use with "-v 6" 
+							command option)
 
- -DWITH_OPENCL={YES|NO}	    (Turns on OpenCL fringe computation)
+ -DWITH_OPENCL={YES|NO}	    (Toggles OpenCL fringe computation capability)
 
- -DWITH_CUDA={YES|NO}	    (Turns on NVIDIA CUDA fringe computation)
+ -DWITH_CUDA={YES|NO}	    (Toggles NVIDIA CUDA fringe computation capability)
 
- -DWITH_PNG={YES|NO}	    (Turns on screenshot capability)
+ -DWITH_PNG={YES|NO}	    (Toggles screenshot capability)
 
  -DBUILD_DSCP4_QT_APP=NO    (Turns off dscp4-qt app building)
+ 
+ -DBUILD_COPY_MODELS=NO		(Turns off copying of 3D models on install)
 
  These can be used like so:
 
@@ -163,12 +184,19 @@
 
 	sudo make install
  
- The install function will build (if necessary) copy (if files are newer):
-  * dscp4 executable to /usr/local/bin
-  * 3d model files from dscp4/models to /usr/local/dscp4/models
-  * shader files from libdscp4/shaders to /usr/local/dscp4/shaders
-  * OpenCL kernel files fromt libdscp4/kernels to /usr/local/dscp4/kernels
-  * it will generate dscp4.conf from dscp4.conf.in and copy to /etc/dscp4
+ The install function will build (if necessary) and copy (if files are newer):
+  * dscp4.h and dscp4_defs.h to /usr/local/include/dscp4
+  * libdscp4.so to /usr/local/lib
+  * dscp4 and dscp4-qt executables to /usr/local/bin
+  * 3d model files from ./models to /usr/local/share/dscp4/models
+  * shader files from libdscp4/shaders to /usr/local/share/dscp4/shaders
+  * OpenCL kernel files from libdscp4/kernels to /usr/local/share/dscp4/kernels
+  * it will generate dscp4.conf from ./dscp4.conf.in and copy to /etc/dscp4
+  * it will generate dscp4.desktop and dscp4-qt.desktop and copy to
+    /usr/local/share/applications. This creates shortcuts for X/Linux desktop
+	shells. Look for dscp4 and dscp4-qt programs under "Scientific" category
+	in your programs menu.  You may need to log out and log in to see it
+	appear when you install dscp4 the first time.
  
  == 5. CONFIGURING ==
  
@@ -194,10 +222,16 @@
  From the render window, there are many useful keyboard shortcuts:
 
   - Use the arrow keys to rotate the view
-  - Hold LEFT SHIFT and arrow keys, Z,X to translate the object
-  - Hold LEFT SHIFT and W,A,S,D,Z,X to change light position 
+  - Hold LEFT SHIFT and arrow keys, {,} to translate the object
+  - Hold LEFT SHIFT and W,A,S,D,Z,X to change light position
+  - Hold LEFT SHIFT and =,- to change the far clipping plane
+  - Press =,- to change the near clipping plane  
   - Press "R" key to toggle model spinning, arrow keys will set spin rate
+  - Press "F" key to toggle fullscreen mode
   - CTRL + S will dump the current color and depth buffer to PNG files
+    in modelview, stereogram, and aerial modes.  In "holovideo" mode, it
+	will write the fringe pattern data onto PNG files.
+  - U will force the renderer to redraw
   - SPACEBAR toggles the render window view mode from color to depth buffer
   - Q will close the render window
 
