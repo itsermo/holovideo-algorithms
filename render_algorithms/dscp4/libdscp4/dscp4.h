@@ -1,15 +1,18 @@
 #ifndef DSCP4_H
 #define DSCP4_H
 
-
 #ifdef WIN32
-#ifdef DSCP4_STATIC
-#define DSCP4_API
+	#ifdef DSCP4_STATIC
+		#define DSCP4_API
+	#else
+		#ifdef DSCP4_BUILD
+			#define DSCP4_API __declspec(dllexport)
+		#else
+			#define DSCP4_API __declspec(dllimport)
+		#endif
+	#endif
 #else
-#define DSCP4_API __declspec(dllexport)
-#endif
-#else
-#define DSCP4_API
+	#define DSCP4_API
 #endif
 
 #include "dscp4_defs.h"

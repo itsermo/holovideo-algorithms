@@ -52,6 +52,7 @@ option(WITH_LIBLOG4CXX "Uses Log4Cxx library for logging status and error messag
 option(WITH_TRACE_LOG "Enables trace log to resolve code performance and behavior, such as showing FPS calculations in the log. Requires liblog4cxx" ${LIBLOG4CXX_FOUND})
 option(WITH_OPENCL "Enables OpenCL compute building" ${OPENCL_FOUND})
 option(WITH_PNG "Enables screenshot functionality (saving render buffer to PNG)" ${PNG_FOUND})
+option(BUILD_COPY_MODELS "Copies the 3D object models on install" ON)
 
 if(LIBLOG4CXX_FOUND)
 	option(LIBLOG4CXX_USING_STATICLIB "Defines LOG4CXX_STATIC for use with static LOG4CXX libraries" ${WIN32})
@@ -103,7 +104,6 @@ if(${BUILD_DSCP4_APP})
 	add_subdirectory(dscp4)
 else()
 	set(DSCP4_APP_BIN_INSTALL_PATH "NOT_INSTALLED")
-	set(MODELS_INSTALL_PATH "NOT_INSTALLED")
 endif()
 
 if(${BUILD_DSCP4_QT_APP})
@@ -140,6 +140,15 @@ elseif(WIN32)
 	install(FILES ${CMAKE_BINARY_DIR}/dscp4.conf DESTINATION $ENV{PROGRAMDATA}/dscp4)
 endif()
 
+if(BUILD_COPY_MODELS)
+	file(GLOB MODEL_FILES
+		"models/*.*"
+		)
+	install(FILES ${MODEL_FILES} DESTINATION share/${PROJECT_NAME}/models)
+	set(MODELS_INSTALL_PATH "${CMAKE_INSTALL_PREFIX}/share/${PROJECT_NAME}/models")
+else()
+	set(MODELS_INSTALL_PATH "NOT_INSTALLED")
+endif()
 
 # uninstall target
 configure_file(
@@ -162,6 +171,7 @@ message(STATUS "OpenCL support:                      ${WITH_OPENCL}")
 message(STATUS "Logging support (liblog4cxx):        ${WITH_LIBLOG4CXX}")
 message(STATUS "Screenshot support (libpng):         ${WITH_PNG}")
 message(STATUS "Tracelog (FPS, performance logging): ${WITH_TRACE_LOG}")
+message(STATUS "Copy 3D object files on install:     ${BUILD_COPY_MODELS}")
 message(STATUS "")
 if(NOT WITH_CUDA AND NOT WITH_OPENCL)
 	message(WARNING "You haven't enabled support for OpenCL or CUDA, use the -DWITH_CUDA=YES and/or -DWITH_OPENCL=YES, otherwise you will not be able to compute holograms.")
@@ -170,7 +180,6 @@ endif()
 if(WITH_CUDA AND (${CUDA_VERSION_MAJOR} GREATER 6))
 	message(WARNING "DSCP4 set to not compile for sm_13 architecture.\nsm_13 has been deprecated and removed from CUDA 7 (No FX5800 support).\nYou must install CUDA 6.5 if you want to compile for kepler GPUs.")
 endif()
-
 
 message(STATUS "Now just type:")
 message(STATUS "")
