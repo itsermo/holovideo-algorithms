@@ -23,6 +23,10 @@ endif(BOOST_DISABLE_AUTOLINK)
 
 include_directories(${assimp_INCLUDE_DIRS})
 
+if(BUILD_DSCP4_STATIC)
+	add_definitions(-DDSCP4_STATIC)
+endif()
+
 if(WITH_LIBLOG4CXX)
 	add_definitions(-DDSCP4_HAVE_LOG4CXX)
 	include_directories(${LIBLOG4CXX_INCLUDE_DIRS})

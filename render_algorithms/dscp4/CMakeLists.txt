@@ -15,6 +15,11 @@ endmacro()
 
 project(dscp4)
 
+SET (MAINFOLDER ${PROJECT_SOURCE_DIR})
+SET (EXECUTABLE_OUTPUT_PATH "${MAINFOLDER}/bin")
+SET (LIBRARY_OUTPUT_PATH "${MAINFOLDER}/lib")
+SET (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${EXECUTABLE_OUTPUT_PATH})
+
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 	include(CheckCXXCompilerFlag)
 	CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
@@ -73,6 +78,7 @@ endif()
 if(WITH_TRACE_LOG)
 	add_definitions(-DDSCP4_ENABLE_TRACE_LOG)
 endif()
+
 
 # use, i.e. don't skip the full RPATH for the build tree
 SET(CMAKE_SKIP_BUILD_RPATH FALSE)
@@ -172,7 +178,9 @@ message(STATUS "Logging support (liblog4cxx):        ${WITH_LIBLOG4CXX}")
 message(STATUS "Screenshot support (libpng):         ${WITH_PNG}")
 message(STATUS "Tracelog (FPS, performance logging): ${WITH_TRACE_LOG}")
 message(STATUS "Copy 3D object files on install:     ${BUILD_COPY_MODELS}")
+message(STATUS "Build static libdscp4:               ${BUILD_DSCP4_STATIC}")
 message(STATUS "")
+
 if(NOT WITH_CUDA AND NOT WITH_OPENCL)
 	message(WARNING "You haven't enabled support for OpenCL or CUDA, use the -DWITH_CUDA=YES and/or -DWITH_OPENCL=YES, otherwise you will not be able to compute holograms.")
 endif()
