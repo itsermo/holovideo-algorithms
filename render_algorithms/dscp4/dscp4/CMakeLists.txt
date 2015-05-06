@@ -31,6 +31,7 @@ set(DSCP4_APP_BIN ${PROJECT_NAME} PARENT_SCOPE)
 
 add_executable(${DSCP4_APP_BIN} ${DSCP4_SRC})
 
+set_target_properties(${DSCP4_APP_BIN} PROPERTIES DEBUG_POSTFIX -debug)
 set_target_properties(${DSCP4_APP_BIN} PROPERTIES OUTPUT_NAME ${PROJECT_NAME} CLEAN_DIRECT_OUTPUT 1)
 
 target_link_libraries(${DSCP4_APP_BIN} LINK_PUBLIC ${PROJECT_NAME}-lib ${Boost_LIBRARIES} ${assimp_LIBRARIES})

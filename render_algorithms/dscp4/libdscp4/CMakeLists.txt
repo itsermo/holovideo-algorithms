@@ -63,6 +63,8 @@ target_include_directories(${DSCP4_LIB} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 set_target_properties(${DSCP4_LIB} PROPERTIES OUTPUT_NAME libdscp4 CLEAN_DIRECT_OUTPUT 1)
 set_target_properties(${DSCP4_LIB} PROPERTIES PREFIX "")
 
+set_target_properties(${DSCP4_LIB} PROPERTIES DEBUG_POSTFIX -debug)
+
 target_link_libraries(${DSCP4_LIB} ${Boost_LIBRARIES} ${OPENGL_gl_LIBRARY} ${GLEW_LIBRARY} ${SDL2_LIBRARY})
 
 if(WITH_CUDA)
@@ -96,7 +98,7 @@ file(GLOB KERNEL_FILES
 	"kernels/*.cl"
 )
 
-install(TARGETS ${DSCP4_LIB} DESTINATION lib)
+install(TARGETS ${DSCP4_LIB} RUNTIME DESTINATION bin LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
 install(FILES dscp4.h DESTINATION include/${PROJECT_NAME})
 install(FILES dscp4_defs.h DESTINATION include/${PROJECT_NAME})
 install(FILES ${SHADER_FILES} DESTINATION share/${PROJECT_NAME}/shaders)

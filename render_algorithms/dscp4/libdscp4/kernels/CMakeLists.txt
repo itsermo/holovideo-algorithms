@@ -47,6 +47,12 @@ if(WITH_CUDA)
 		RELEASE -O3 --use_fast_math -DNDEBUG
 		DEBUG -g -G -DDEBUG
 		)
+		
+	set_target_properties(${PROJECT_NAME} PROPERTIES DEBUG_POSTFIX -debug)
+	
+	if(BUILD_DSCP4_STATIC)
+		install(TARGETS ${PROJECT_NAME} DESTINATION lib)
+	endif()
 endif()
 
 if(WITH_OPENCL)
@@ -75,5 +81,11 @@ if(WITH_OPENCL)
 		add_definitions(-DDSCP4_HAVE_LOG4CXX)
 		target_include_directories(${PROJECT_NAME} PUBLIC ${LIBLOG4CXX_INCLUDE_DIRS})
 		target_link_libraries(${PROJECT_NAME} LINK_PUBLIC ${LIBLOG4CXX_LIBRARIES})
+	endif()
+	
+	set_target_properties(${PROJECT_NAME} PROPERTIES DEBUG_POSTFIX -debug)
+	
+	if(BUILD_DSCP4_STATIC)
+		install(TARGETS ${PROJECT_NAME} DESTINATION lib)
 	endif()
 endif()
