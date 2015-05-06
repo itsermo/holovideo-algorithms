@@ -179,12 +179,9 @@ message(STATUS "Screenshot support (libpng):         ${WITH_PNG}")
 message(STATUS "Tracelog (FPS, performance logging): ${WITH_TRACE_LOG}")
 message(STATUS "Copy 3D object files on install:     ${BUILD_COPY_MODELS}")
 message(STATUS "Build static libdscp4:               ${BUILD_DSCP4_STATIC}")
-if(NOT("${CMAKE_BULID_TYPE}" STREQUAL "Release"))
-	message(STATUS "Optimize build (release mode):	   OFF")
-else()
-	message(STATUS "Optimize build (release mode):	   ON")
-endif()
+
 message(STATUS "")
+
 
 if(NOT WITH_CUDA AND NOT WITH_OPENCL)
 	message(WARNING "You haven't enabled support for OpenCL or CUDA, use the -DWITH_CUDA=YES and/or -DWITH_OPENCL=YES, otherwise you will not be able to compute holograms.")
@@ -194,8 +191,8 @@ if(WITH_CUDA AND (${CUDA_VERSION_MAJOR} GREATER 6))
 	message(WARNING "dscp4 set to not compile for sm_13 architecture.\nsm_13 has been deprecated and removed from CUDA 7 (No FX5800 support).\nYou must install CUDA 6.5 if you want to compile for kepler GPUs.")
 endif()
 
-if(NOT("${CMAKE_BULID_TYPE}" STREQUAL "Release"))
-	message(WARNING "dscp4 is not set to compile in release mode.\nHolovideo fringe computation performance will suffer.\nUse -DCMAKE_BUILD_TYPE=Release switch to compile with optimizations.")
+if(NOT (CMAKE_BUILD_TYPE MATCHES Release))
+	message(WARNING "dscp4 will not be optimized.\nHolovideo fringe computation will suffer.\nUse the -DCMAKE_BUILD_TYPE=Release flag to enable optimizations.")
 endif()
 
 message(STATUS "Now just type:")
