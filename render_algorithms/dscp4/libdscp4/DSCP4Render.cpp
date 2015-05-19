@@ -151,6 +151,8 @@ DSCP4Render::DSCP4Render(render_options_t *renderOptions,
 		log4cxx::ConsoleAppenderPtr logAppenderPtr = new log4cxx::ConsoleAppender(logLayoutPtr);
 		log4cxx::BasicConfigurator::configure(logAppenderPtr);
 	}
+	else
+		logger_->addAppender((log4cxx::Appender*)logAppender);
 
 	switch (verbosity)
 	{
