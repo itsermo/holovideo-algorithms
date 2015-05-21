@@ -245,6 +245,21 @@ failedInit_(false)
 	palette.setColor(palette.WindowText, QColor(0, 255, 0));
 	ui->renderFPSCounter->setPalette(palette);
 	ui->computeFPSCounter->setPalette(palette);
+
+	x11Process_ = new QProcess(this);
+	QObject::connect(x11Process_, SIGNAL(readyReadStandardError()), this, SLOT(logX11()));
+	QObject::connect(x11Process_, SIGNAL(error(QProcess::ProcessError)), this, SLOT(handleX11ProcessError(QProcess::ProcessError)));
+	QObject::connect(x11Process_, SIGNAL(stateChanged(QProcess::ProcessState)), this, SLOT(handleX11ProcessStateChanged(QProcess::ProcessState)));
+
+	nvidiaSettingsProcess_ = new QProcess(this);
+	QObject::connect(nvidiaSettingsProcess_, SIGNAL(readyReadStandardError()), this, SLOT(logNVIDIASettings()));
+	QObject::connect(nvidiaSettingsProcess_, SIGNAL(error(QProcess::ProcessError)), this, SLOT(handleNVIDIASettingsProcessError(QProcess::ProcessError)));
+	QObject::connect(nvidiaSettingsProcess_, SIGNAL(stateChanged(QProcess::ProcessState)), this, SLOT(handleNVIDIASettingsProcessStateChanged(QProcess::ProcessState)));
+
+	x11vncProcess_ = new QProcess(this);
+	QObject::connect(x11vncProcess_, SIGNAL(readyReadStandardError()), this, SLOT(logX11Vnc()));
+	QObject::connect(x11vncProcess_, SIGNAL(error(QProcess::ProcessError)), this, SLOT(handleX11VncProcessError(QProcess::ProcessError)));
+	QObject::connect(x11vncProcess_, SIGNAL(stateChanged(QProcess::ProcessState)), this, SLOT(handleX11VncProcessStateChanged(QProcess::ProcessState)));
 }
 
 
@@ -254,6 +269,13 @@ MainWindow::~MainWindow()
 
 	if (algorithmContext_)
 		stopDSCP4();
+
+	QObject::disconnect(nvidiaSettingsProcess_, SIGNAL(error(QProcess::ProcessError)), this, SLOT(handleNVIDIASettingsProcessError(QProcess::ProcessError)));
+	QObject::disconnect(nvidiaSettingsProcess_, SIGNAL(stateChanged(QProcess::ProcessState)), this, SLOT(handleNVIDIASettingsProcessStateChanged(QProcess::ProcessState)));
+	QObject::disconnect(x11vncProcess_, SIGNAL(error(QProcess::ProcessError)), this, SLOT(handleX11VncProcessError(QProcess::ProcessError)));
+	QObject::disconnect(x11vncProcess_, SIGNAL(stateChanged(QProcess::ProcessState)), this, SLOT(handleX11VncProcessStateChanged(QProcess::ProcessState)));
+	QObject::disconnect(x11Process_, SIGNAL(error(QProcess::ProcessError)), this, SLOT(handleX11ProcessError(QProcess::ProcessError)));
+	QObject::disconnect(x11Process_, SIGNAL(stateChanged(QProcess::ProcessState)), this, SLOT(handleX11ProcessStateChanged(QProcess::ProcessState)));
 
 	if (nvidiaSettingsProcess_)
 	{
@@ -605,116 +627,41 @@ void MainWindow::stopDSCP4()
 
 void MainWindow::startX11()
 {
-	x11Process_ = new QProcess(this);
-	QObject::connect(x11Process_, SIGNAL(readyReadStandardError()), this, SLOT(logX11()));
-	QString command("X ");
-	command.append(ui->x11DisplayEnvLineEdit->text()); // set the display env. variable
-	command.append(" -br"); // set black background
-	command.append(" +xinerama"); //enable xinerama
-	x11Process_->start(command);
-	if (x11Process_->waitForStarted())
-	{
-		QObject::disconnect(ui->x11ToggleButton, SIGNAL(clicked()), this, SLOT(startX11()));
-		QObject::connect(ui->x11ToggleButton, SIGNAL(clicked()), this, SLOT(stopX11()));
-		ui->x11ToggleButton->setText("Stop X11");
-		ui->nvidiaSettingsToggleButton->setEnabled(true);
-		ui->x11vncToggleButton->setEnabled(true);
-	}
-	else
-	{
-		QString message("Please check your X11 settings in /etc/X11/xorg.conf.\n");
-		message.append("Launch command used: \"");
-		message.append(command);
-		message.append("\"");
-		QMessageBox::critical(this, "Error Launching X11", message, QMessageBox::Ok);
-	}
-}
-
-void MainWindow::startX11Vnc()
-{
-	x11vncProcess_ = new QProcess(this);
-	QObject::connect(x11vncProcess_, SIGNAL(readyReadStandardError()), this, SLOT(logX11Vnc()));
-	QString command("x11vnc -display ");
-	command.append(ui->x11DisplayEnvLineEdit->text()); // set the display env. variable
-	x11vncProcess_->start(command);
-	if (x11vncProcess_->waitForStarted())
-	{
-		QObject::disconnect(ui->x11vncToggleButton, SIGNAL(clicked()), this, SLOT(startX11Vnc()));
-		QObject::connect(ui->x11vncToggleButton, SIGNAL(clicked()), this, SLOT(stopX11Vnc()));
-		ui->x11vncToggleButton->setText("Stop x11vnc");
-	}
-	else
-	{
-		QString message("Please check that x11vnc package is installed on your system.\n");
-		message.append("Launch command used: \"");
-		message.append(command);
-		message.append("\"");
-		QMessageBox::critical(this, "Error Launching x11vnc", message, QMessageBox::Ok);
-	}
-}
-
-void MainWindow::stopX11()
-{
-	x11Process_->close();
-	x11Process_->waitForFinished();
-	QObject::disconnect(x11Process_, SIGNAL(readyReadStandardError()), this, SLOT(logX11()));
-
-	delete x11Process_;
-	x11Process_ = nullptr;
-
-	QObject::disconnect(ui->x11ToggleButton, SIGNAL(clicked()), this, SLOT(stopX11()));
-
-	if (x11vncProcess_)
-		QObject::disconnect(x11vncProcess_, SIGNAL(readyReadStandardError()), this, SLOT(logX11Vnc()));
-
-	if(nvidiaSettingsProcess_)
-		QObject::disconnect(nvidiaSettingsProcess_, SIGNAL(readyReadStandardError()), this, SLOT(logNVIDIASettings()));
-
-	QObject::connect(ui->x11ToggleButton, SIGNAL(clicked()), this, SLOT(startX11()));
-	ui->x11ToggleButton->setText("Start X11");
-
-	ui->nvidiaSettingsToggleButton->setEnabled(false);
-	ui->x11vncToggleButton->setEnabled(false);
-}
-
-void MainWindow::stopX11Vnc()
-{
-	x11vncProcess_->close();
-	x11vncProcess_->waitForFinished();
-	QObject::disconnect(x11Process_, SIGNAL(readyReadStandardError()), this, SLOT(logX11Vnc()));
-
-	delete x11vncProcess_;
-	x11vncProcess_ = nullptr;
-
-	QObject::disconnect(ui->x11vncToggleButton, SIGNAL(clicked()), this, SLOT(stopX11Vnc()));
-
-	QObject::connect(ui->x11vncToggleButton, SIGNAL(clicked()), this, SLOT(startX11Vnc()));
-	ui->x11vncToggleButton->setText("Start x11vnc");
+	x11Command_ = "X ";
+	x11Command_.append(ui->x11DisplayEnvLineEdit->text()); // set the display env. variable
+	x11Command_.append(" -br"); // set black background
+	x11Command_.append(" +xinerama"); //enable xinerama
+	x11Process_->start(x11Command_);
 }
 
 void MainWindow::startNVIDIASettings()
 {
-	if (nvidiaSettingsProcess_ == nullptr)
-	{
-		nvidiaSettingsProcess_ = new QProcess(this);
-		QObject::connect(nvidiaSettingsProcess_, SIGNAL(readyReadStandardError()), this, SLOT(logNVIDIASettings()));
-	}
+	nvidiaSettingsCommand_ = "nvidia-settings -V all -c ";
+	nvidiaSettingsCommand_.append(ui->x11DisplayEnvLineEdit->text());
+	nvidiaSettingsProcess_->start(nvidiaSettingsCommand_);
+}
 
-	if (nvidiaSettingsProcess_->state() != QProcess::Running)
-	{
 
-		QString command("nvidia-settings -V all -c ");
-		command.append(ui->x11DisplayEnvLineEdit->text()); // set the display env. variable
-		nvidiaSettingsProcess_->start(command);
-		if (!nvidiaSettingsProcess_->waitForStarted(100))
-		{
-			QString message("Please check your NVIDIA drivers installation.\n");
-			message.append("Launch command used: \"");
-			message.append(command);
-			message.append("\"");
-			QMessageBox::critical(this, "Error Launching NVIDIA Settings", message, QMessageBox::Ok);
-		}
-	}
+void MainWindow::startX11Vnc()
+{
+	x11vncCommand_ = "x11vnc -display ";
+	x11vncCommand_.append(ui->x11DisplayEnvLineEdit->text()); // set the display env. variable
+	x11vncProcess_->start(x11vncCommand_);
+}
+
+void MainWindow::stopX11()
+{
+	x11Process_->terminate();
+}
+
+void MainWindow::stopX11Vnc()
+{
+	x11vncProcess_->terminate();
+}
+
+void MainWindow::stopNVIDIASettings()
+{
+	nvidiaSettingsProcess_->terminate();
 }
 
 void MainWindow::dumpFramebufferToPNG()
@@ -827,6 +774,9 @@ void MainWindow::disableControlsUI()
 	ui->xRotateHorizontalSlider->setValue(0);
 	ui->yRotateHorizontalSlider->setValue(0);
 	ui->zRotateHorizontalSlider->setValue(0);
+	ui->redColorGainHorizontalSlider->setValue(100);
+	ui->greenColorGainHorizontalSlider->setValue(100);
+	ui->blueColorGainHorizontalSlider->setValue(100);
 	ui->spinModelCheckBox->setChecked(false);
 	for (QWidget* var : dscp4Controls_)
 	{
@@ -897,5 +847,147 @@ void MainWindow::handleLogMessage(QString logMessage)
 	else if (logMessage.contains("WARN"))
 	{
 		QMessageBox::warning(this, "Warning in libdscp4", logMessage.replace("WARN \t", ""), QMessageBox::StandardButton::Ok);
+	}
+}
+
+void MainWindow::handleX11ProcessError(QProcess::ProcessError processError)
+{
+	switch (processError)
+	{
+		case QProcess::ProcessError::FailedToStart:
+		{
+			QString message("Please check your X11 settings in /etc/X11/xorg.conf.\n");
+			message.append("Launch command used: \"");
+			message.append(x11Command_);
+			message.append("\"");
+			QMessageBox::critical(this, "Error Launching X11", message, QMessageBox::Ok);
+			break;
+		}
+		default:
+			QMessageBox::critical(this, "Error in X11 Process", "X11 process has crashed or stopped responding.");
+			break;
+	}
+}
+
+void MainWindow::handleX11ProcessStateChanged(QProcess::ProcessState processState)
+{
+	switch (processState)
+	{
+	case QProcess::ProcessState::Running:
+	{
+		QObject::disconnect(ui->x11ToggleButton, SIGNAL(clicked()), this, SLOT(startX11()));
+		QObject::connect(ui->x11ToggleButton, SIGNAL(clicked()), this, SLOT(stopX11()));
+		ui->x11ToggleButton->setText("Stop X11");
+		ui->nvidiaSettingsToggleButton->setEnabled(true);
+		ui->x11vncToggleButton->setEnabled(true);
+
+		break;
+	}
+	case QProcess::ProcessState::NotRunning:
+	{
+		QObject::disconnect(ui->x11ToggleButton, SIGNAL(clicked()), this, SLOT(stopX11()));
+
+		if (x11vncProcess_)
+		{
+			x11vncProcess_->terminate();
+		}
+
+		if (nvidiaSettingsProcess_)
+		{
+			nvidiaSettingsProcess_->terminate();
+		}
+
+		QObject::connect(ui->x11ToggleButton, SIGNAL(clicked()), this, SLOT(startX11()));
+		ui->x11ToggleButton->setText("Start X11");
+
+		ui->nvidiaSettingsToggleButton->setEnabled(false);
+		ui->x11vncToggleButton->setEnabled(false);
+	}
+	default:
+		break;
+	}
+}
+
+void MainWindow::handleNVIDIASettingsProcessError(QProcess::ProcessError processError)
+{
+	switch (processError)
+	{
+	case QProcess::ProcessError::FailedToStart:
+	{
+		QString message("Please check your NVIDIA driver install\n");
+		message.append("Launch command used: \"");
+		message.append(nvidiaSettingsCommand_);
+		message.append("\"");
+		QMessageBox::critical(this, "Error Launching NVIDIA Settings", message, QMessageBox::Ok);
+		break;
+	}
+	default:
+		QMessageBox::critical(this, "Error in NVIDIA Settings Process", "NVIDIA Settings process has crashed or stopped responding.");
+		break;
+	}
+}
+
+void MainWindow::handleNVIDIASettingsProcessStateChanged(QProcess::ProcessState processState)
+{
+	switch (processState)
+	{
+	case QProcess::ProcessState::Running:
+	{
+		QObject::disconnect(ui->nvidiaSettingsToggleButton, SIGNAL(clicked()), this, SLOT(startNVIDIASettings()));
+		QObject::connect(ui->nvidiaSettingsToggleButton, SIGNAL(clicked()), this, SLOT(stopNVIDIASettings()));
+		ui->nvidiaSettingsToggleButton->setText("Stop NVIDIA Settings");
+		break;
+	}
+	case QProcess::ProcessState::NotRunning:
+	{
+		QObject::connect(ui->nvidiaSettingsToggleButton, SIGNAL(clicked()), this, SLOT(startNVIDIASettings()));
+		QObject::disconnect(ui->nvidiaSettingsToggleButton, SIGNAL(clicked()), this, SLOT(stopNVIDIASettings()));
+		ui->nvidiaSettingsToggleButton->setText("Start NVIDIA Settings");
+		break;
+	}
+	default:
+		break;
+	}
+}
+
+void MainWindow::handleX11VncProcessError(QProcess::ProcessError processError)
+{
+	switch (processError)
+	{
+	case QProcess::ProcessError::FailedToStart:
+	{
+		QString message("Please check that x11vnc is installed on your system");
+		message.append("Launch command used: \"");
+		message.append(x11vncCommand_);
+		message.append("\"");
+		QMessageBox::critical(this, "Error Launching x11vnc", message, QMessageBox::Ok);
+		break;
+	}
+	default:
+		QMessageBox::critical(this, "Error in x11vnc Process", "x11vnc process has crashed or stopped responding.");
+		break;
+	}
+}
+
+void MainWindow::handleX11VncProcessStateChanged(QProcess::ProcessState processState)
+{
+	switch (processState)
+	{
+	case QProcess::ProcessState::Running:
+	{
+			QObject::disconnect(ui->x11vncToggleButton, SIGNAL(clicked()), this, SLOT(startX11Vnc()));
+			QObject::connect(ui->x11vncToggleButton, SIGNAL(clicked()), this, SLOT(stopX11Vnc()));
+			ui->x11vncToggleButton->setText("Stop x11vnc");
+			break;
+	}
+	case QProcess::ProcessState::NotRunning:
+	{
+			QObject::disconnect(ui->x11vncToggleButton, SIGNAL(clicked()), this, SLOT(stopX11Vnc()));
+			QObject::connect(ui->x11vncToggleButton, SIGNAL(clicked()), this, SLOT(startX11Vnc()));
+			ui->x11vncToggleButton->setText("Start x11vnc");
+			break;
+	}
+	default:
+		break;
 	}
 }

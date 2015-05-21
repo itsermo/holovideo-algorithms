@@ -70,6 +70,7 @@ public slots:
 	void stopX11Vnc();
 
 	void startNVIDIASettings();
+	void stopNVIDIASettings();
 
 	void enableUnchangeableUI();
 	void disableUnchangeableUI();
@@ -97,6 +98,15 @@ public slots:
 	void logX11();
 	void logNVIDIASettings();
 	void logX11Vnc();
+
+	void handleX11ProcessError(QProcess::ProcessError processError);
+	void handleX11ProcessStateChanged(QProcess::ProcessState processState);
+
+	void handleNVIDIASettingsProcessError(QProcess::ProcessError processError);
+	void handleNVIDIASettingsProcessStateChanged(QProcess::ProcessState processState);
+
+	void handleX11VncProcessError(QProcess::ProcessError processError);
+	void handleX11VncProcessStateChanged(QProcess::ProcessState processState);
 
 	void clearLog();
 	void handleLogMessage(QString logMessage);
@@ -143,6 +153,10 @@ private:
 	std::condition_variable haveNewFrameCV_;
 	std::atomic<bool> haveNewFrame_;
 	std::mutex renderPreviewDataMutex_;
+
+	QString x11Command_;
+	QString nvidiaSettingsCommand_;
+	QString x11vncCommand_;
 
 	bool failedInit_;
 };

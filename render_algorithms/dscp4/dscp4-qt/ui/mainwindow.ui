@@ -3096,7 +3096,7 @@
      <rect>
       <x>130</x>
       <y>620</y>
-      <width>111</width>
+      <width>131</width>
       <height>28</height>
      </rect>
     </property>
@@ -3104,7 +3104,7 @@
      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Launches NVIDIA settings application&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
     </property>
     <property name="text">
-     <string>NVIDIA Settings</string>
+     <string>Start NVIDIA Settings</string>
     </property>
    </widget>
    <widget class="QPushButton" name="x11vncToggleButton">
@@ -3113,7 +3113,7 @@
     </property>
     <property name="geometry">
      <rect>
-      <x>250</x>
+      <x>270</x>
       <y>620</y>
       <width>91</width>
       <height>28</height>
