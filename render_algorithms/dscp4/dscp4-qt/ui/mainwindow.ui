@@ -3037,26 +3037,7 @@
      </widget>
     </widget>
    </widget>
-   <widget class="QPushButton" name="stopButton">
-    <property name="enabled">
-     <bool>false</bool>
-    </property>
-    <property name="geometry">
-     <rect>
-      <x>420</x>
-      <y>620</y>
-      <width>101</width>
-      <height>28</height>
-     </rect>
-    </property>
-    <property name="toolTip">
-     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Stop the DSCP4 render algorithm&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-    </property>
-    <property name="text">
-     <string>Stop</string>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="startButton">
+   <widget class="QPushButton" name="dscp4ToggleButton">
     <property name="geometry">
      <rect>
       <x>540</x>
@@ -3069,13 +3050,13 @@
      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Run the DSCP4 render algorithm&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
     </property>
     <property name="text">
-     <string>Start</string>
+     <string>Start DSCP4</string>
     </property>
    </widget>
    <widget class="QPushButton" name="x11ToggleButton">
     <property name="geometry">
      <rect>
-      <x>20</x>
+      <x>10</x>
       <y>620</y>
       <width>101</width>
       <height>28</height>
@@ -3094,9 +3075,9 @@
     </property>
     <property name="geometry">
      <rect>
-      <x>130</x>
+      <x>120</x>
       <y>620</y>
-      <width>131</width>
+      <width>141</width>
       <height>28</height>
      </rect>
     </property>
@@ -3132,8 +3113,7 @@
   <tabstop>tabWidget</tabstop>
   <tabstop>x11ToggleButton</tabstop>
   <tabstop>nvidiaSettingsToggleButton</tabstop>
-  <tabstop>startButton</tabstop>
-  <tabstop>stopButton</tabstop>
+  <tabstop>dscp4ToggleButton</tabstop>
   <tabstop>inputFileComboBox</tabstop>
   <tabstop>inputFileToolButton</tabstop>
   <tabstop>triangulateMeshCheckBox</tabstop>

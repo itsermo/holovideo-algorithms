@@ -195,8 +195,7 @@ failedInit_(false)
 #endif
 
 	//Controls
-	QObject::connect(ui->startButton, SIGNAL(clicked()), this, SLOT(startDSCP4()));
-	QObject::connect(ui->stopButton, SIGNAL(clicked()), this, SLOT(stopDSCP4()));
+	QObject::connect(ui->dscp4ToggleButton, SIGNAL(clicked()), this, SLOT(startDSCP4()));
 	QObject::connect(ui->x11ToggleButton, SIGNAL(clicked()), this, SLOT(startX11()));
 	QObject::connect(ui->x11vncToggleButton, SIGNAL(clicked()), this, SLOT(startX11Vnc()));
 	QObject::connect(ui->nvidiaSettingsToggleButton, SIGNAL(clicked()), this, SLOT(startNVIDIASettings()));
@@ -228,14 +227,13 @@ failedInit_(false)
 	ui->inputGroupBox <<
 	ui->displayGroupBox <<
 	ui->renderGroupBox <<
-	ui->startButton <<
 	ui->x11ToggleButton <<
 	ui->numWafelsSpinBox <<
 	ui->xViewsSpinBox <<
 	ui->yViewsSpinBox;
 
 	// These UI items will be enabled while DSCP4 is running
-	dscp4Controls_ << ui->renderPreviewGroupBox << ui->controlGroupBox << ui->stopButton;
+	dscp4Controls_ << ui->renderPreviewGroupBox << ui->controlGroupBox;
 
 	disableControlsUI();
 
@@ -484,6 +482,8 @@ void MainWindow::startDSCP4()
 {
 	LOG4CXX_INFO(logger_, "Starting DSCP4 algorithm...")
 
+	ui->dscp4ToggleButton->setEnabled(false);
+
 	disableUnchangeableUI();
 
 	unsigned int aiFlags = 0;
@@ -535,6 +535,7 @@ void MainWindow::startDSCP4()
 		dscp4_DestroyContext(&algorithmContext_);
 		assetImporter_.FreeScene();
 		enableUnchangeableUI();
+		ui->dscp4ToggleButton->setEnabled(true);
 		return;
 	}
 
@@ -582,6 +583,11 @@ void MainWindow::startDSCP4()
 	}
 
 	enableControlsUI();
+
+	QObject::disconnect(ui->dscp4ToggleButton, SIGNAL(clicked()), this, SLOT(startDSCP4()));
+	QObject::connect(ui->dscp4ToggleButton, SIGNAL(clicked()), this, SLOT(stopDSCP4()));
+	ui->dscp4ToggleButton->setText("Stop DSCP4");
+	ui->dscp4ToggleButton->setEnabled(true);
 }
 
 void MainWindow::dscp4RenderEvent(callback_type_t evt, void * parent, void * userData)
@@ -614,8 +620,6 @@ void MainWindow::stopDSCP4()
 
 	enableUnchangeableUI();
 
-	ui->stopButton->setDisabled(true);
-
 	delete renderPreviewScene_;
 	renderPreviewScene_ = nullptr;
 
@@ -623,6 +627,10 @@ void MainWindow::stopDSCP4()
 
 	ui->renderFPSCounter->display(0);
 	ui->computeFPSCounter->display(0);
+
+	QObject::connect(ui->dscp4ToggleButton, SIGNAL(clicked()), this, SLOT(startDSCP4()));
+	QObject::disconnect(ui->dscp4ToggleButton, SIGNAL(clicked()), this, SLOT(stopDSCP4()));
+	ui->dscp4ToggleButton->setText("Start DSCP4");
 }
 
 void MainWindow::startX11()
