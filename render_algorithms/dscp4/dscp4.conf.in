@@ -99,7 +99,7 @@ opencl_local_workgroup_size_y = 16
 ; cuda algorithm options
 ; block dimension is the number of threads per block in X or Y
 cuda_block_dimension_x = 8
-cuda_block_dimension_y = 8
+cuda_block_dimension_y = 16
 
 ; angle of the reference beam, in degrees
 reference_beam_angle = 30.0

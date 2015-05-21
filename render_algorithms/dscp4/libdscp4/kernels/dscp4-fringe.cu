@@ -263,7 +263,7 @@ void dscp4_fringe_cuda_ComputeFringe(dscp4_fringe_cuda_context_t* cudaContext)
 
 	// Run kernel here
 	error = cudaMemset(cudaContext->spec_buffer, 0, cudaContext->fringe_context->display_options.head_res_x_spec * cudaContext->fringe_context->display_options.head_res_y_spec * cudaContext->fringe_context->display_options.num_heads * 4);
-
+	
 		dim3 threadsPerBlock(
 			cudaContext->fringe_context->algorithm_options->cuda_block_dimensions[0],
 			cudaContext->fringe_context->algorithm_options->cuda_block_dimensions[1]
@@ -273,7 +273,7 @@ void dscp4_fringe_cuda_ComputeFringe(dscp4_fringe_cuda_context_t* cudaContext)
 			cudaContext->fringe_context->algorithm_options->cache.cuda_number_of_blocks[1]
 			);
 
-		computeFringe << <numBlocks, threadsPerBlock, 592 * 4 >> >(
+		computeFringe <<<numBlocks, threadsPerBlock, cudaContext->fringe_context->algorithm_options->num_wafels_per_scanline * 4>>>(
 			(unsigned char*)cudaContext->spec_buffer,
 			(const float*)viewsetDepthArray,
 			cudaContext->fringe_context->algorithm_options->num_wafels_per_scanline,
