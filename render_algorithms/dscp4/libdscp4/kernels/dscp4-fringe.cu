@@ -190,6 +190,8 @@ void dscp4_fringe_cuda_DestroyContext(dscp4_fringe_cuda_context_t** cudaContext)
 
 	free(*cudaContext);
 	*cudaContext = NULL;
+
+	cudaDeviceReset();
 };
 
 void dscp4_fringe_cuda_ComputeFringe(dscp4_fringe_cuda_context_t* cudaContext)

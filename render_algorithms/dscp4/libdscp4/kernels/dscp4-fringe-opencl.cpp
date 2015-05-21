@@ -54,8 +54,7 @@ static log4cxx::LoggerPtr DSCP4_OPENCL_LOGGER = log4cxx::Logger::getLogger("edu.
 #define CHECK_OPENCL_RC(rc, what)												\
 if (rc != CL_SUCCESS)															\
 {																				\
-	LOG4CXX_ERROR(DSCP4_OPENCL_LOGGER, what)									\
-	LOG4CXX_ERROR(DSCP4_OPENCL_LOGGER, "OpenCL Error: " << clGetErrorString(rc))\
+	LOG4CXX_ERROR(DSCP4_OPENCL_LOGGER, what << ": " << clGetErrorString(rc))	\
 }																				\
 
 #ifdef __cplusplus
@@ -85,7 +84,6 @@ extern "C" {
 		}
 		else
 		{
-			DSCP4_OPENCL_LOGGER->removeAllAppenders();
 			if (DSCP4_OPENCL_LOGGER->getParent() != nullptr && DSCP4_OPENCL_LOGGER->getParent()->getAllAppenders().size() == 0 && DSCP4_OPENCL_LOGGER->getAllAppenders().size() == 0)
 				DSCP4_OPENCL_LOGGER->addAppender((log4cxx::Appender*)logAppender);
 		}

@@ -153,8 +153,7 @@ DSCP4Render::DSCP4Render(render_options_t *renderOptions,
 	}
 	else
 	{
-		logger_->removeAllAppenders();
-		if (logger_->getParent() != nullptr && logger_->getParent()->getAllAppenders().size() == 0)
+		if (logger_->getParent() != nullptr && logger_->getParent()->getAllAppenders().size() == 0 && logger_->getAllAppenders().size() == 0)
 			logger_->addAppender((log4cxx::Appender*)logAppender);
 	}
 

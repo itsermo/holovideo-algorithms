@@ -598,6 +598,9 @@ void MainWindow::stopDSCP4()
 	renderPreviewScene_ = nullptr;
 
 	haveNewFrame_ = false;
+
+	ui->renderFPSCounter->display(0);
+	ui->computeFPSCounter->display(0);
 }
 
 void MainWindow::startX11()

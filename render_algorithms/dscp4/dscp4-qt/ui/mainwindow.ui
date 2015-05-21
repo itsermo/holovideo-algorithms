@@ -1036,7 +1036,7 @@
         </palette>
        </property>
        <property name="toolTip">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The total frame render speed, in FPS&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body style=&quot;background: white;&quot;&gt;&lt;p&gt;The total frame render speed, in FPS&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
        <property name="styleSheet">
         <string notr="true">background: black;</string>
@@ -1126,8 +1126,8 @@
           <colorrole role="WindowText">
            <brush brushstyle="SolidPattern">
             <color alpha="255">
-             <red>255</red>
-             <green>0</green>
+             <red>0</red>
+             <green>255</green>
              <blue>0</blue>
             </color>
            </brush>
@@ -1164,8 +1164,8 @@
           <colorrole role="WindowText">
            <brush brushstyle="SolidPattern">
             <color alpha="255">
-             <red>255</red>
-             <green>0</green>
+             <red>0</red>
+             <green>255</green>
              <blue>0</blue>
             </color>
            </brush>
@@ -1239,7 +1239,7 @@
         </palette>
        </property>
        <property name="toolTip">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The hologram computation speed, in FPS&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body style=&quot;background: white;&quot;&gt;&lt;p&gt;The hologram computation speed, in FPS&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
        <property name="styleSheet">
         <string notr="true">background: black;</string>
