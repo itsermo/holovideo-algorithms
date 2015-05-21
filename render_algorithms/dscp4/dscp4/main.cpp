@@ -98,7 +98,7 @@ int main(int argc, const char* argv[])
 	}
 	catch (std::exception&)
 	{
-		std::cout << "Uknown arguments detected" << std::endl;
+		std::cout << "Unknown arguments detected" << std::endl;
 		options.printOptions(DSCP4ProgramOptions::DSCP4_OPTIONS_TYPE_ALL);
 		return -1;
 	}

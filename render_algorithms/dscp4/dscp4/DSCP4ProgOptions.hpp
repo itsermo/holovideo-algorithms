@@ -42,6 +42,7 @@ public:
 	void parseCommandLine(int argc, const char* argv[]);
 
 	void printOptions(DSCP4_OPTIONS_TYPE options);
+	void printOptions(DSCP4_OPTIONS_TYPE options, std::ostream& ostr);
 
 	std::string getFileName() { return vm_["input-file"].as<std::string>(); }
 	bool getWantHelp() { return vm_.count("help") == 0 ? false : true; }

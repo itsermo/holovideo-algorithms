@@ -3,6 +3,8 @@
 #include <boost/property_tree/ini_parser.hpp>
 #include <qfile.h>
 #include <qdir.h>
+#include <qmessagebox.h>
+#include <qtextstream.h>
 
 QDSCP4Settings::QDSCP4Settings(QWidget *parent) : QDSCP4Settings(0, nullptr, parent)
 {
@@ -19,114 +21,149 @@ argv_(argv)
 
 }
 
-void QDSCP4Settings::populateSettings()
+bool QDSCP4Settings::populateSettings()
 {
-	programOptions_.parseCommandLine(argc_, argv_);
-	programOptions_.parseConfigFile();
+	try {
+		programOptions_.parseCommandLine(argc_, argv_);
+		if (programOptions_.getWantHelp())
+		{
+			std::stringstream ss;
+			ss << "Here are the command options available for dscp4-qt:" << std::endl;
+			programOptions_.printOptions(DSCP4ProgramOptions::DSCP4_OPTIONS_TYPE_ALL, ss);
 
-	// General and input options
-	this->setVerbosity((int)programOptions_.getVerbosity());
-	this->setObjectFileName(QString::fromStdString(programOptions_.getFileName()));
-	this->setGenerateNormals(QString::fromStdString(programOptions_.getGenerateNormals() == "smooth" ? "Smooth" : programOptions_.getGenerateNormals() == "flat" ? "Flat" : "Off"));
-	bool triangulate = programOptions_.getTriangulateMesh();
-	this->setTriangulateMesh(triangulate);
+			QMessageBox::information((QWidget*)this->parent(), "Command line options help", QString::fromStdString(ss.str()));
 
-	this->setInstallPath(QString::fromStdString(programOptions_.getInstallPath().string()));
-	this->setBinPath(QString::fromStdString(programOptions_.getBinPath().string()));
-	this->setLibPath(QString::fromStdString(programOptions_.getLibPath().string()));
-	this->setModelsPath(QString::fromStdString(programOptions_.getModelsPath().string()));
-	this->setShadersPath(QString::fromStdString(programOptions_.getShadersPath().string()));
-	this->setKernelsPath(QString::fromStdString(programOptions_.getKernelsPath().string()));
+			return false;
+		}
+	}
+	catch (std::exception&)
+	{
+		std::stringstream ss;
+		ss << "Unknown command line options entered" << std::endl;
+		programOptions_.printOptions(DSCP4ProgramOptions::DSCP4_OPTIONS_TYPE_ALL, ss);
 
-	// Render options
-	this->setAutoScaleEnabled(programOptions_.getAutoscale());
-	this->setShadeModel(programOptions_.getShadeModel() == "smooth" ? "Smooth" : programOptions_.getShadeModel() == "flat" ? "Flat" : "Off");
-	this->setShaderFileName(QString::fromStdString(programOptions_.getShaderFileName()));
-	
-	auto renderMode = programOptions_.getRenderMode();
-	if (renderMode == "viewing")
-		this->setRenderMode(DSCP4_RENDER_MODE_MODEL_VIEWING);
-	else if (renderMode == "stereogram")
-		this->setRenderMode(DSCP4_RENDER_MODE_STEREOGRAM_VIEWING);
-	else if (renderMode == "aerial")
-		this->setRenderMode(DSCP4_RENDER_MODE_AERIAL_DISPLAY);
-	else if (renderMode == "holovideo")
-		this->setRenderMode(DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE);
+		QMessageBox::critical((QWidget*)this->parent(), "Command line options error", QString::fromStdString(ss.str()));
+		return false;
+	}
 
-	this->setLightPosX(programOptions_.getLightPosX());
-	this->setLightPosY(programOptions_.getLightPosY());
-	this->setLightPosZ(programOptions_.getLightPosZ());
+	try {
+		programOptions_.parseConfigFile();
+	}
+	catch (std::exception&)
+	{
+		QMessageBox::critical((QWidget*)this->parent(), "Settings file error", "Error parsing settings file.\nCheck that /etc/dscp4/dscp4.conf exists, has proper permissions and there are no errors in the file.");
+		return false;
+	}
 
-	// Algorithm options
-	this->setNumViewsX(programOptions_.getNumViewsX());
-	this->setNumViewsY(programOptions_.getNumViewsY());
-	this->setNumWafelsPerScanline(programOptions_.getNumWafelsPerScanline());
-	this->setNumScanlines(programOptions_.getNumScanlines());
-	this->setFOVX(programOptions_.getFovX());
-	this->setFOVY(programOptions_.getFovY());
-	this->setZNear(programOptions_.getZNear());
-	this->setZFar(programOptions_.getZFar());
-	this->setComputeMethod(programOptions_.getComputeMethod() == "cuda" ? "CUDA" : "OpenCL");
-	this->setComputeBlockDimX(programOptions_.getComputeMethod() == "cuda" ?
+	try {
+		// General and input options
+		this->setVerbosity((int)programOptions_.getVerbosity());
+		this->setObjectFileName(QString::fromStdString(programOptions_.getFileName()));
+		this->setGenerateNormals(QString::fromStdString(programOptions_.getGenerateNormals() == "smooth" ? "Smooth" : programOptions_.getGenerateNormals() == "flat" ? "Flat" : "Off"));
+		bool triangulate = programOptions_.getTriangulateMesh();
+		this->setTriangulateMesh(triangulate);
+
+		this->setInstallPath(QString::fromStdString(programOptions_.getInstallPath().string()));
+		this->setBinPath(QString::fromStdString(programOptions_.getBinPath().string()));
+		this->setLibPath(QString::fromStdString(programOptions_.getLibPath().string()));
+		this->setModelsPath(QString::fromStdString(programOptions_.getModelsPath().string()));
+		this->setShadersPath(QString::fromStdString(programOptions_.getShadersPath().string()));
+		this->setKernelsPath(QString::fromStdString(programOptions_.getKernelsPath().string()));
+
+		// Render options
+		this->setAutoScaleEnabled(programOptions_.getAutoscale());
+		this->setShadeModel(programOptions_.getShadeModel() == "smooth" ? "Smooth" : programOptions_.getShadeModel() == "flat" ? "Flat" : "Off");
+		this->setShaderFileName(QString::fromStdString(programOptions_.getShaderFileName()));
+
+		auto renderMode = programOptions_.getRenderMode();
+		if (renderMode == "viewing")
+			this->setRenderMode(DSCP4_RENDER_MODE_MODEL_VIEWING);
+		else if (renderMode == "stereogram")
+			this->setRenderMode(DSCP4_RENDER_MODE_STEREOGRAM_VIEWING);
+		else if (renderMode == "aerial")
+			this->setRenderMode(DSCP4_RENDER_MODE_AERIAL_DISPLAY);
+		else if (renderMode == "holovideo")
+			this->setRenderMode(DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE);
+
+		this->setLightPosX(programOptions_.getLightPosX());
+		this->setLightPosY(programOptions_.getLightPosY());
+		this->setLightPosZ(programOptions_.getLightPosZ());
+
+		// Algorithm options
+		this->setNumViewsX(programOptions_.getNumViewsX());
+		this->setNumViewsY(programOptions_.getNumViewsY());
+		this->setNumWafelsPerScanline(programOptions_.getNumWafelsPerScanline());
+		this->setNumScanlines(programOptions_.getNumScanlines());
+		this->setFOVX(programOptions_.getFovX());
+		this->setFOVY(programOptions_.getFovY());
+		this->setZNear(programOptions_.getZNear());
+		this->setZFar(programOptions_.getZFar());
+		this->setComputeMethod(programOptions_.getComputeMethod() == "cuda" ? "CUDA" : "OpenCL");
+		this->setComputeBlockDimX(programOptions_.getComputeMethod() == "cuda" ?
 #ifdef DSCP4_HAVE_CUDA
-		programOptions_.getCUDABlockDimensionX()
+			programOptions_.getCUDABlockDimensionX()
 #else
-		32 
+			32
 #endif
-		: programOptions_.getComputeMethod() == "opencl" ?
+			: programOptions_.getComputeMethod() == "opencl" ?
 
 #ifdef DSCP4_HAVE_OPENCL
-		programOptions_.getOpenCLKernelWorksizeX()
+			programOptions_.getOpenCLKernelWorksizeX()
 #else
-		32
+			32
 #endif
-		: 32);
+			: 32);
 
-	this->setComputeBlockDimY(programOptions_.getComputeMethod() == "cuda" ?
+		this->setComputeBlockDimY(programOptions_.getComputeMethod() == "cuda" ?
 #ifdef DSCP4_HAVE_CUDA
-		programOptions_.getCUDABlockDimensionY()
+			programOptions_.getCUDABlockDimensionY()
 #else
-		32
+			32
 #endif
-		: programOptions_.getComputeMethod() == "opencl" ?
+			: programOptions_.getComputeMethod() == "opencl" ?
 
 #ifdef DSCP4_HAVE_OPENCL
-		programOptions_.getOpenCLKernelWorksizeY()
+			programOptions_.getOpenCLKernelWorksizeY()
 #else
-		32
+			32
 #endif
-		: 32);
+			: 32);
 
-	this->setOpenCLKernelFileName(QString::fromStdString(programOptions_.getOpenCLKernelFileName()));
-	this->setRefBeamAngle_Deg((double)programOptions_.getReferenceBeamAngle());
-	this->setTemporalUpconvertRed(programOptions_.getTemporalUpconvertRed());
-	this->setTemporalUpconvertGreen(programOptions_.getTemporalUpconvertGreen());
-	this->setTemporalUpconvertBlue(programOptions_.getTemporalUpconvertBlue());
-	this->setWavelengthRed_100nm((double)(programOptions_.getWavelengthRed()) * pow(10,7));
-	this->setWavelengthGreen_100nm((double)(programOptions_.getWavelengthGreen())* pow(10, 7));
-	this->setWavelengthBlue_100nm((double)(programOptions_.getWavelengthBlue())* pow(10, 7));
-	this->setRedGain(static_cast<int>(programOptions_.getRedGain() * 100));
-	this->setGreenGain(static_cast<int>(programOptions_.getGreenGain() * 100));
-	this->setBlueGain(static_cast<int>(programOptions_.getBlueGain() * 100));
+		this->setOpenCLKernelFileName(QString::fromStdString(programOptions_.getOpenCLKernelFileName()));
+		this->setRefBeamAngle_Deg((double)programOptions_.getReferenceBeamAngle());
+		this->setTemporalUpconvertRed(programOptions_.getTemporalUpconvertRed());
+		this->setTemporalUpconvertGreen(programOptions_.getTemporalUpconvertGreen());
+		this->setTemporalUpconvertBlue(programOptions_.getTemporalUpconvertBlue());
+		this->setWavelengthRed_100nm((double)(programOptions_.getWavelengthRed()) * pow(10, 7));
+		this->setWavelengthGreen_100nm((double)(programOptions_.getWavelengthGreen())* pow(10, 7));
+		this->setWavelengthBlue_100nm((double)(programOptions_.getWavelengthBlue())* pow(10, 7));
+		this->setRedGain(static_cast<int>(programOptions_.getRedGain() * 100));
+		this->setGreenGain(static_cast<int>(programOptions_.getGreenGain() * 100));
+		this->setBlueGain(static_cast<int>(programOptions_.getBlueGain() * 100));
 
-	//Display options
-	this->setDisplayName(QString::fromStdString(programOptions_.getDisplayName()));
-	this->setNumHeads(programOptions_.getNumHeads());
-	this->setNumHeadsPerGPU(programOptions_.getNumHeadsPerGPU());
-	this->setHeadResX(programOptions_.getHeadResX());
-	this->setHeadResXSpec(programOptions_.getHeadResXSpec());
-	this->setHeadResY(programOptions_.getHeadResY());
-	this->setHeadResYSpec(programOptions_.getHeadResYSpec());
-	this->setNumAOMChannels(programOptions_.getNumAOMChannels());
-	this->setNumSamplesPerHololine(programOptions_.getNumSamplesPerHololine());
-	this->setPixelClockRate(programOptions_.getPixelClockRate());
-	this->setHologramPlaneWidth((double)programOptions_.getHologramPlaneWidth());
+		//Display options
+		this->setDisplayName(QString::fromStdString(programOptions_.getDisplayName()));
+		this->setNumHeads(programOptions_.getNumHeads());
+		this->setNumHeadsPerGPU(programOptions_.getNumHeadsPerGPU());
+		this->setHeadResX(programOptions_.getHeadResX());
+		this->setHeadResXSpec(programOptions_.getHeadResXSpec());
+		this->setHeadResY(programOptions_.getHeadResY());
+		this->setHeadResYSpec(programOptions_.getHeadResYSpec());
+		this->setNumAOMChannels(programOptions_.getNumAOMChannels());
+		this->setNumSamplesPerHololine(programOptions_.getNumSamplesPerHololine());
+		this->setPixelClockRate(programOptions_.getPixelClockRate());
+		this->setHologramPlaneWidth((double)programOptions_.getHologramPlaneWidth());
 
 
-	this->setX11EnvVar(QString::fromStdString(programOptions_.getX11DisplayEnvironmentVar()));
+		this->setX11EnvVar(QString::fromStdString(programOptions_.getX11DisplayEnvironmentVar()));
+	}
+	catch (std::exception&)
+	{
+		QMessageBox::critical((QWidget*)this->parent(), "Settings file error", "Error parsing some settings.\nPlease check /etc/dscp4/dscp4.conf or ~/.dscp4/dscp4.conf has no errors.");
+		return false;
+	}
 
-	
-	int x = 0;
+	return true;
 }
 
 void QDSCP4Settings::saveSettings()

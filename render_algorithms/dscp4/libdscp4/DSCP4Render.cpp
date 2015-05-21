@@ -154,7 +154,8 @@ DSCP4Render::DSCP4Render(render_options_t *renderOptions,
 	else
 	{
 		logger_->removeAllAppenders();
-		logger_->addAppender((log4cxx::Appender*)logAppender);
+		if (logger_->getParent() != nullptr && logger_->getParent()->getAllAppenders().size() == 0)
+			logger_->addAppender((log4cxx::Appender*)logAppender);
 	}
 
 	switch (verbosity)
@@ -272,6 +273,15 @@ bool DSCP4Render::init()
 	renderThread_ = std::thread(std::bind(&DSCP4Render::renderLoop, this));
 
 	isInitCV_.wait(initLock);
+
+	if (!isInit_)
+	{
+		delete[] windows_;
+		delete[] glContexts_;
+		delete[] windowWidth_;
+		delete[] windowHeight_;
+		SDL_Quit();
+	}
 
 	return isInit_;
 }
@@ -552,13 +562,10 @@ void DSCP4Render::renderLoop()
 	float q = 0.f; //offset for rendering stereograms
 	SDL_Event event = { 0 };
 
-	//lightingShader_ = new VSShaderLib[numWindows_];
-
 	camera_.eye = glm::vec3(0, 0, (renderOptions_->render_mode == DSCP4_RENDER_MODE_MODEL_VIEWING) || (renderOptions_->render_mode == DSCP4_RENDER_MODE_AERIAL_DISPLAY) ? 4.0f : .5f);
 	camera_.center = glm::vec3(0, 0, 0);
 	camera_.up = glm::vec3(0, 1, 0);
 
-	
 	lighting_.ambientColor = glm::vec4(0.2f, 0.2f, 0.2f, 1.f);
 	lighting_.diffuseColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.f);
 	lighting_.specularColor = glm::vec4(1.f, 1.f, 1.f, 1.f);
@@ -604,9 +611,6 @@ void DSCP4Render::renderLoop()
 	default:
 		break;
 	}
-
-	// For capturing mouse and keyboard events
-	//SDL_AddEventWatch(DSCP4Render::inputStateChanged, this);
 
 	// Sanity check, i'm pretty sure you don't want different resolutions
 	bool resAreDifferent = false;
@@ -2095,8 +2099,13 @@ void DSCP4Render::initComputeMethod()
 
 		fringeContext_.kernel_file_path = kernelFileStr.c_str();
 
+		void* appender;
+		if (logger_->getParent() && logger_->getParent()->getAllAppenders().size() > 0)
+			appender = logger_->getParent()->getAllAppenders()[0];
+		else
+			appender = logger_->getAllAppenders().size() > 0 ? logger_->getAllAppenders()[0] : nullptr;
 
-		computeContext_ = (dscp4_fringe_opencl_context_t*)dscp4_fringe_opencl_CreateContext(&fringeContext_, (int*)glContexts_[0]);
+		computeContext_ = (dscp4_fringe_opencl_context_t*)dscp4_fringe_opencl_CreateContext(&fringeContext_, (int*)glContexts_[0], appender);
 #else
 		LOG4CXX_FATAL(logger_, "OpenCL selected as compute method, but this binary was not compiled with OpenCL")
 #endif

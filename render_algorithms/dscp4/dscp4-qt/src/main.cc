@@ -18,7 +18,9 @@ int main(int argc, char *argv[])
     app.setWindowIcon(appIcon);
 
     MainWindow mainWindow(argc, (const char **)argv);
-
-    mainWindow.show();
+	if (mainWindow.FailedInit())
+		return -1;
+	
+	mainWindow.show();
     return app.exec();
 }

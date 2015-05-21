@@ -2,6 +2,10 @@
 
 #ifdef DSCP4_HAVE_LOG4CXX
 #include <log4cxx/logger.h>
+#include <log4cxx/appender.h>
+#include <log4cxx/patternlayout.h>
+#include <log4cxx/consoleappender.h>
+#include <log4cxx/basicconfigurator.h>
 #else
 #define LOG4CXX_TRACE(logger, expression)    
 #define LOG4CXX_DEBUG(logger, expression)    
@@ -60,11 +64,32 @@ extern "C" {
 
 	const char *clGetErrorString(cl_int error);
 
-	dscp4_fringe_opencl_context_t* dscp4_fringe_opencl_CreateContext(dscp4_fringe_context_t *fringeContext, int *glContext)
+	dscp4_fringe_opencl_context_t* dscp4_fringe_opencl_CreateContext(dscp4_fringe_context_t *fringeContext, int *glContext, void * logAppender)
 	{
 
 		cl_int ret = CL_SUCCESS;
 
+#ifdef DSCP4_HAVE_LOG4CXX
+		if (!logAppender)
+		{
+			log4cxx::BasicConfigurator::resetConfiguration();
+
+#ifdef WIN32
+			log4cxx::PatternLayoutPtr logLayoutPtr = new log4cxx::PatternLayout(L"%-5p %m%n");
+#else
+			log4cxx::PatternLayoutPtr logLayoutPtr = new log4cxx::PatternLayout("%-5p %m%n");
+#endif
+
+			log4cxx::ConsoleAppenderPtr logAppenderPtr = new log4cxx::ConsoleAppender(logLayoutPtr);
+			log4cxx::BasicConfigurator::configure(logAppenderPtr);
+		}
+		else
+		{
+			DSCP4_OPENCL_LOGGER->removeAllAppenders();
+			if (DSCP4_OPENCL_LOGGER->getParent() != nullptr && DSCP4_OPENCL_LOGGER->getParent()->getAllAppenders().size() == 0 && DSCP4_OPENCL_LOGGER->getAllAppenders().size() == 0)
+				DSCP4_OPENCL_LOGGER->addAppender((log4cxx::Appender*)logAppender);
+		}
+#endif
 		dscp4_fringe_opencl_context_t * context = new dscp4_fringe_opencl_context_t;
 		*context = { 0 };
 
@@ -232,6 +257,8 @@ extern "C" {
 		// Use double precision, where possible
 		if (context->have_cl_double_precision_extension)
 			buildOptions += " -D CONFIG_USE_DOUBLE";
+		else
+			LOG4CXX_WARN(DSCP4_OPENCL_LOGGER, "Your OpenCL device does not support double precision computation extensions. Continuing, but your results will be totally fucked up")
 
 		// Use depth texture if OpenCL supports it, otherwise use PBO copied from depth texture
 		if (context->have_cl_gl_depth_images_extension)
@@ -253,8 +280,9 @@ extern "C" {
 			dscp4_fringe_opencl_DestroyContext(&context);
 			return nullptr;
 		}
-		else
+		else if (ret != CL_SUCCESS)
 		{
+			LOG4CXX_ERROR(DSCP4_OPENCL_LOGGER, "Undefined OpenCL kernel build error")
 			dscp4_fringe_opencl_DestroyContext(&context);
 			return nullptr;
 		}

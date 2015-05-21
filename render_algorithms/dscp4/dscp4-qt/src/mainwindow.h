@@ -45,6 +45,8 @@ public:
 	MainWindow(int argc, const char ** argv, QWidget *parent = 0);
     virtual ~MainWindow();
 
+	bool FailedInit() { return failedInit_; }
+
 public slots:
 	void populateModelFiles();
 	void populateKernelFiles();
@@ -141,6 +143,8 @@ private:
 	std::condition_variable haveNewFrameCV_;
 	std::atomic<bool> haveNewFrame_;
 	std::mutex renderPreviewDataMutex_;
+
+	bool failedInit_;
 };
 
 #endif

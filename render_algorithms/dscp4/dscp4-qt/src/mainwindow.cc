@@ -24,7 +24,8 @@ algorithmContext_(nullptr),
 x11Process_(nullptr),
 nvidiaSettingsProcess_(nullptr),
 x11vncProcess_(nullptr),
-haveNewFrame_(false)
+haveNewFrame_(false),
+failedInit_(false)
 {
 
 	settings_ = new QDSCP4Settings(argc, argv, this);
@@ -161,8 +162,11 @@ haveNewFrame_(false)
 	QObject::connect(ui->blueColorGainHorizontalSlider, SIGNAL(valueChanged(int)), settings_, SLOT(setBlueGain(int)));
 	QObject::connect(settings_, SIGNAL(blueGainChangedInt(int)), ui->blueColorGainHorizontalSlider, SLOT(setValue(int)));
 
-
-	settings_->populateSettings();
+	if (!settings_->populateSettings())
+	{
+		this->failedInit_ = true;
+		return;
+	}
 
 	populateModelFiles();
 	populateKernelFiles();

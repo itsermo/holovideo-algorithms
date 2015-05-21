@@ -152,3 +152,21 @@ void DSCP4ProgramOptions::printOptions(DSCP4_OPTIONS_TYPE options)
 
 }
 
+void DSCP4ProgramOptions::printOptions(DSCP4_OPTIONS_TYPE options, std::ostream& ostr)
+{
+	switch (options)
+	{
+	case DSCP4ProgramOptions::DSCP4_OPTIONS_TYPE_ALL:
+		allOptions_.print(ostr);
+		break;
+	case DSCP4ProgramOptions::DSCP4_OPTIONS_TYPE_GENERAL:
+		generalOptions_.print(ostr);
+		break;
+	case DSCP4ProgramOptions::DSCP4_OPTIONS_TYPE_INPUT:
+		inputOptions_.print(ostr);
+		break;
+	default:
+		break;
+	}
+}
+

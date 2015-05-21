@@ -18,7 +18,7 @@ public:
 	QDSCP4Settings(QWidget *parent = 0);
 	QDSCP4Settings(int argc, const char **argv, QWidget *parent = 0);
 
-	void populateSettings();
+	bool populateSettings();
 
 	algorithm_options_t* getAlgorithmOptions() { return algorithmOptions_; }
 	display_options_t getDisplayOptions() { return displayOptions_; }

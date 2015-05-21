@@ -26,7 +26,7 @@ extern "C" {
 		bool have_cl_double_precision_extension;
 	} dscp4_fringe_opencl_context_t;
 
-	dscp4_fringe_opencl_context_t* dscp4_fringe_opencl_CreateContext(dscp4_fringe_context_t *fringeContext, int *glContext);
+	dscp4_fringe_opencl_context_t* dscp4_fringe_opencl_CreateContext(dscp4_fringe_context_t *fringeContext, int *glContext, void * logAppender = 0);
 
 	void dscp4_fringe_opencl_DestroyContext(dscp4_fringe_opencl_context_t** openclContext);
 
