@@ -17,16 +17,24 @@ if(WITH_CUDA)
 		set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};
 			-gencode=arch=compute_20,code=\"sm_20,compute_20\"
 			-gencode=arch=compute_30,code=\"sm_30,compute_30\"
+			-gencode=arch=compute_32,code=\"sm_32,compute_32\"
 			-gencode=arch=compute_35,code=\"sm_35,compute_35\"
+			-gencode=arch=compute_37,code=\"sm_37,compute_37\"
 			-gencode=arch=compute_50,code=\"sm_50,compute_50\"
-			-gencode=arch=compute_52,code=\"sm_52,compute_52\")
+			-gencode=arch=compute_52,code=\"sm_52,compute_52\"
+			-gencode=arch=compute_53,code=\"sm_53,compute_53\"
+			)
 	else()
 		set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};
 			-gencode=arch=compute_13,code=\"sm_13,compute_13\"
 			-gencode=arch=compute_20,code=\"sm_20,compute_20\"
 			-gencode=arch=compute_30,code=\"sm_30,compute_30\"
+			-gencode=arch=compute_32,code=\"sm_32,compute_32\"
 			-gencode=arch=compute_35,code=\"sm_35,compute_35\"
-			-gencode=arch=compute_50,code=\"sm_50,compute_50\")
+			-gencode=arch=compute_37,code=\"sm_37,compute_37\"
+			-gencode=arch=compute_50,code=\"sm_50,compute_50\"
+			--Wno-deprecated-gpu-targets
+			)
 	endif()
 
 	set(BUILD_SHARED_LIBS OFF)
