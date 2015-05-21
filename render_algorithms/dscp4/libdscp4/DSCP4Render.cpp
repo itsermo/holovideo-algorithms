@@ -152,7 +152,10 @@ DSCP4Render::DSCP4Render(render_options_t *renderOptions,
 		log4cxx::BasicConfigurator::configure(logAppenderPtr);
 	}
 	else
+	{
+		logger_->removeAllAppenders();
 		logger_->addAppender((log4cxx::Appender*)logAppender);
+	}
 
 	switch (verbosity)
 	{
