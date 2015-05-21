@@ -53,15 +53,14 @@ dscp4_fringe_cuda_context_t* dscp4_fringe_cuda_CreateContext(dscp4_fringe_contex
 {
 	cudaError_t error = cudaSuccess;
 	dscp4_fringe_cuda_context_t* cudaContext = (dscp4_fringe_cuda_context_t*)malloc(sizeof(dscp4_fringe_cuda_context_t));
+	memset(cudaContext, 0, sizeof(dscp4_fringe_cuda_context_t));
 	cudaContext->fringe_context = fringeContext;
 
 	error = cudaGetDeviceCount(&cudaContext->num_gpus);
-
-	
 	if (error != cudaSuccess)
 	{
 		printf("ERROR Could not get CUDA device count -- Are there any CUDA devices present?\n");
-		free(cudaContext);
+		dscp4_fringe_cuda_DestroyContext(&cudaContext);
 		return NULL;
 	}
 
@@ -70,39 +69,76 @@ dscp4_fringe_cuda_context_t* dscp4_fringe_cuda_CreateContext(dscp4_fringe_contex
 	for (int i = 0; i < cudaContext->num_gpus; i++)
 	{
 		error = cudaGLSetGLDevice(i);
+		if (error != cudaSuccess)
+		{
+			printf("ERROR Could not set OpenGL device\n");
+			dscp4_fringe_cuda_DestroyContext(&cudaContext);
+			return NULL;
+		}
+
 		error = cudaGetDeviceProperties(&cudaContext->gpu_properties[i], i);
+		if (error != cudaSuccess)
+		{
+			printf("ERROR Could not get GPU device properties\n");
+			dscp4_fringe_cuda_DestroyContext(&cudaContext);
+			return NULL;
+		}
 	}
 
 	error = cudaGraphicsGLRegisterImage(&cudaContext->stereogram_rgba_cuda_resource, cudaContext->fringe_context->stereogram_gl_fbo_color, GL_TEXTURE_2D, cudaGraphicsRegisterFlagsReadOnly);
 	if (error != cudaSuccess)
+	{
 		printf("ERROR Could not register viewset OpenGL RGBA texture\n");
+		dscp4_fringe_cuda_DestroyContext(&cudaContext);
+		return NULL;
+	}
 
 	error = cudaGraphicsGLRegisterBuffer(&cudaContext->stereogram_depth_cuda_resource, cudaContext->fringe_context->stereogram_gl_depth_pbo_in, cudaGraphicsRegisterFlagsReadOnly);
 	if (error != cudaSuccess)
+	{
 		printf("ERROR Could not register viewset OpenGL DEPTH texture with CUDA\n");
+		dscp4_fringe_cuda_DestroyContext(&cudaContext);
+		return NULL;
+	}
 
 	cudaContext->fringe_cuda_resources = (struct cudaGraphicsResource**)malloc(sizeof(void*)*cudaContext->fringe_context->algorithm_options->cache.num_fringe_buffers);
 
-	//error = cudaMalloc((void**)&framebuffer_tex_out, sizeof(framebuffer_tex_out) * cudaContext->fringe_context->algorithm_options->cache.num_fringe_buffers);
-	//if (error)
-	//	printf("ERROR Could not alloc CUDA framebuffer textures\n");
-
 	for (unsigned int i = 0; i < cudaContext->fringe_context->algorithm_options->cache.num_fringe_buffers; i++)
 	{
-		//error = cudaGraphicsGLRegisterBuffer(&cudaContext->fringe_cuda_resources[i], cudaContext->fringe_context->fringe_gl_buf_out[i], cudaGraphicsRegisterFlagsWriteDiscard);
 		error = cudaGraphicsGLRegisterImage(&cudaContext->fringe_cuda_resources[i], cudaContext->fringe_context->fringe_gl_tex_out[i], GL_TEXTURE_2D, cudaGraphicsRegisterFlagsWriteDiscard);
 		if (error)
+		{
 			printf("ERROR Could not register CUDA image framebuffer texture objects\n");
+			dscp4_fringe_cuda_DestroyContext(&cudaContext);
+			return NULL;
+		}
 	}
 
 	error = cudaMalloc(&cudaContext->spec_buffer, cudaContext->fringe_context->display_options.head_res_x_spec * cudaContext->fringe_context->display_options.head_res_y_spec * cudaContext->fringe_context->display_options.num_heads * 4);
 	if (error != cudaSuccess)
+	{
 		printf("ERROR Could not alloc CUDA megabuffer\n");
+		dscp4_fringe_cuda_DestroyContext(&cudaContext);
+		return NULL;
+	}
 
 	const size_t wafelBufferLength = cudaContext->fringe_context->algorithm_options->cache.num_samples_per_wafel * cudaContext->fringe_context->algorithm_options->num_wafels_per_scanline * cudaContext->fringe_context->algorithm_options->num_scanlines;
 
 	error = cudaMalloc(&cudaContext->wafel_buffers, wafelBufferLength * sizeof(unsigned char));
+	if (error != cudaSuccess)
+	{
+		printf("ERROR Could not alloc CUDA megabuffer\n");
+		dscp4_fringe_cuda_DestroyContext(&cudaContext);
+		return NULL;
+	}
+
 	error = cudaMalloc(&cudaContext->wafel_positions, wafelBufferLength * sizeof(float));
+	if (error != cudaSuccess)
+	{
+		printf("ERROR Could not alloc CUDA megabuffer\n");
+		dscp4_fringe_cuda_DestroyContext(&cudaContext);
+		return NULL;
+	}
 	
 	dim3 threadsPerBlock(
 		cudaContext->fringe_context->algorithm_options->cuda_block_dimensions[0],
@@ -123,38 +159,37 @@ dscp4_fringe_cuda_context_t* dscp4_fringe_cuda_CreateContext(dscp4_fringe_contex
 
 void dscp4_fringe_cuda_DestroyContext(dscp4_fringe_cuda_context_t** cudaContext)
 {
+	if ((*cudaContext)->wafel_buffers)
+		cudaFree((*cudaContext)->wafel_buffers);
 
-	cudaFree((*cudaContext)->wafel_buffers);
-	cudaFree((*cudaContext)->wafel_positions);
-	cudaFree((*cudaContext)->spec_buffer);
+	if ((*cudaContext)->wafel_positions)
+		cudaFree((*cudaContext)->wafel_positions);
+
+	if ((*cudaContext)->spec_buffer)
+		cudaFree((*cudaContext)->spec_buffer);
 
 	//cudaFree(framebuffer_tex_out);
-
-	for (unsigned int i = 0; i < (*cudaContext)->fringe_context->display_options.num_heads / 2; i++)
+	if ((*cudaContext)->fringe_cuda_resources)
 	{
-		cudaGraphicsUnregisterResource((*cudaContext)->fringe_cuda_resources[i]);
-	}
-
-	cudaGraphicsUnregisterResource((*cudaContext)->stereogram_depth_cuda_resource);
-	cudaGraphicsUnregisterResource((*cudaContext)->stereogram_rgba_cuda_resource);
-
-	if (*cudaContext != NULL)
-	{
-		if ((*cudaContext)->fringe_cuda_resources)
+		for (unsigned int i = 0; i < (*cudaContext)->fringe_context->display_options.num_heads / 2; i++)
 		{
-			free((*cudaContext)->fringe_cuda_resources);
-			(*cudaContext)->fringe_cuda_resources = NULL;
+			cudaGraphicsUnregisterResource((*cudaContext)->fringe_cuda_resources[i]);
 		}
 
-		if ((*cudaContext)->gpu_properties)
-		{
-			free((*cudaContext)->gpu_properties);
-			(*cudaContext)->gpu_properties = NULL;
-		}
-
-		free(*cudaContext);
-		*cudaContext = NULL;
+		free((*cudaContext)->fringe_cuda_resources);
 	}
+
+	if ((*cudaContext)->stereogram_depth_cuda_resource)
+		cudaGraphicsUnregisterResource((*cudaContext)->stereogram_depth_cuda_resource);
+
+	if ((*cudaContext)->stereogram_rgba_cuda_resource)
+		cudaGraphicsUnregisterResource((*cudaContext)->stereogram_rgba_cuda_resource);
+
+	if ((*cudaContext)->gpu_properties)
+		free((*cudaContext)->gpu_properties);
+
+	free(*cudaContext);
+	*cudaContext = NULL;
 };
 
 void dscp4_fringe_cuda_ComputeFringe(dscp4_fringe_cuda_context_t* cudaContext)
@@ -177,41 +212,44 @@ void dscp4_fringe_cuda_ComputeFringe(dscp4_fringe_cuda_context_t* cudaContext)
 	cudaError_t error = cudaSuccess;
 
 	error = cudaGraphicsMapResources(1, &cudaContext->stereogram_rgba_cuda_resource, 0);
-	if(error != cudaSuccess)
+	if (error != cudaSuccess)
+	{
 		printf("ERROR Mapping stereogram RGBA CUDA graphics resource\n");
+		return;
+	}
 
 	error = cudaGraphicsMapResources(1, &cudaContext->stereogram_depth_cuda_resource, 0);
-	if(error != cudaSuccess)
+	if (error != cudaSuccess)
+	{
 		printf("ERROR Mapping stereogram DEPTH CUDA graphics resource\n");
+		return;
+	}
 
 	error = cudaGraphicsSubResourceGetMappedArray(&viewsetRGBAArray, cudaContext->stereogram_rgba_cuda_resource, 0, 0);
 	if (error != cudaSuccess)
+	{
 		printf("ERROR Mapping stereogram COLOR texture CUDA graphics resource\n");
+		return;
+	}
 
 	error = cudaBindTextureToArray(&viewset_color_in, viewsetRGBAArray, &rgbaTexDesc);
+	if (error != cudaSuccess)
+	{
+		printf("ERROR Binding COLOR texture to array\n");
+		return;
+	}
 
 	error = cudaGraphicsResourceGetMappedPointer((void**)&viewsetDepthArray, &viewsetDepthArraySize, cudaContext->stereogram_depth_cuda_resource);
-	if(error != cudaSuccess)
+	if (error != cudaSuccess)
+	{
 		printf("ERROR Getting stereogram DEPTH CUDA graphics resource mapped pointer\n");
-
-
-	//output = (void**)malloc(sizeof(void*)* cudaContext->fringe_context->algorithm_options->cache.num_fringe_buffers);
-	//outputSizes = (size_t*)malloc(sizeof(size_t)* cudaContext->fringe_context->algorithm_options->cache.num_fringe_buffers);
+		return;
+	}
 
 	framebufferArrays = (cudaArray_t*)malloc(sizeof(cudaArray_t)* cudaContext->fringe_context->algorithm_options->cache.num_fringe_buffers);
 
 	for (unsigned int i = 0; i < cudaContext->fringe_context->algorithm_options->cache.num_fringe_buffers; i++)
 	{
-		//error = cudaGraphicsMapResources(1, (cudaGraphicsResource_t*)(&cudaContext->fringe_cuda_resources[i]), 0);
-		//if(error != cudaSuccess)
-		//	printf("ERROR Mapping CUDA fringe texture buffer %i\n", i);
-
-
-		//error = cudaGraphicsResourceGetMappedPointer(&output[i], &outputSizes[i], cudaContext->fringe_cuda_resources[i]);
-		//if (error != cudaSuccess)
-		//	printf("ERROR Getting fringe texture buffer %i CUDA mapped pointer\n", i);
-
-
 		error = cudaGraphicsMapResources(1, &cudaContext->fringe_cuda_resources[i], 0);
 		if (error != cudaSuccess)
 			printf("ERROR Mapping framebuffer %i CUDA graphics resource\n", i);
@@ -219,17 +257,9 @@ void dscp4_fringe_cuda_ComputeFringe(dscp4_fringe_cuda_context_t* cudaContext)
 		error = cudaGraphicsSubResourceGetMappedArray(&framebufferArrays[i], cudaContext->fringe_cuda_resources[i],0,0);
 		if (error != cudaSuccess)
 			printf("ERROR Getting framebuffer %i CUDA array\n", i);
-
-		//error = cudaBindTextureToArray(&framebuffer_tex_out[i], framebufferArrays[i], &rgbaTexDesc);
-		//if (error != cudaSuccess)
-		//	printf("ERROR Binding framebuffer texture %i  to CUDA array\n", i);
-
 	}
 
-	//// run kernel here
-	//for (unsigned int i = 0; i < cudaContext->fringe_context->algorithm_options->cache.num_fringe_buffers; i++)
-	//{
-
+	// Run kernel here
 	error = cudaMemset(cudaContext->spec_buffer, 0, cudaContext->fringe_context->display_options.head_res_x_spec * cudaContext->fringe_context->display_options.head_res_y_spec * cudaContext->fringe_context->display_options.num_heads * 4);
 
 		dim3 threadsPerBlock(
@@ -270,12 +300,16 @@ void dscp4_fringe_cuda_ComputeFringe(dscp4_fringe_cuda_context_t* cudaContext)
 			cudaContext->fringe_context->display_options.head_res_y_spec,
 			cudaContext->fringe_context->algorithm_options->cache.num_fringe_buffers
 			);
-	//}g
+
 
 	error = cudaUnbindTexture(&viewset_color_in);
+	if (error != cudaSuccess)
+	{
+		printf("ERROR Unbinding COLOR texture resource\n");
+		return;
+	}
 
 	//write texture outputs here
-
 	for (unsigned int j = 0; j < cudaContext->fringe_context->display_options.num_heads; j++)
 	{
 		unsigned int num_gpus = cudaContext->fringe_context->display_options.num_heads / cudaContext->fringe_context->display_options.num_heads_per_gpu;
@@ -311,9 +345,6 @@ void dscp4_fringe_cuda_ComputeFringe(dscp4_fringe_cuda_context_t* cudaContext)
 	if(error != cudaSuccess)
 		printf("ERROR Unmapping viewset DEPTH CUDA graphics resource\n");
 
-
-	//free(output);
-	//free(outputSizes);
 	free(framebufferArrays);
 };
 

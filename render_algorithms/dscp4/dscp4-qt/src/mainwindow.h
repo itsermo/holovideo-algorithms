@@ -97,6 +97,7 @@ public slots:
 	void logX11Vnc();
 
 	void clearLog();
+	void handleLogMessage(QString logMessage);
 
 signals:
 	void dscp4IsRunningChanged(bool isRunning);

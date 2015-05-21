@@ -270,9 +270,7 @@ bool DSCP4Render::init()
 
 	isInitCV_.wait(initLock);
 
-	initLock.unlock();
-		
-	return true;
+	return isInit_;
 }
 
 bool DSCP4Render::initWindow(SDL_Window*& window, SDL_GLContext& glContext, int thisWindowNum)
@@ -357,7 +355,14 @@ bool DSCP4Render::initWindow(SDL_Window*& window, SDL_GLContext& glContext, int 
 	GLenum err = glewInit();
 	if (err != GLEW_OK)
 	{
-		LOG4CXX_ERROR(logger_, "Could not initialize GLEW: " << glewGetString(err))
+		auto errorString = glewGetString(err);
+		LOG4CXX_ERROR(logger_, "Could not initialize GLEW: " << errorString)
+		x = 0;
+		y = 0;
+		SDL_GL_DeleteContext(glContext);
+		SDL_DestroyWindow(window);
+
+		return false;
 	}
 #endif
 
@@ -561,7 +566,15 @@ void DSCP4Render::renderLoop()
 	// number of displays, and for holovideo it is number of GPUs
 	for (unsigned int i = numWindows_; i > 0; i--)
 	{
-		initWindow(windows_[i-1], glContexts_[i-1], i-1);
+		bool hasInit = initWindow(windows_[i-1], glContexts_[i-1], i-1);
+
+		if (!hasInit)
+		{
+			isInit_ = false;
+			initLock.unlock();
+			isInitCV_.notify_all();
+			return;
+		}
 
 		// Add ambient and diffuse lighting to every scene
 		glLightfv(GL_LIGHT0, GL_AMBIENT, glm::value_ptr(lighting_.ambientColor));
@@ -1848,8 +1861,8 @@ void DSCP4Render::copyStereogramDepthToPBO()
 	// depth texture extensions.  If not, then we need to copy depth texture
 	// to PBO, which is a performance hit (NVIDIA so far does not support this)
 #ifdef DSCP4_HAVE_OPENCL
-	if (fringeContext_.algorithm_options->compute_method == DSCP4_COMPUTE_METHOD_CUDA ||
-		!((dscp4_fringe_opencl_context_t*)computeContext_)->have_cl_gl_depth_images_extension)
+	if (computeContext_ && (fringeContext_.algorithm_options->compute_method == DSCP4_COMPUTE_METHOD_CUDA ||
+		!((dscp4_fringe_opencl_context_t*)computeContext_)->have_cl_gl_depth_images_extension))
 	{
 #endif
 	//copy DEPTH from stereogram views, because CUDA/OpenCL cannot access depth data directly from framebuffer
@@ -2100,13 +2113,15 @@ void DSCP4Render::deinitComputeMethod()
 	case DSCP4_COMPUTE_METHOD_CUDA:
 #ifdef DSCP4_HAVE_CUDA
 		LOG4CXX_DEBUG(logger_, "CUDA -- Deinitializing CUDA context")
-		dscp4_fringe_cuda_DestroyContext((dscp4_fringe_cuda_context_t**)&computeContext_);
+		if (computeContext_)
+			dscp4_fringe_cuda_DestroyContext((dscp4_fringe_cuda_context_t**)&computeContext_);
 #endif
 		break;
 	case DSCP4_COMPUTE_METHOD_OPENCL:
 #ifdef DSCP4_HAVE_OPENCL
 		LOG4CXX_DEBUG(logger_, "OpenCL -- Deinitializing OpenCL context")
-		dscp4_fringe_opencl_DestroyContext((dscp4_fringe_opencl_context_t**)&computeContext_);
+		if (computeContext_)
+			dscp4_fringe_opencl_DestroyContext((dscp4_fringe_opencl_context_t**)&computeContext_);
 #endif
 		break;
 	default:
@@ -2120,12 +2135,18 @@ void DSCP4Render::computeHologram()
 	{
 	case DSCP4_COMPUTE_METHOD_CUDA:
 #ifdef DSCP4_HAVE_CUDA
-		dscp4_fringe_cuda_ComputeFringe((dscp4_fringe_cuda_context_t*)computeContext_);
+		if (computeContext_)
+			dscp4_fringe_cuda_ComputeFringe((dscp4_fringe_cuda_context_t*)computeContext_);
+		else
+			LOG4CXX_ERROR(logger_, "CUDA context was not created properly, please check your CUDA toolkit install")
 #endif
 		break;
 	case DSCP4_COMPUTE_METHOD_OPENCL:
 #ifdef DSCP4_HAVE_OPENCL
-		dscp4_fringe_opencl_ComputeFringe((dscp4_fringe_opencl_context_t*)computeContext_);
+		if (computeContext_)
+			dscp4_fringe_opencl_ComputeFringe((dscp4_fringe_opencl_context_t*)computeContext_);
+		else
+			LOG4CXX_ERROR(logger_, "OpenCL context was not created properly, please check your OpenCL install")
 #endif
 		break;
 	default:

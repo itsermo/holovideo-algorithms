@@ -187,6 +187,7 @@ haveNewFrame_(false)
 	QObject::connect(ui->clearLogButton, SIGNAL(clicked()), this, SLOT(clearLog()));
 #ifdef DSCP4_HAVE_LOG4CXX
 	QObject::connect(logAppenderPtr, SIGNAL(gotNewLogMessage(QString)), ui->dscp4LogTextEdit, SLOT(append(QString)));
+	QObject::connect(logAppenderPtr, SIGNAL(gotNewLogMessage(QString)), this, SLOT(handleLogMessage(QString)));
 #endif
 
 	//Controls
@@ -505,6 +506,7 @@ void MainWindow::startDSCP4()
 	if (!dscp4_InitRenderer(algorithmContext_))
 	{
 		LOG4CXX_FATAL(logger_, "Could not initialize DSCP4 lib")
+		dscp4_DestroyContext(&algorithmContext_);
 		assetImporter_.FreeScene();
 		enableUnchangeableUI();
 		return;
@@ -874,5 +876,19 @@ void MainWindow::clearLog()
 		break;
 	default:
 		break;
+	}
+}
+
+void MainWindow::handleLogMessage(QString logMessage)
+{
+	QMessageBox messageBox;
+	
+	if (logMessage.contains("ERROR"))
+	{
+		QMessageBox::critical(this, "Error in libdscp4", logMessage.replace("ERROR\t", ""), QMessageBox::StandardButton::Ok);
+	}
+	else if (logMessage.contains("WARN"))
+	{
+		QMessageBox::warning(this, "Warning in libdscp4", logMessage.replace("WARN \t", ""), QMessageBox::StandardButton::Ok);
 	}
 }

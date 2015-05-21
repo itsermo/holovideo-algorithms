@@ -102,15 +102,26 @@ extern "C" {
 		cl_uint numDevices;
 		cl_uint numPlatforms;
 		CHECK_OPENCL_RC(clGetPlatformIDs(1, &platformID, &numPlatforms), "Getting OpenCL platform IDs")
+		if (!platformID)
+		{
+			dscp4_fringe_opencl_DestroyContext(&context);
+			return nullptr;
+		}
 
 		LOG4CXX_DEBUG(DSCP4_OPENCL_LOGGER, "Found " << numPlatforms << " OpenCL platforms")
 
 		CHECK_OPENCL_RC(clGetDeviceIDs(platformID, CL_DEVICE_TYPE_GPU, 1, &deviceID, &numDevices), "Getting OpenCL device ID for GPUs")
+		if (!deviceID || numDevices == 0)
+		{
+			dscp4_fringe_opencl_DestroyContext(&context);
+			return nullptr;
+		}
 
 		size_t extensionSize;
-		clGetDeviceInfo(deviceID, CL_DEVICE_EXTENSIONS, 0, NULL, &extensionSize);
+		CHECK_OPENCL_RC(clGetDeviceInfo(deviceID, CL_DEVICE_EXTENSIONS, 0, NULL, &extensionSize), "Getting OpenCL device extension string size")
+
 		char *extensions = new char[extensionSize];
-		clGetDeviceInfo(deviceID, CL_DEVICE_EXTENSIONS, extensionSize, extensions, NULL);
+		CHECK_OPENCL_RC(clGetDeviceInfo(deviceID, CL_DEVICE_EXTENSIONS, extensionSize, extensions, NULL), "Getting OpenCL extensions")
 
 		std::stringstream extensionsStringStream(extensions);
 		std::string extension;
@@ -127,7 +138,6 @@ extern "C" {
 		delete[] extensions;
 
 		LOG4CXX_DEBUG(DSCP4_OPENCL_LOGGER, "Found " << numDevices << " OpenCL GPU devices")
-
 		context->num_gpus = numDevices;
 
 #ifdef _WIN32
@@ -155,11 +165,27 @@ extern "C" {
 
 		context->cl_context = clCreateContext(properties, 1, &deviceID, NULL, NULL, &ret);
 		CHECK_OPENCL_RC(ret, "Could not create OpenCL context")
+		if (!context->cl_context)
+		{
+			dscp4_fringe_opencl_DestroyContext(&context);
+			return nullptr;
+		}
+
 		context->command_queue = clCreateCommandQueue((cl_context)context->cl_context, deviceID, 0, &ret);
 		CHECK_OPENCL_RC(ret, "Could not create OpenCL command queue")
+		if (!context->command_queue)
+		{
+			dscp4_fringe_opencl_DestroyContext(&context);
+			return nullptr;
+		}
 
 		context->stereogram_rgba_opencl_resource = clCreateFromGLTexture2D((cl_context)context->cl_context, CL_MEM_READ_ONLY, GL_TEXTURE_2D, 0, fringeContext->stereogram_gl_fbo_color, &ret);
 		CHECK_OPENCL_RC(ret, "Could not create OpenCL stereogram RGBA memory resource from OpenGL")
+		if (!context->stereogram_rgba_opencl_resource)
+		{
+			dscp4_fringe_opencl_DestroyContext(&context);
+			return nullptr;
+		}
 
 		if (context->have_cl_gl_depth_images_extension)
 			context->stereogram_depth_opencl_resource = clCreateFromGLTexture2D((cl_context)context->cl_context, CL_MEM_READ_ONLY, GL_TEXTURE_2D, 0, fringeContext->stereogram_gl_fbo_depth, &ret);
@@ -167,6 +193,11 @@ extern "C" {
 			context->stereogram_depth_opencl_resource = clCreateFromGLBuffer((cl_context)context->cl_context, CL_MEM_READ_ONLY, fringeContext->stereogram_gl_depth_pbo_in, &ret);
 
 		CHECK_OPENCL_RC(ret, "Could not create OpenCL stereogram DEPTH memory resource from OpenGL")
+		if (!context->stereogram_depth_opencl_resource)
+		{
+			dscp4_fringe_opencl_DestroyContext(&context);
+			return nullptr;
+		}
 
 		context->fringe_opencl_resources = new void*[num_fringe_buffers];
 
@@ -174,26 +205,40 @@ extern "C" {
 		{
 			context->fringe_opencl_resources[i] = (cl_mem)clCreateFromGLTexture2D((cl_context)context->cl_context, CL_MEM_READ_WRITE, GL_TEXTURE_2D, 0, fringeContext->fringe_gl_tex_out[i], &ret);
 			CHECK_OPENCL_RC(ret, "Could not create OpenCL fringe output texture memory resource " << i << " from OpenGL")
+			if (!context->fringe_opencl_resources[i])
+			{
+				dscp4_fringe_opencl_DestroyContext(&context);
+				return nullptr;
+			}
 		}
 
 		const char * sourceStr = programString.c_str();
 		size_t sourceSize = programString.size();
 		context->program = clCreateProgramWithSource((cl_context)context->cl_context, 1, &sourceStr, &sourceSize, &ret);
 		CHECK_OPENCL_RC(ret, "Could not create OpenCL program from source")
+		if (!context->program)
+		{
+			dscp4_fringe_opencl_DestroyContext(&context);
+			return nullptr;
+		}
 
 		std::string buildOptions;
 
+#ifndef _DEBUG
 		// Optimizations (they don't appear to do much, just 2-3 fps increase)
 		buildOptions += "-cl-mad-enable -cl-no-signed-zeros -cl-unsafe-math-optimizations -cl-finite-math-only -cl-fast-relaxed-math ";
+#endif
 
+		// Use double precision, where possible
 		if (context->have_cl_double_precision_extension)
 			buildOptions += " -D CONFIG_USE_DOUBLE";
+
+		// Use depth texture if OpenCL supports it, otherwise use PBO copied from depth texture
 		if (context->have_cl_gl_depth_images_extension)
 			buildOptions += " -D CONFIG_USE_DEPTH_TEXTURE";
 
 		ret = clBuildProgram((cl_program)context->program, 1, &deviceID, buildOptions.c_str(), NULL, NULL);
 		CHECK_OPENCL_RC(ret, "Could not build OpenCL program from source")
-		
 		if (ret == CL_BUILD_PROGRAM_FAILURE)
 		{
 			size_t len;
@@ -205,17 +250,28 @@ extern "C" {
 			LOG4CXX_ERROR(DSCP4_OPENCL_LOGGER, "OpenCL Build Log:\n" << log)
 			delete[] log;
 
+			dscp4_fringe_opencl_DestroyContext(&context);
+			return nullptr;
+		}
+		else
+		{
+			dscp4_fringe_opencl_DestroyContext(&context);
 			return nullptr;
 		}
 
 		context->kernel = clCreateKernel((cl_program)context->program, "computeFringe", &ret);
-
 		CHECK_OPENCL_RC(ret, "Could not create OpenCL kernel object")
 
-		// the architecture specifications call for a buffer that is slightly bigger
+		if (!context->kernel)
+		{
+			dscp4_fringe_opencl_DestroyContext(&context);
+			return nullptr;
+		}
+
+		// the Mark IV architecture specifications call for a buffer that is slightly bigger
 		// than the buffer that the OS can see, so our algorithm in OpenCL will
 		// store to this buffer, then we must appropriately copy data to
-		// a buffer of OS size
+		// a buffer of appropriate size. also zero the data and put alpha at 255
 		cl_uchar * specBuffer = new cl_uchar[context->fringe_context->display_options.head_res_x_spec * context->fringe_context->display_options.head_res_y_spec * context->fringe_context->display_options.num_heads * 4];
 		for (unsigned int i = 0; i < context->fringe_context->display_options.head_res_x_spec * context->fringe_context->display_options.head_res_y_spec * context->fringe_context->display_options.num_heads; i++)
 		{
@@ -238,69 +294,229 @@ extern "C" {
 
 		delete[] specBuffer;
 
+		if (!context->framebuffer_opencl_output)
+		{
+			dscp4_fringe_opencl_DestroyContext(&context);
+			return nullptr;
+		}
+
 		ret = clSetKernelArg((cl_kernel)context->kernel, 0, sizeof(cl_mem), &(context->framebuffer_opencl_output));
+		if (ret != CL_SUCCESS)
+		{
+			LOG4CXX_ERROR(DSCP4_OPENCL_LOGGER, "Could not set argument 0 (framebuffer output) in OpenCL kernel")
+			dscp4_fringe_opencl_DestroyContext(&context);
+			return nullptr;
+		}
+
 		ret = clSetKernelArg((cl_kernel)context->kernel, 1, sizeof(cl_mem), &(context->stereogram_rgba_opencl_resource));
+		if (ret != CL_SUCCESS)
+		{
+			LOG4CXX_ERROR(DSCP4_OPENCL_LOGGER, "Could not set argument 1 (stereogram RGBA) in OpenCL kernel")
+				dscp4_fringe_opencl_DestroyContext(&context);
+			return nullptr;
+		}
+
 		ret = clSetKernelArg((cl_kernel)context->kernel, 2, sizeof(cl_mem), &(context->stereogram_depth_opencl_resource));
+		if (ret != CL_SUCCESS)
+		{
+			LOG4CXX_ERROR(DSCP4_OPENCL_LOGGER, "Could not set argument 2 (stereogram DEPTH) in OpenCL kernel")
+				dscp4_fringe_opencl_DestroyContext(&context);
+			return nullptr;
+		}
+
 		ret = clSetKernelArg((cl_kernel)context->kernel, 3, sizeof(cl_uint), &context->fringe_context->algorithm_options->num_wafels_per_scanline);
+		if (ret != CL_SUCCESS)
+		{
+			LOG4CXX_ERROR(DSCP4_OPENCL_LOGGER, "Could not set argument 3 (number of wafels per scanline) in OpenCL kernel")
+				dscp4_fringe_opencl_DestroyContext(&context);
+			return nullptr;
+		}
+
 		ret = clSetKernelArg((cl_kernel)context->kernel, 4, sizeof(cl_uint), &context->fringe_context->algorithm_options->num_scanlines);
+		if (ret != CL_SUCCESS)
+		{
+			LOG4CXX_ERROR(DSCP4_OPENCL_LOGGER, "Could not set argument 4 (number of scanlines) in OpenCL kernel")
+				dscp4_fringe_opencl_DestroyContext(&context);
+			return nullptr;
+		}
+
 		ret = clSetKernelArg((cl_kernel)context->kernel, 5, sizeof(cl_uint), &context->fringe_context->algorithm_options->cache.stereogram_res_x);
+		if (ret != CL_SUCCESS)
+		{
+			LOG4CXX_ERROR(DSCP4_OPENCL_LOGGER, "Could not set argument 5 (stereogram X resolution) in OpenCL kernel")
+				dscp4_fringe_opencl_DestroyContext(&context);
+			return nullptr;
+		}
+
 		ret = clSetKernelArg((cl_kernel)context->kernel, 6, sizeof(cl_uint), &context->fringe_context->algorithm_options->cache.stereogram_res_y);
+		if (ret != CL_SUCCESS)
+		{
+			LOG4CXX_ERROR(DSCP4_OPENCL_LOGGER, "Could not set argument 6 (stereogram Y resolution) in OpenCL kernel")
+				dscp4_fringe_opencl_DestroyContext(&context);
+			return nullptr;
+		}
+
 		ret = clSetKernelArg((cl_kernel)context->kernel, 7, sizeof(cl_uint), &context->fringe_context->algorithm_options->cache.stereogram_num_tiles_x);
+		if (ret != CL_SUCCESS)
+		{
+			LOG4CXX_ERROR(DSCP4_OPENCL_LOGGER, "Could not set argument 7 (number of tiles in X direction in stereogram) in OpenCL kernel")
+				dscp4_fringe_opencl_DestroyContext(&context);
+			return nullptr;
+		}
+
 		ret = clSetKernelArg((cl_kernel)context->kernel, 8, sizeof(cl_uint), &context->fringe_context->algorithm_options->cache.stereogram_num_tiles_y);
+		if (ret != CL_SUCCESS)
+		{
+			LOG4CXX_ERROR(DSCP4_OPENCL_LOGGER, "Could not set argument 8 (number of tiles in Y direction in stereogram) in OpenCL kernel")
+				dscp4_fringe_opencl_DestroyContext(&context);
+			return nullptr;
+		}
+
 		ret = clSetKernelArg((cl_kernel)context->kernel, 9, sizeof(cl_uint), &context->fringe_context->algorithm_options->cache.fringe_buffer_res_x);
+		if (ret != CL_SUCCESS)
+		{
+			LOG4CXX_ERROR(DSCP4_OPENCL_LOGGER, "Could not set argument 9 (output buffer X resolution) in OpenCL kernel")
+				dscp4_fringe_opencl_DestroyContext(&context);
+			return nullptr;
+		}
+
 		ret = clSetKernelArg((cl_kernel)context->kernel, 10, sizeof(cl_uint), &context->fringe_context->algorithm_options->cache.fringe_buffer_res_y);
+		if (ret != CL_SUCCESS)
+		{
+			LOG4CXX_ERROR(DSCP4_OPENCL_LOGGER, "Could not set argument 10 (output buffer Y resolution) in OpenCL kernel")
+				dscp4_fringe_opencl_DestroyContext(&context);
+			return nullptr;
+		}
 
 		ret = clSetKernelArg((cl_kernel)context->kernel, 15, context->fringe_context->algorithm_options->num_wafels_per_scanline*sizeof(cl_float), NULL);
+		if (ret != CL_SUCCESS)
+		{
+			LOG4CXX_ERROR(DSCP4_OPENCL_LOGGER, "Could not set argument 15 (wafel position buffer size) in OpenCL kernel")
+				dscp4_fringe_opencl_DestroyContext(&context);
+			return nullptr;
+		}
 
 		ret = clSetKernelArg((cl_kernel)context->kernel, 22, sizeof(cl_uint), &context->fringe_context->algorithm_options->cache.num_samples_per_wafel);
+		if (ret != CL_SUCCESS)
+		{
+			LOG4CXX_ERROR(DSCP4_OPENCL_LOGGER, "Could not set argument 22 (number of samples per wafel) in OpenCL kernel")
+				dscp4_fringe_opencl_DestroyContext(&context);
+			return nullptr;
+		}
+
 		ret = clSetKernelArg((cl_kernel)context->kernel, 23, sizeof(cl_float), &context->fringe_context->algorithm_options->cache.sample_pitch);
+		if (ret != CL_SUCCESS)
+		{
+			LOG4CXX_ERROR(DSCP4_OPENCL_LOGGER, "Could not set argument 23 (sample pitch) in OpenCL kernel")
+				dscp4_fringe_opencl_DestroyContext(&context);
+			return nullptr;
+		}
+
 		ret = clSetKernelArg((cl_kernel)context->kernel, 24, sizeof(cl_float), &context->fringe_context->algorithm_options->cache.z_span);
+		if (ret != CL_SUCCESS)
+		{
+			LOG4CXX_ERROR(DSCP4_OPENCL_LOGGER, "Could not set argument 24 (Z-span) in OpenCL kernel")
+				dscp4_fringe_opencl_DestroyContext(&context);
+			return nullptr;
+		}
+
 		ret = clSetKernelArg((cl_kernel)context->kernel, 26, sizeof(cl_uint), &context->fringe_context->display_options.num_aom_channels);
+		if (ret != CL_SUCCESS)
+		{
+			LOG4CXX_ERROR(DSCP4_OPENCL_LOGGER, "Could not set argument 26 (number of AOM channels) in OpenCL kernel")
+				dscp4_fringe_opencl_DestroyContext(&context);
+			return nullptr;
+		}
+
 		ret = clSetKernelArg((cl_kernel)context->kernel, 27, sizeof(cl_uint), &context->fringe_context->display_options.head_res_y_spec);
+		if (ret != CL_SUCCESS)
+		{
+			LOG4CXX_ERROR(DSCP4_OPENCL_LOGGER, "Could not set argument 27 (the GPU head Y spec resolution) in OpenCL kernel")
+				dscp4_fringe_opencl_DestroyContext(&context);
+			return nullptr;
+		}
+
 		ret = clSetKernelArg((cl_kernel)context->kernel, 28, sizeof(cl_uint), &context->fringe_context->algorithm_options->cache.num_fringe_buffers);
-
-
+		if (ret != CL_SUCCESS)
+		{
+			LOG4CXX_ERROR(DSCP4_OPENCL_LOGGER, "Could not set argument 28 (the number of fringe output buffers) in OpenCL kernel")
+				dscp4_fringe_opencl_DestroyContext(&context);
+			return nullptr;
+		}
 
 		return context;
 	}
 
 	void dscp4_fringe_opencl_DestroyContext(dscp4_fringe_opencl_context_t** openclContext)
 	{
-		cl_int ret = 0;
+		cl_int ret = CL_SUCCESS;
 
 		LOG4CXX_DEBUG(DSCP4_OPENCL_LOGGER, "Destroying OpenCL context")
 
-		ret = clFlush((cl_command_queue)(*openclContext)->command_queue);
-		CHECK_OPENCL_RC(ret, "Could not flush OpenCL command queue")
-		ret = clFinish((cl_command_queue)(*openclContext)->command_queue);
-		CHECK_OPENCL_RC(ret, "Could not finish OpenCL command queue")
-		ret = clReleaseKernel((cl_kernel)(*openclContext)->kernel);
-		CHECK_OPENCL_RC(ret, "Could not release OpenCL kernel")
-		ret = clReleaseProgram((cl_program)(*openclContext)->program);
-		CHECK_OPENCL_RC(ret, "Could not release OpenCL program")
-
-
-		for (unsigned int i = 0; i < (*openclContext)->fringe_context->algorithm_options->cache.num_fringe_buffers; i++)
+		if ((*openclContext)->command_queue)
 		{
-			ret = clReleaseMemObject((cl_mem)(*openclContext)->fringe_opencl_resources[i]);
-			CHECK_OPENCL_RC(ret, "Could not release fringe texture " << i << " OpenCL memory resource")
+			ret = clFlush((cl_command_queue)(*openclContext)->command_queue);
+			CHECK_OPENCL_RC(ret, "Could not flush OpenCL command queue")
 		}
 
-		delete[] (*openclContext)->fringe_opencl_resources;
+		if ((*openclContext)->command_queue)
+		{
+			ret = clFinish((cl_command_queue)(*openclContext)->command_queue);
+			CHECK_OPENCL_RC(ret, "Could not finish OpenCL command queue")
+		}
+		
+		if ((*openclContext)->kernel)
+		{
+			ret = clReleaseKernel((cl_kernel)(*openclContext)->kernel);
+			CHECK_OPENCL_RC(ret, "Could not release OpenCL kernel")
+		}
+		
+		if ((*openclContext)->program)
+		{
+			ret = clReleaseProgram((cl_program)(*openclContext)->program);
+			CHECK_OPENCL_RC(ret, "Could not release OpenCL program")
+		}
 
-		ret = clReleaseMemObject((cl_mem)(*openclContext)->stereogram_rgba_opencl_resource);
-		CHECK_OPENCL_RC(ret, "Could not release stereogram RGBA OpenCL memory resource")
-		ret = clReleaseMemObject((cl_mem)(*openclContext)->stereogram_depth_opencl_resource);
-		CHECK_OPENCL_RC(ret, "Could not release stereogram DEPTH OpenCL memory resource")
+		if ((*openclContext)->fringe_opencl_resources)
+		{
+			for (unsigned int i = 0; i < (*openclContext)->fringe_context->algorithm_options->cache.num_fringe_buffers; i++)
+			{
+				ret = clReleaseMemObject((cl_mem)(*openclContext)->fringe_opencl_resources[i]);
+				CHECK_OPENCL_RC(ret, "Could not release fringe texture " << i << " OpenCL memory resource")
+			}
 
-		ret = clReleaseMemObject((cl_mem)(*openclContext)->framebuffer_opencl_output);
-		CHECK_OPENCL_RC(ret, "Could not release mega buffer OpenCL memory resource")
+			delete[](*openclContext)->fringe_opencl_resources;
+		}
 
-		ret = clReleaseCommandQueue((cl_command_queue)(*openclContext)->command_queue);
-		CHECK_OPENCL_RC(ret, "Could not release OpenCL command queue")
+		if ((*openclContext)->stereogram_rgba_opencl_resource)
+		{
+			ret = clReleaseMemObject((cl_mem)(*openclContext)->stereogram_rgba_opencl_resource);
+			CHECK_OPENCL_RC(ret, "Could not release stereogram RGBA OpenCL memory resource")
+		}
 
-		ret = clReleaseContext((cl_context)(*openclContext)->cl_context);
-		CHECK_OPENCL_RC(ret, "Could not release fringe OpenCL context")
+		if ((*openclContext)->stereogram_depth_opencl_resource)
+		{
+			ret = clReleaseMemObject((cl_mem)(*openclContext)->stereogram_depth_opencl_resource);
+			CHECK_OPENCL_RC(ret, "Could not release stereogram DEPTH OpenCL memory resource")
+		}
+
+		if ((*openclContext)->framebuffer_opencl_output)
+		{
+			ret = clReleaseMemObject((cl_mem)(*openclContext)->framebuffer_opencl_output);
+			CHECK_OPENCL_RC(ret, "Could not release mega buffer OpenCL memory resource")
+		}
+
+		if ((cl_command_queue)(*openclContext)->command_queue)
+		{
+			ret = clReleaseCommandQueue((cl_command_queue)(*openclContext)->command_queue);
+			CHECK_OPENCL_RC(ret, "Could not release OpenCL command queue")
+		}
+
+		if ((cl_context)(*openclContext)->cl_context)
+		{
+			ret = clReleaseContext((cl_context)(*openclContext)->cl_context);
+			CHECK_OPENCL_RC(ret, "Could not release fringe OpenCL context")
+		}
 
 		delete *openclContext;
 		*openclContext = NULL;
@@ -342,11 +558,28 @@ extern "C" {
 
 			ret = clEnqueueNDRangeKernel((cl_command_queue)openclContext->command_queue, (cl_kernel)openclContext->kernel, 2, NULL,
 				(const size_t*)openclContext->fringe_context->algorithm_options->cache.opencl_global_workgroup_size, (const size_t*)openclContext->fringe_context->algorithm_options->opencl_local_workgroup_size, 1, &event[i*num_fringe_buffers], &event[i*num_fringe_buffers+1]);
+			if (ret != CL_SUCCESS)
+			{
+				LOG4CXX_ERROR(DSCP4_OPENCL_LOGGER, "Could not enqueue OpenCL kernel")
+				delete[] event;
+				return;
+			}
 
 			ret = clFlush((cl_command_queue)(openclContext)->command_queue);
-			CHECK_OPENCL_RC(ret, "Could not flush OpenCL command queue")
+			if (ret != CL_SUCCESS)
+			{
+				LOG4CXX_ERROR(DSCP4_OPENCL_LOGGER, "Could not flush OpenCL command queue")
+				delete[] event;
+				return;
+			}
+
 			ret = clFinish((cl_command_queue)(openclContext)->command_queue);
-			CHECK_OPENCL_RC(ret, "Could not finish OpenCL command queue")
+			if (ret != CL_SUCCESS)
+			{
+				LOG4CXX_ERROR(DSCP4_OPENCL_LOGGER, "Could not finish OpenCL command queue")
+				delete[] event;
+				return;
+			}
 
 			for (unsigned int j = 0; j < openclContext->fringe_context->display_options.num_heads; j++)
 			{
