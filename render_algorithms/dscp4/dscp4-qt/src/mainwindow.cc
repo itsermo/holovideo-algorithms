@@ -238,11 +238,8 @@ failedInit_(false)
 	disableControlsUI();
 
 	ui->tabWidget->setCurrentIndex(0);
-
-	auto palette = ui->renderFPSCounter->palette();
-	palette.setColor(palette.WindowText, QColor(0, 255, 0));
-	ui->renderFPSCounter->setPalette(palette);
-	ui->computeFPSCounter->setPalette(palette);
+	ui->renderFPSCounter->setStyleSheet("QLCDNumber { background: black; color: #0F0; text: #0F0;}");
+	ui->computeFPSCounter->setStyleSheet("QLCDNumber { background: black; color: #0F0; text: #0F0;}");
 
 	x11Process_ = new QProcess(this);
 	QObject::connect(x11Process_, SIGNAL(readyReadStandardError()), this, SLOT(logX11()));
