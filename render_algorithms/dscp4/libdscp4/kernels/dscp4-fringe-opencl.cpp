@@ -550,18 +550,18 @@ extern "C" {
 
 	void dscp4_fringe_opencl_ComputeFringe(dscp4_fringe_opencl_context_t* openclContext)
 	{
-		const size_t region[3] = { openclContext->fringe_context->algorithm_options->cache.fringe_buffer_res_x, openclContext->fringe_context->algorithm_options->cache.fringe_buffer_res_y / 2, 1 };
+		const size_t region[3] = { openclContext->fringe_context->algorithm_options->cache.fringe_buffer_res_x, openclContext->fringe_context->algorithm_options->cache.fringe_buffer_res_y / openclContext->fringe_context->display_options.num_heads_per_gpu, 1 };
 		const size_t outputBufferSize = openclContext->fringe_context->algorithm_options->cache.fringe_buffer_res_x * openclContext->fringe_context->algorithm_options->cache.fringe_buffer_res_y * 4;
 		
-		const unsigned int num_fringe_buffers = 1;
+		const unsigned int num_gpus = 1;
 
 		cl_int ret = 0;
 
-		cl_event *event = new cl_event[num_fringe_buffers * 3];
+		cl_event *event = new cl_event[num_gpus * 3];
 
 		glFinish();
 
-		for (unsigned int i = 0; i < num_fringe_buffers; i++)
+		for (unsigned int i = 0; i < num_gpus; i++)
 		{
 			ret = clSetKernelArg((cl_kernel)openclContext->kernel, 11, sizeof(cl_float), &openclContext->fringe_context->algorithm_options->red_gain);
 			ret = clSetKernelArg((cl_kernel)openclContext->kernel, 12, sizeof(cl_float), &openclContext->fringe_context->algorithm_options->green_gain);
@@ -578,12 +578,12 @@ extern "C" {
 
 			ret = clEnqueueAcquireGLObjects((cl_command_queue)openclContext->command_queue, 1, (const cl_mem*)&openclContext->stereogram_rgba_opencl_resource, 0, NULL, NULL);
 			ret = clEnqueueAcquireGLObjects((cl_command_queue)openclContext->command_queue, 1, (const cl_mem*)&openclContext->stereogram_depth_opencl_resource, 0, NULL, NULL);
-			ret = clEnqueueAcquireGLObjects((cl_command_queue)openclContext->command_queue, 1, (const cl_mem*)&openclContext->fringe_opencl_resources[0], 0, NULL, &event[i*num_fringe_buffers]);
-			ret = clEnqueueAcquireGLObjects((cl_command_queue)openclContext->command_queue, 1, (const cl_mem*)&openclContext->fringe_opencl_resources[1], 0, NULL, &event[i*num_fringe_buffers]);
-			ret = clEnqueueAcquireGLObjects((cl_command_queue)openclContext->command_queue, 1, (const cl_mem*)&openclContext->fringe_opencl_resources[2], 0, NULL, &event[i*num_fringe_buffers]);
+
+			for (int f = 0; f < openclContext->fringe_context->display_options.num_heads / openclContext->fringe_context->display_options.num_heads_per_gpu; f++)
+				ret = clEnqueueAcquireGLObjects((cl_command_queue)openclContext->command_queue, 1, (const cl_mem*)&openclContext->fringe_opencl_resources[f], 0, NULL, &event[i*num_gpus]);
 
 			ret = clEnqueueNDRangeKernel((cl_command_queue)openclContext->command_queue, (cl_kernel)openclContext->kernel, 2, NULL,
-				(const size_t*)openclContext->fringe_context->algorithm_options->cache.opencl_global_workgroup_size, (const size_t*)openclContext->fringe_context->algorithm_options->opencl_local_workgroup_size, 1, &event[i*num_fringe_buffers], &event[i*num_fringe_buffers+1]);
+				(const size_t*)openclContext->fringe_context->algorithm_options->cache.opencl_global_workgroup_size, (const size_t*)openclContext->fringe_context->algorithm_options->opencl_local_workgroup_size, 1, &event[i*num_gpus], &event[i*num_gpus+1]);
 			if (ret != CL_SUCCESS)
 			{
 				LOG4CXX_ERROR(DSCP4_OPENCL_LOGGER, "Could not enqueue OpenCL kernel")
@@ -612,24 +612,31 @@ extern "C" {
 				unsigned int numGPUS = openclContext->fringe_context->display_options.num_heads / openclContext->fringe_context->display_options.num_heads_per_gpu;
 				unsigned int which_gpu = j % numGPUS;
 
-				size_t dst_origin[3] = { 0, j < numGPUS ? 0 : openclContext->fringe_context->algorithm_options->cache.fringe_buffer_res_y / 2, 0 };
+				size_t dst_origin[3] = { 0,
+					((which_gpu + 1) % openclContext->fringe_context->display_options.num_heads_per_gpu) == 0 ?
+					(openclContext->fringe_context->display_options.num_heads_per_gpu - (j % openclContext->fringe_context->display_options.num_heads_per_gpu) - 1) * openclContext->fringe_context->display_options.head_res_y :
+					(j % openclContext->fringe_context->display_options.num_heads_per_gpu) * openclContext->fringe_context->display_options.head_res_y,
+					0 };
 
 				ret = clEnqueueCopyBufferToImage((cl_command_queue)openclContext->command_queue,
 					(cl_mem)openclContext->framebuffer_opencl_output,
 					(cl_mem)openclContext->fringe_opencl_resources[which_gpu],
-					j * openclContext->fringe_context->display_options.head_res_x_spec * openclContext->fringe_context->display_options.head_res_y_spec * 4, dst_origin, region, 1, &event[i*num_fringe_buffers + 1], &event[i*num_fringe_buffers + 2]);
+					j * openclContext->fringe_context->display_options.head_res_x_spec * openclContext->fringe_context->display_options.head_res_y_spec * 4,
+					dst_origin,
+					region,
+					1,
+					&event[i*num_gpus + 1], &event[i*num_gpus + 2]);
 			}
 
 			ret = clEnqueueReleaseGLObjects((cl_command_queue)openclContext->command_queue, 1, (const cl_mem*)&openclContext->stereogram_rgba_opencl_resource, 0, NULL, NULL);
-			ret = clEnqueueReleaseGLObjects((cl_command_queue)openclContext->command_queue, 1, (const cl_mem*)&openclContext->fringe_opencl_resources[0], 1, &event[i*num_fringe_buffers + 1], &event[i*num_fringe_buffers + 2]);
-			ret = clEnqueueReleaseGLObjects((cl_command_queue)openclContext->command_queue, 1, (const cl_mem*)&openclContext->fringe_opencl_resources[1], 1, &event[i*num_fringe_buffers + 1], &event[i*num_fringe_buffers + 2]);
-			ret = clEnqueueReleaseGLObjects((cl_command_queue)openclContext->command_queue, 1, (const cl_mem*)&openclContext->fringe_opencl_resources[2], 1, &event[i*num_fringe_buffers + 1], &event[i*num_fringe_buffers + 2]);
+			for (int f = 0; f < openclContext->fringe_context->display_options.num_heads / openclContext->fringe_context->display_options.num_heads_per_gpu; f++)
+				ret = clEnqueueReleaseGLObjects((cl_command_queue)openclContext->command_queue, 1, (const cl_mem*)&openclContext->fringe_opencl_resources[f], 1, &event[i*num_gpus + 1], &event[i*num_gpus + 2]);
 			ret = clEnqueueReleaseGLObjects((cl_command_queue)openclContext->command_queue, 1, (const cl_mem*)&openclContext->stereogram_depth_opencl_resource, 0, NULL, NULL);
 		}
 
-		for (unsigned int i = 0; i < num_fringe_buffers; i++)
+		for (unsigned int i = 0; i < num_gpus; i++)
 		{
-			ret = clWaitForEvents(1, &event[i* num_fringe_buffers + 2]);
+			ret = clWaitForEvents(1, &event[i* num_gpus + 2]);
 		}
 
 		delete[] event;

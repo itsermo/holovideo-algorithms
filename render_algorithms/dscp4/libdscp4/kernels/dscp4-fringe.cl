@@ -121,7 +121,7 @@ __kernel void computeFringe(
 		int which_frame_buf = (global_y % NUM_AOM_CHANNELS);
 		int which_hololine = global_y / NUM_AOM_CHANNELS;
 
-		unsigned int offset = which_frame_buf / NUM_BUFFERS * framebuffer_res_x * HEAD_RES_Y_SPEC * 4
+		unsigned int offset = which_frame_buf / 3 * framebuffer_res_x * HEAD_RES_Y_SPEC * 4
 			+ which_hololine * (((NUM_SAMPLES_PER_WAFEL * num_wafels_per_scanline) / framebuffer_res_x) * framebuffer_res_x * 4)
 			+ NUM_SAMPLES_PER_WAFEL * 4 * global_x
 			+ which_frame_buf % 3;
