@@ -317,7 +317,8 @@ void dscp4_fringe_cuda_ComputeFringe(dscp4_fringe_cuda_context_t* cudaContext)
 		unsigned int num_gpus = cudaContext->fringe_context->display_options.num_heads / cudaContext->fringe_context->display_options.num_heads_per_gpu;
 		unsigned int which_gpu = j % num_gpus;
 
-		size_t height_offset = j < num_gpus ? 0 : cudaContext->fringe_context->display_options.head_res_y;
+		//size_t height_offset = j < num_gpus ? 0 : cudaContext->fringe_context->display_options.head_res_y;
+		size_t height_offset = (j % cudaContext->fringe_context->display_options.num_heads_per_gpu) * cudaContext->fringe_context->display_options.head_res_y;
 
 		size_t offset = j*cudaContext->fringe_context->display_options.head_res_x * cudaContext->fringe_context->display_options.head_res_y_spec * 4;
 
