@@ -911,7 +911,7 @@
       <widget class="QLCDNumber" name="renderFPSCounter">
        <property name="geometry">
         <rect>
-         <x>230</x>
+         <x>220</x>
          <y>270</y>
          <width>64</width>
          <height>16</height>
@@ -1048,14 +1048,14 @@
       <widget class="QLabel" name="renderFPSLabel">
        <property name="geometry">
         <rect>
-         <x>170</x>
+         <x>160</x>
          <y>270</y>
          <width>55</width>
          <height>16</height>
         </rect>
        </property>
        <property name="text">
-        <string>Framerate</string>
+        <string>Display</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -1064,7 +1064,7 @@
       <widget class="QLabel" name="computeFPSLabel">
        <property name="geometry">
         <rect>
-         <x>10</x>
+         <x>20</x>
          <y>270</y>
          <width>55</width>
          <height>16</height>
@@ -1114,7 +1114,7 @@
       <widget class="QLCDNumber" name="computeFPSCounter">
        <property name="geometry">
         <rect>
-         <x>70</x>
+         <x>80</x>
          <y>270</y>
          <width>64</width>
          <height>16</height>
