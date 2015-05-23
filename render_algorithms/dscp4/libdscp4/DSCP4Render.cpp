@@ -397,6 +397,14 @@ bool DSCP4Render::initWindow(SDL_Window*& window, SDL_GLContext& glContext, int 
 
 	SDL_GL_SwapWindow(window);
 
+#ifdef _DEBUG
+	if (thisWindowNum == 0)
+	{
+		x = 0;
+		y = 0;
+	}
+#endif
+
 	return true;
 }
 

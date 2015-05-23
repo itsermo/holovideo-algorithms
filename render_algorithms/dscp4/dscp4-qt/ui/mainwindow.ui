@@ -2964,7 +2964,7 @@
       </property>
       <widget class="QWidget" name="tab">
        <attribute name="title">
-        <string>libdscp4</string>
+        <string>DSCP4 Library</string>
        </attribute>
        <widget class="QTextEdit" name="dscp4LogTextEdit">
         <property name="geometry">
@@ -2982,7 +2982,7 @@
       </widget>
       <widget class="QWidget" name="tab_3">
        <attribute name="title">
-        <string>X</string>
+        <string>X-Windows</string>
        </attribute>
        <widget class="QTextEdit" name="x11LogTextEdit">
         <property name="geometry">
@@ -3000,7 +3000,7 @@
       </widget>
       <widget class="QWidget" name="tab_2">
        <attribute name="title">
-        <string>nvidia-settings</string>
+        <string>NVIDIA Settings</string>
        </attribute>
        <widget class="QTextEdit" name="nvidiaSettingsLogTextEdit">
         <property name="geometry">
@@ -3018,7 +3018,7 @@
       </widget>
       <widget class="QWidget" name="tab_4">
        <attribute name="title">
-        <string>x11vnc</string>
+        <string>X-VNC</string>
        </attribute>
        <widget class="QTextEdit" name="x11vncLogTextEdit">
         <property name="geometry">
@@ -3058,7 +3058,7 @@
      <rect>
       <x>10</x>
       <y>620</y>
-      <width>101</width>
+      <width>121</width>
       <height>28</height>
      </rect>
     </property>
@@ -3066,7 +3066,7 @@
      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Launches the X server&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
     </property>
     <property name="text">
-     <string>Start X11</string>
+     <string>Start X-Windows</string>
     </property>
    </widget>
    <widget class="QPushButton" name="nvidiaSettingsToggleButton">
@@ -3075,7 +3075,7 @@
     </property>
     <property name="geometry">
      <rect>
-      <x>120</x>
+      <x>140</x>
       <y>620</y>
       <width>141</width>
       <height>28</height>
@@ -3094,7 +3094,7 @@
     </property>
     <property name="geometry">
      <rect>
-      <x>270</x>
+      <x>290</x>
       <y>620</y>
       <width>91</width>
       <height>28</height>
@@ -3104,7 +3104,7 @@
      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Launches x11vnc server. This allows you to connect to the X11 session via VNC client to peek at the framebuffer data (for debugging purposes).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
     </property>
     <property name="text">
-     <string>Start x11vnc</string>
+     <string>Start X-VNC</string>
     </property>
    </widget>
   </widget>

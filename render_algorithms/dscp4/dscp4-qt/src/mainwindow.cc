@@ -885,7 +885,7 @@ void MainWindow::handleX11ProcessStateChanged(QProcess::ProcessState processStat
 	{
 		QObject::disconnect(ui->x11ToggleButton, SIGNAL(clicked()), this, SLOT(startX11()));
 		QObject::connect(ui->x11ToggleButton, SIGNAL(clicked()), this, SLOT(stopX11()));
-		ui->x11ToggleButton->setText("Stop X11");
+		ui->x11ToggleButton->setText("Stop X-Windows");
 		ui->nvidiaSettingsToggleButton->setEnabled(true);
 		ui->x11vncToggleButton->setEnabled(true);
 
@@ -906,7 +906,7 @@ void MainWindow::handleX11ProcessStateChanged(QProcess::ProcessState processStat
 		}
 
 		QObject::connect(ui->x11ToggleButton, SIGNAL(clicked()), this, SLOT(startX11()));
-		ui->x11ToggleButton->setText("Start X11");
+		ui->x11ToggleButton->setText("Start X-Windows");
 
 		ui->nvidiaSettingsToggleButton->setEnabled(false);
 		ui->x11vncToggleButton->setEnabled(false);
@@ -985,14 +985,14 @@ void MainWindow::handleX11VncProcessStateChanged(QProcess::ProcessState processS
 	{
 			QObject::disconnect(ui->x11vncToggleButton, SIGNAL(clicked()), this, SLOT(startX11Vnc()));
 			QObject::connect(ui->x11vncToggleButton, SIGNAL(clicked()), this, SLOT(stopX11Vnc()));
-			ui->x11vncToggleButton->setText("Stop x11vnc");
+			ui->x11vncToggleButton->setText("Stop X-VNC");
 			break;
 	}
 	case QProcess::ProcessState::NotRunning:
 	{
 			QObject::disconnect(ui->x11vncToggleButton, SIGNAL(clicked()), this, SLOT(stopX11Vnc()));
 			QObject::connect(ui->x11vncToggleButton, SIGNAL(clicked()), this, SLOT(startX11Vnc()));
-			ui->x11vncToggleButton->setText("Start x11vnc");
+			ui->x11vncToggleButton->setText("Start X-VNC");
 			break;
 	}
 	default:
