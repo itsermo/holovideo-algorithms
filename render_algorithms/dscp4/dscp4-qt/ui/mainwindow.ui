@@ -215,7 +215,7 @@
        <rect>
         <x>10</x>
         <y>170</y>
-        <width>181</width>
+        <width>191</width>
         <height>131</height>
        </rect>
       </property>
@@ -243,7 +243,7 @@
         <rect>
          <x>20</x>
          <y>80</y>
-         <width>71</width>
+         <width>81</width>
          <height>22</height>
         </rect>
        </property>
@@ -269,14 +269,14 @@
       <widget class="QLabel" name="shaderModelLabel">
        <property name="geometry">
         <rect>
-         <x>100</x>
+         <x>110</x>
          <y>80</y>
-         <width>61</width>
+         <width>71</width>
          <height>20</height>
         </rect>
        </property>
        <property name="text">
-        <string>GL Shading</string>
+        <string>GL Shader</string>
        </property>
       </widget>
      </widget>
@@ -860,9 +860,9 @@
      <widget class="QGroupBox" name="displayGroupBox">
       <property name="geometry">
        <rect>
-        <x>200</x>
+        <x>210</x>
         <y>170</y>
-        <width>91</width>
+        <width>81</width>
         <height>131</height>
        </rect>
       </property>
@@ -874,7 +874,7 @@
         <rect>
          <x>10</x>
          <y>80</y>
-         <width>71</width>
+         <width>61</width>
          <height>21</height>
         </rect>
        </property>
@@ -885,9 +885,9 @@
       <widget class="QLabel" name="x11DisplayEnvLabel">
        <property name="geometry">
         <rect>
-         <x>20</x>
+         <x>14</x>
          <y>30</y>
-         <width>55</width>
+         <width>51</width>
          <height>31</height>
         </rect>
        </property>
@@ -911,7 +911,7 @@
       <widget class="QLCDNumber" name="renderFPSCounter">
        <property name="geometry">
         <rect>
-         <x>220</x>
+         <x>230</x>
          <y>270</y>
          <width>64</width>
          <height>16</height>
@@ -1048,7 +1048,7 @@
       <widget class="QLabel" name="renderFPSLabel">
        <property name="geometry">
         <rect>
-         <x>160</x>
+         <x>170</x>
          <y>270</y>
          <width>55</width>
          <height>16</height>
@@ -1064,7 +1064,7 @@
       <widget class="QLabel" name="computeFPSLabel">
        <property name="geometry">
         <rect>
-         <x>20</x>
+         <x>10</x>
          <y>270</y>
          <width>55</width>
          <height>16</height>
@@ -1114,7 +1114,7 @@
       <widget class="QLCDNumber" name="computeFPSCounter">
        <property name="geometry">
         <rect>
-         <x>80</x>
+         <x>70</x>
          <y>270</y>
          <width>64</width>
          <height>16</height>
