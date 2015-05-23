@@ -149,7 +149,7 @@ dscp4_fringe_cuda_context_t* dscp4_fringe_cuda_CreateContext(dscp4_fringe_contex
 		cudaContext->fringe_context->algorithm_options->cache.cuda_number_of_blocks[1]
 		);
 
-	fillWafelPositionsBuffer <<<numBlocks, threadsPerBlock, 592 * 4>> >(
+	fillWafelPositionsBuffer <<<numBlocks, threadsPerBlock, cudaContext->fringe_context->algorithm_options->num_wafels_per_scanline * 4>>>(
 		cudaContext->fringe_context->algorithm_options->cache.num_samples_per_wafel,
 		cudaContext->fringe_context->algorithm_options->cache.sample_pitch
 		);
@@ -171,7 +171,7 @@ void dscp4_fringe_cuda_DestroyContext(dscp4_fringe_cuda_context_t** cudaContext)
 	//cudaFree(framebuffer_tex_out);
 	if ((*cudaContext)->fringe_cuda_resources)
 	{
-		for (unsigned int i = 0; i < (*cudaContext)->fringe_context->display_options.num_heads / 2; i++)
+		for (unsigned int i = 0; i < (*cudaContext)->fringe_context->display_options.num_heads / (*cudaContext)->fringe_context->display_options.num_heads_per_gpu; i++)
 		{
 			cudaGraphicsUnregisterResource((*cudaContext)->fringe_cuda_resources[i]);
 		}
@@ -449,7 +449,7 @@ __global__ void computeFringe(
 		int which_frame_buf = (global_y % NUM_AOM_CHANNELS);
 		int which_hololine = global_y / NUM_AOM_CHANNELS;
 
-		unsigned int offset = which_frame_buf / NUM_BUFFERS * framebuffer_res_x * HEAD_RES_Y_SPEC * 4
+		unsigned int offset = which_frame_buf / 3 * framebuffer_res_x * HEAD_RES_Y_SPEC * 4
 			+ which_hololine * (((NUM_SAMPLES_PER_WAFEL * num_wafels_per_scanline) / framebuffer_res_x) * framebuffer_res_x * 4)
 			+ NUM_SAMPLES_PER_WAFEL * 4 * global_x
 			+ which_frame_buf % 3;
