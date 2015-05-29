@@ -134,7 +134,8 @@ DSCP4Render::DSCP4Render(render_options_t *renderOptions,
 	parentCallback_(nullptr),
 	shouldSaveScreenshot_(false),
 	planeZOffset_(0.f),
-	fringeContext_({ algorithmOptions, displayOptions, nullptr, 0, 0, 0, 0, 0, 0, 0, nullptr })
+	fringeContext_({ algorithmOptions, displayOptions, nullptr, 0, 0, 0, 0, 0, 0, 0, nullptr }),
+	screenshotPath_(boost::filesystem::current_path())
 {
 #ifdef DSCP4_HAVE_LOG4CXX
 	
@@ -2313,11 +2314,11 @@ void DSCP4Render::saveScreenshotPNG()
 
 		boost::gil::copy_and_convert_pixels(depthImg, depthImg2);
 
-		boost::gil::png_write_view("dscp4_model_color.png", boost::gil::flipped_up_down_view(colorImg));
-		LOG4CXX_INFO(logger_, "Saved model view COLOR screenshot to " << (boost::filesystem::current_path() / "dscp4_model_color.png").string())
+		boost::gil::png_write_view((screenshotPath_ / "dscp4_model_color.png").string().c_str(), boost::gil::flipped_up_down_view(colorImg));
+		LOG4CXX_INFO(logger_, "Saved model view COLOR screenshot to " << (screenshotPath_ / "dscp4_model_color.png").string())
 
-		boost::gil::png_write_view("dscp4_model_depth.png", boost::gil::flipped_up_down_view(depthImg2));
-		LOG4CXX_INFO(logger_, "Saved model view DEPTH screenshot to " << (boost::filesystem::current_path() / "dscp4_model_depth.png").string())
+		boost::gil::png_write_view((screenshotPath_ / "dscp4_model_depth.png").string().c_str(), boost::gil::flipped_up_down_view(depthImg2));
+		LOG4CXX_INFO(logger_, "Saved model view DEPTH screenshot to " << (screenshotPath_ / "dscp4_model_depth.png").string())
 
 		delete[] colorBuf;
 		delete[] depthBuf;
@@ -2326,105 +2327,7 @@ void DSCP4Render::saveScreenshotPNG()
 		break;
 	case DSCP4_RENDER_MODE_AERIAL_DISPLAY:
 		break;
-	case DSCP4_RENDER_MODE_STEREOGRAM_VIEWING:
-	{
-		unsigned char * colorBuf = nullptr;
-		float * depthBuf = nullptr;
-		unsigned short * depthBuf2 = nullptr;
-		boost::gil::rgba8_view_t colorImg;
-		boost::gil::gray32f_view_t depthImg;
-		boost::gil::gray16_view_t depthImg2;
 
-		colorBuf = new unsigned char[fringeContext_.algorithm_options->cache.stereogram_res_x * fringeContext_.algorithm_options->cache.stereogram_res_y * 4];
-
-#ifdef DSCP4_ENABLE_TRACE_LOG
-		auto duration = measureTime<>([&](){
-#endif
-
-		glBindTexture(GL_TEXTURE_2D, fringeContext_.stereogram_gl_fbo_color);
-		glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, colorBuf);
-		colorImg = boost::gil::interleaved_view(fringeContext_.algorithm_options->cache.stereogram_res_x, fringeContext_.algorithm_options->cache.stereogram_res_y, (boost::gil::rgba8_pixel_t*)colorBuf, fringeContext_.algorithm_options->cache.stereogram_res_x * 4);
-		boost::gil::png_write_view("dscp4_stereogram_color.png", boost::gil::flipped_up_down_view(colorImg));
-		LOG4CXX_INFO(logger_, "Saved stereogram view COLOR panorama screenshot to '" << (boost::filesystem::current_path() / "dscp4_stereogram_color.png").string() << "'")
-
-#ifdef DSCP4_ENABLE_TRACE_LOG
-		});
-		LOG4CXX_TRACE(logger_, "Saving stereogram view COLOR panorama screenshot took " << duration << " ms (" << 1.f / duration * 1000 << " fps)")
-#endif
-
-#ifdef DSCP4_ENABLE_TRACE_LOG
-		duration = measureTime<>([&](){
-#endif
-
-		depthBuf = new float[fringeContext_.algorithm_options->cache.stereogram_res_x * fringeContext_.algorithm_options->cache.stereogram_res_y];
-		depthBuf2 = new unsigned short[fringeContext_.algorithm_options->cache.stereogram_res_x * fringeContext_.algorithm_options->cache.stereogram_res_y];
-		glBindTexture(GL_TEXTURE_2D, fringeContext_.stereogram_gl_fbo_depth);
-		glGetTexImage(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, GL_FLOAT, depthBuf);
-		glBindTexture(GL_TEXTURE_2D, 0);
-
-		depthImg = boost::gil::interleaved_view(fringeContext_.algorithm_options->cache.stereogram_res_x, fringeContext_.algorithm_options->cache.stereogram_res_y, (boost::gil::gray32f_pixel_t*)depthBuf, fringeContext_.algorithm_options->cache.stereogram_res_x * 4);
-		depthImg2 = boost::gil::interleaved_view(fringeContext_.algorithm_options->cache.stereogram_res_x, fringeContext_.algorithm_options->cache.stereogram_res_y, (boost::gil::gray16_pixel_t*)depthBuf2, fringeContext_.algorithm_options->cache.stereogram_res_x * 2);
-		boost::gil::copy_and_convert_pixels(depthImg, depthImg2);
-		boost::gil::png_write_view("dscp4_stereogram_depth.png", boost::gil::flipped_up_down_view(depthImg2));
-		
-		LOG4CXX_INFO(logger_, "Saved stereogram view DEPTH panorama screenshot to '" << (boost::filesystem::current_path() / "dscp4_stereogram_depth.png").string() << "'")
-
-#ifdef DSCP4_ENABLE_TRACE_LOG
-		});
-		LOG4CXX_TRACE(logger_, "Saving stereogram view DEPTH panorama screenshot took " << duration << " ms (" << 1.f / duration * 1000 << " fps)")
-#endif
-
-
-		for (unsigned int i = 0; i < fringeContext_.algorithm_options->num_views_x; i++)
-		{
-
-				std::stringstream depthFilenameSS;
-				depthFilenameSS << "dscp4_stereogram_depth_" << std::setfill('0') << std::setw(2) << i << ".png";
-
-				std::stringstream colorFilenameSS;
-				colorFilenameSS << "dscp4_stereogram_color_" << std::setfill('0') << std::setw(2) << i << ".png";
-
-				std::string colorFilename = colorFilenameSS.str();
-				std::string depthFilename = depthFilenameSS.str();
-
-#ifdef DSCP4_ENABLE_TRACE_LOG
-				duration = measureTime<>([&](){
-#endif
-
-				auto colorSubImg = boost::gil::subimage_view(colorImg,
-					fringeContext_.algorithm_options->num_wafels_per_scanline * (i%static_cast<unsigned int>(sqrt(fringeContext_.algorithm_options->num_views_x))),
-					fringeContext_.algorithm_options->num_scanlines *(i / static_cast<unsigned int>(sqrt(fringeContext_.algorithm_options->num_views_x))),
-					fringeContext_.algorithm_options->num_wafels_per_scanline,
-					fringeContext_.algorithm_options->num_scanlines);
-				boost::gil::png_write_view(colorFilename.c_str(), boost::gil::flipped_up_down_view(colorSubImg));
-				LOG4CXX_INFO(logger_, "Saved stereogram view COLOR screenshot " << i + 1 << " of " << fringeContext_.algorithm_options->num_views_x << " to '" << (boost::filesystem::current_path() / colorFilename).string() << "'")
-
-#ifdef DSCP4_ENABLE_TRACE_LOG
-			});
-			LOG4CXX_TRACE(logger_, "Saving stereogram view COLOR screenshot took " << duration << " ms (" << 1.f / duration * 1000 << " fps)")
-#endif
-
-#ifdef DSCP4_ENABLE_TRACE_LOG
-				duration = measureTime<>([&](){
-#endif
-					auto depthSubImg = boost::gil::subimage_view(depthImg2,
-					fringeContext_.algorithm_options->num_wafels_per_scanline * (i%static_cast<unsigned int>(sqrt(fringeContext_.algorithm_options->num_views_x))),
-					fringeContext_.algorithm_options->num_scanlines *(i / static_cast<unsigned int>(sqrt(fringeContext_.algorithm_options->num_views_x))),
-					fringeContext_.algorithm_options->num_wafels_per_scanline,
-					fringeContext_.algorithm_options->num_scanlines);
-				boost::gil::png_write_view(depthFilename.c_str(), boost::gil::flipped_up_down_view(depthSubImg));
-				LOG4CXX_INFO(logger_, "Saved stereogram view DEPTH screenshot " << i + 1 << " of " << fringeContext_.algorithm_options->num_views_x << " to '" << (boost::filesystem::current_path() / depthFilename).string() << "'")
-#ifdef DSCP4_ENABLE_TRACE_LOG
-			});
-			LOG4CXX_TRACE(logger_, "Saving stereogram view DEPTH screenshot took " << duration << " ms (" << 1.f / duration * 1000 << " fps)")
-#endif
-		}
-
-		delete[] colorBuf;
-		delete[] depthBuf;
-		delete[] depthBuf2;
-	}
-		break;
 	case DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE:
 	{
 		unsigned char * fringeBuffer = nullptr;
@@ -2454,10 +2357,10 @@ void DSCP4Render::saveScreenshotPNG()
 			auto fringeImageNoAlpha = boost::gil::interleaved_view(fringeContext_.algorithm_options->cache.fringe_buffer_res_x, fringeContext_.algorithm_options->cache.fringe_buffer_res_y, (boost::gil::rgb8_pixel_t*)fringeBufferNoAlpha, fringeContext_.algorithm_options->cache.fringe_buffer_res_x * 3);
 			boost::gil::copy_and_convert_pixels(fringeImage, fringeImageNoAlpha);
 
-			boost::gil::png_write_view(fringeFilename.c_str(), fringeImage);
+			boost::gil::png_write_view((screenshotPath_ / fringeFilename).string().c_str(), fringeImage);
 
 
-			LOG4CXX_INFO(logger_, "Saved hologram fringe pattern buffer " << i + 1 << " of " << fringeContext_.algorithm_options->cache.num_fringe_buffers << " to '" << (boost::filesystem::current_path() / fringeFilename).string() << "'")
+			LOG4CXX_INFO(logger_, "Saved hologram fringe pattern buffer " << i + 1 << " of " << fringeContext_.algorithm_options->cache.num_fringe_buffers << " to '" << (screenshotPath_ / fringeFilename).string() << "'")
 
 #ifdef DSCP4_ENABLE_TRACE_LOG
 			});
@@ -2468,6 +2371,105 @@ void DSCP4Render::saveScreenshotPNG()
 		glBindTexture(GL_TEXTURE, 0);
 
 		delete[] fringeBuffer;
+	}
+
+	case DSCP4_RENDER_MODE_STEREOGRAM_VIEWING:
+	{
+		unsigned char * colorBuf = nullptr;
+		float * depthBuf = nullptr;
+		unsigned short * depthBuf2 = nullptr;
+		boost::gil::rgba8_view_t colorImg;
+		boost::gil::gray32f_view_t depthImg;
+		boost::gil::gray16_view_t depthImg2;
+
+		colorBuf = new unsigned char[fringeContext_.algorithm_options->cache.stereogram_res_x * fringeContext_.algorithm_options->cache.stereogram_res_y * 4];
+
+#ifdef DSCP4_ENABLE_TRACE_LOG
+		auto duration = measureTime<>([&](){
+#endif
+
+		glBindTexture(GL_TEXTURE_2D, fringeContext_.stereogram_gl_fbo_color);
+		glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, colorBuf);
+		colorImg = boost::gil::interleaved_view(fringeContext_.algorithm_options->cache.stereogram_res_x, fringeContext_.algorithm_options->cache.stereogram_res_y, (boost::gil::rgba8_pixel_t*)colorBuf, fringeContext_.algorithm_options->cache.stereogram_res_x * 4);
+		boost::gil::png_write_view((screenshotPath_ / "dscp4_stereogram_color.png").string().c_str(), boost::gil::flipped_up_down_view(colorImg));
+		LOG4CXX_INFO(logger_, "Saved stereogram view COLOR panorama screenshot to '" << (screenshotPath_ / "dscp4_stereogram_color.png").string() << "'")
+
+#ifdef DSCP4_ENABLE_TRACE_LOG
+		});
+		LOG4CXX_TRACE(logger_, "Saving stereogram view COLOR panorama screenshot took " << duration << " ms (" << 1.f / duration * 1000 << " fps)")
+#endif
+
+#ifdef DSCP4_ENABLE_TRACE_LOG
+		duration = measureTime<>([&](){
+#endif
+
+		depthBuf = new float[fringeContext_.algorithm_options->cache.stereogram_res_x * fringeContext_.algorithm_options->cache.stereogram_res_y];
+		depthBuf2 = new unsigned short[fringeContext_.algorithm_options->cache.stereogram_res_x * fringeContext_.algorithm_options->cache.stereogram_res_y];
+		glBindTexture(GL_TEXTURE_2D, fringeContext_.stereogram_gl_fbo_depth);
+		glGetTexImage(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, GL_FLOAT, depthBuf);
+		glBindTexture(GL_TEXTURE_2D, 0);
+
+		depthImg = boost::gil::interleaved_view(fringeContext_.algorithm_options->cache.stereogram_res_x, fringeContext_.algorithm_options->cache.stereogram_res_y, (boost::gil::gray32f_pixel_t*)depthBuf, fringeContext_.algorithm_options->cache.stereogram_res_x * 4);
+		depthImg2 = boost::gil::interleaved_view(fringeContext_.algorithm_options->cache.stereogram_res_x, fringeContext_.algorithm_options->cache.stereogram_res_y, (boost::gil::gray16_pixel_t*)depthBuf2, fringeContext_.algorithm_options->cache.stereogram_res_x * 2);
+		boost::gil::copy_and_convert_pixels(depthImg, depthImg2);
+		boost::gil::png_write_view((screenshotPath_ / "dscp4_stereogram_depth.png").string().c_str(), boost::gil::flipped_up_down_view(depthImg2));
+		
+		LOG4CXX_INFO(logger_, "Saved stereogram view DEPTH panorama screenshot to '" << (screenshotPath_ / "dscp4_stereogram_depth.png").string() << "'")
+
+#ifdef DSCP4_ENABLE_TRACE_LOG
+		});
+		LOG4CXX_TRACE(logger_, "Saving stereogram view DEPTH panorama screenshot took " << duration << " ms (" << 1.f / duration * 1000 << " fps)")
+#endif
+
+
+		for (unsigned int i = 0; i < fringeContext_.algorithm_options->num_views_x; i++)
+		{
+
+				std::stringstream depthFilenameSS;
+				depthFilenameSS << "dscp4_stereogram_depth_" << std::setfill('0') << std::setw(2) << i << ".png";
+
+				std::stringstream colorFilenameSS;
+				colorFilenameSS << "dscp4_stereogram_color_" << std::setfill('0') << std::setw(2) << i << ".png";
+
+				std::string colorFilename = colorFilenameSS.str();
+				std::string depthFilename = depthFilenameSS.str();
+
+#ifdef DSCP4_ENABLE_TRACE_LOG
+				duration = measureTime<>([&](){
+#endif
+
+				auto colorSubImg = boost::gil::subimage_view(colorImg,
+					fringeContext_.algorithm_options->num_wafels_per_scanline * (i%static_cast<unsigned int>(sqrt(fringeContext_.algorithm_options->num_views_x))),
+					fringeContext_.algorithm_options->num_scanlines *(i / static_cast<unsigned int>(sqrt(fringeContext_.algorithm_options->num_views_x))),
+					fringeContext_.algorithm_options->num_wafels_per_scanline,
+					fringeContext_.algorithm_options->num_scanlines);
+				boost::gil::png_write_view((screenshotPath_ / colorFilename).string().c_str(), boost::gil::flipped_up_down_view(colorSubImg));
+				LOG4CXX_INFO(logger_, "Saved stereogram view COLOR screenshot " << i + 1 << " of " << fringeContext_.algorithm_options->num_views_x << " to '" << (screenshotPath_ / colorFilename).string() << "'")
+
+#ifdef DSCP4_ENABLE_TRACE_LOG
+			});
+			LOG4CXX_TRACE(logger_, "Saving stereogram view COLOR screenshot took " << duration << " ms (" << 1.f / duration * 1000 << " fps)")
+#endif
+
+#ifdef DSCP4_ENABLE_TRACE_LOG
+				duration = measureTime<>([&](){
+#endif
+					auto depthSubImg = boost::gil::subimage_view(depthImg2,
+					fringeContext_.algorithm_options->num_wafels_per_scanline * (i%static_cast<unsigned int>(sqrt(fringeContext_.algorithm_options->num_views_x))),
+					fringeContext_.algorithm_options->num_scanlines *(i / static_cast<unsigned int>(sqrt(fringeContext_.algorithm_options->num_views_x))),
+					fringeContext_.algorithm_options->num_wafels_per_scanline,
+					fringeContext_.algorithm_options->num_scanlines);
+					boost::gil::png_write_view((screenshotPath_ / depthFilename).string().c_str(), boost::gil::flipped_up_down_view(depthSubImg));
+					LOG4CXX_INFO(logger_, "Saved stereogram view DEPTH screenshot " << i + 1 << " of " << fringeContext_.algorithm_options->num_views_x << " to '" << (screenshotPath_ / depthFilename).string() << "'")
+#ifdef DSCP4_ENABLE_TRACE_LOG
+			});
+			LOG4CXX_TRACE(logger_, "Saving stereogram view DEPTH screenshot took " << duration << " ms (" << 1.f / duration * 1000 << " fps)")
+#endif
+		}
+
+		delete[] colorBuf;
+		delete[] depthBuf;
+		delete[] depthBuf2;
 	}
 		break;
 	default:

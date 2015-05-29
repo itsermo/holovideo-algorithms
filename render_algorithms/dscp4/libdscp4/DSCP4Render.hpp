@@ -141,7 +141,7 @@ namespace dscp4
 
 		void setEventCallback(dscp4_event_cb_t eventCallback, void * parent = 0) { parentCallback_ = parent; eventCallback_ = eventCallback; }
 
-		void saveScreenshot() { shouldSaveScreenshot_ = true; }
+		void saveScreenshot(std::string screenshotPath) { screenshotPath_ = screenshotPath; shouldSaveScreenshot_ = true; }
 
 	private:
 
@@ -303,6 +303,8 @@ namespace dscp4
 
 		std::atomic<bool> shouldSaveScreenshot_;
 		std::atomic<float> planeZOffset_;
+
+		boost::filesystem::path screenshotPath_;
 
 #ifdef DSCP4_HAVE_LOG4CXX
 		log4cxx::LoggerPtr logger_ = log4cxx::Logger::getLogger("edu.mit.media.obmg.holovideo.dscp4.lib.renderer");

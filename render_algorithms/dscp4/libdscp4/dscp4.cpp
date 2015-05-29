@@ -173,9 +173,9 @@ extern "C"
 		return ((dscp4::DSCP4Render*)renderContext)->getSpinOn();
 	}
 
-	DSCP4_API void dscp4_SaveFrameBufferToPNG(dscp4_context_t renderContext)
+	DSCP4_API void dscp4_SaveFrameBufferToPNG(dscp4_context_t renderContext, const char* screenshotPath)
 	{
-		((dscp4::DSCP4Render*)renderContext)->saveScreenshot();
+		((dscp4::DSCP4Render*)renderContext)->saveScreenshot(std::string(screenshotPath));
 	}
 
 	DSCP4_API void dscp4_ForceRedraw(dscp4_context_t renderContext)

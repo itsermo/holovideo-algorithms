@@ -220,8 +220,8 @@ failedInit_(false)
 	unchangeables_ <<
 	ui->generalSettingsGroupBox <<
 	ui->renderModeComboBox <<
-	ui->shaderFileNameComboBox <<
-	ui->shaderFileNameToolButton <<
+	//ui->shaderFileNameComboBox <<
+	//ui->shaderFileNameToolButton <<
 	ui->displaySettingsGroupBox <<
 	ui->computeMethodComboBox <<
 	ui->inputGroupBox <<
@@ -383,11 +383,7 @@ void MainWindow::populateShaderFiles()
 
 QString MainWindow::browseDir()
 {
-	QFileDialog dialog;
-	dialog.setFileMode(QFileDialog::Directory);
-	dialog.setOption(QFileDialog::ShowDirsOnly);
-
-	return dialog.getExistingDirectory(this);
+	return QFileDialog::getExistingDirectory(this, tr("Folder for saving DSCP4 framebuffers"), "", QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
 }
 
 QString MainWindow::browseFile(const char * title, QString currentDir, const char * filter)
@@ -671,7 +667,13 @@ void MainWindow::stopNVIDIASettings()
 
 void MainWindow::dumpFramebufferToPNG()
 {
-	dscp4_SaveFrameBufferToPNG(algorithmContext_);
+	QString savePath = this->browseDir();
+
+	if (!savePath.isEmpty())
+	{
+		auto savePathStr = savePath.toStdString();
+		dscp4_SaveFrameBufferToPNG(algorithmContext_, savePathStr.c_str());
+	}
 }
 
 void MainWindow::forceRedraw()
