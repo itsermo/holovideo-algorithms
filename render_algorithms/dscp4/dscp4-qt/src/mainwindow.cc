@@ -796,7 +796,7 @@ void MainWindow::setRenderPreview()
 	if (haveNewFrame_)
 	{
 		std::unique_lock<std::mutex> updateFrameLock(renderPreviewDataMutex_);
-		QImage theImage((unsigned char *)frameData_.buffer, ui->numWafelsSpinBox->value(), ui->numScanlinesSpinBox->value(), QImage::Format_RGBA8888);
+		QImage theImage((unsigned char *)frameData_.buffer, frameData_.x_res, frameData_.y_res, QImage::Format_RGBA8888);
 		renderPreviewImage_ = QPixmap::fromImage(theImage.mirrored(false, true));
 		renderPreviewScene_->clear();
 		renderPreviewScene_->addPixmap(renderPreviewImage_.scaled(ui->renderPreviewGraphicsView->width()-4, ui->renderPreviewGraphicsView->height()-4, Qt::IgnoreAspectRatio, Qt::SmoothTransformation));

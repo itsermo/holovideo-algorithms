@@ -640,10 +640,32 @@ void DSCP4Render::renderLoop()
 
 	if (eventCallback_)
 	{
-		renderPreviewBuffer_ = new unsigned char[fringeContext_.algorithm_options->num_wafels_per_scanline * fringeContext_.algorithm_options->num_scanlines * 4];
-		renderPreviewData_.x_res = fringeContext_.algorithm_options->num_wafels_per_scanline;
-		renderPreviewData_.y_res = fringeContext_.algorithm_options->num_scanlines;
-		renderPreviewData_.buffer = renderPreviewBuffer_;
+		switch (renderOptions_->render_mode)
+		{
+		case DSCP4_RENDER_MODE_MODEL_VIEWING:
+		case DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE:
+			renderPreviewBuffer_ = new unsigned char[fringeContext_.algorithm_options->num_wafels_per_scanline * fringeContext_.algorithm_options->num_scanlines * 4];
+			renderPreviewData_.x_res = fringeContext_.algorithm_options->num_wafels_per_scanline;
+			renderPreviewData_.y_res = fringeContext_.algorithm_options->num_scanlines;
+			renderPreviewData_.buffer = renderPreviewBuffer_;
+			break;
+		case DSCP4_RENDER_MODE_STEREOGRAM_VIEWING:
+			renderPreviewBuffer_ = new unsigned char[fringeContext_.algorithm_options->cache.stereogram_res_x * fringeContext_.algorithm_options->cache.stereogram_res_y * 4];
+			renderPreviewData_.x_res = fringeContext_.algorithm_options->cache.stereogram_res_x;
+			renderPreviewData_.y_res = fringeContext_.algorithm_options->cache.stereogram_res_y;
+			renderPreviewData_.buffer = renderPreviewBuffer_;
+			break;
+		case DSCP4_RENDER_MODE_AERIAL_DISPLAY:
+			renderPreviewBuffer_ = new unsigned char[windowWidth_[0] * windowHeight_[0] * 4];
+			renderPreviewData_.x_res = windowWidth_[0];
+			renderPreviewData_.y_res = windowHeight_[0];
+			renderPreviewData_.buffer = renderPreviewBuffer_;
+			break;
+		default:
+			break;
+		}
+
+
 	}
 
 	while (shouldRender_)
@@ -718,7 +740,7 @@ void DSCP4Render::renderLoop()
 		LOG4CXX_TRACE(logger_, "Rendering the frame took " << renderFrameDuration << " ms (" << 1.f / renderFrameDuration * 1000 << " fps)");
 #endif
 
-        if (eventCallback_ && renderOptions_->render_mode == DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE)
+        if (eventCallback_)
 		{
 #ifdef DSCP4_ENABLE_TRACE_LOG
 			renderPreviewData_.render_fps = 1.f / renderFrameDuration * 1000.f;
@@ -869,6 +891,19 @@ void DSCP4Render::generateStereogram()
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glDrawBuffer(GL_BACK);
+
+	if (eventCallback_ && renderOptions_->render_mode == DSCP4_RENDER_MODE_STEREOGRAM_VIEWING)
+	{
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, fringeContext_.stereogram_gl_fbo);
+		glReadPixels(
+			0,
+			0,
+			fringeContext_.algorithm_options->cache.stereogram_res_x,
+			fringeContext_.algorithm_options->cache.stereogram_res_y,
+			GL_RGBA, GL_UNSIGNED_BYTE, renderPreviewBuffer_);
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+	}
+
 }
 
 void DSCP4Render::generateView()
@@ -931,6 +966,18 @@ void DSCP4Render::generateView()
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glDrawBuffer(GL_BACK);
+
+	if (eventCallback_ && renderOptions_->render_mode == DSCP4_RENDER_MODE_MODEL_VIEWING)
+	{
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, fringeContext_.view_gl_fbo);
+		glReadPixels(
+			0,
+			0,
+			fringeContext_.algorithm_options->num_wafels_per_scanline,
+			fringeContext_.algorithm_options->num_scanlines,
+			GL_RGBA, GL_UNSIGNED_BYTE, renderPreviewBuffer_);
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+	}
 }
 
 void DSCP4Render::drawForViewing()
@@ -1025,6 +1072,26 @@ void DSCP4Render::drawForAerialDisplay()
 
 		glDisable(GL_LIGHT0);
 		glDisable(GL_DEPTH_TEST);
+
+		if (eventCallback_ && renderOptions_->render_mode == DSCP4_RENDER_MODE_AERIAL_DISPLAY && i == 0)
+		{
+			if (renderPreviewData_.x_res != windowWidth_[0] || renderPreviewData_.y_res != windowHeight_[0])
+			{
+				delete[] renderPreviewBuffer_;
+				renderPreviewBuffer_ = new unsigned char[windowWidth_[0] * windowHeight_[0] * 4];
+				renderPreviewData_.x_res = windowWidth_[0];
+				renderPreviewData_.y_res = windowHeight_[0];
+			}
+			//glBindFramebuffer(GL_READ_FRAMEBUFFER, fringeContext_.view_gl_fbo);
+			glReadPixels(
+				0,
+				0,
+				windowWidth_[0],
+				windowHeight_[0],
+				GL_RGBA, GL_UNSIGNED_BYTE, renderPreviewBuffer_);
+			glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+		}
+
 	}
 
 	cameraChanged_ = false;
@@ -1043,7 +1110,7 @@ void DSCP4Render::drawForFringe()
 	generateStereogram();
 #endif
 
-	if (eventCallback_)
+	if (eventCallback_ && renderOptions_->render_mode == DSCP4_RENDER_MODE_HOLOVIDEO_FRINGE)
 	{
 		glBindFramebuffer(GL_READ_FRAMEBUFFER, fringeContext_.stereogram_gl_fbo);
 		glReadPixels(
