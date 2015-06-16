@@ -68,13 +68,13 @@ dscp4_fringe_cuda_context_t* dscp4_fringe_cuda_CreateContext(dscp4_fringe_contex
 
 	for (int i = 0; i < cudaContext->num_gpus; i++)
 	{
-		error = cudaGLSetGLDevice(i);
-		if (error != cudaSuccess)
-		{
-			printf("ERROR Could not set OpenGL device\n");
-			dscp4_fringe_cuda_DestroyContext(&cudaContext);
-			return NULL;
-		}
+		//error = cudaGLSetGLDevice(i);
+		//if (error != cudaSuccess)
+		//{
+		//	printf("ERROR Could not set OpenGL device\n");
+		//	dscp4_fringe_cuda_DestroyContext(&cudaContext);
+		//	return NULL;
+		//}
 
 		error = cudaGetDeviceProperties(&cudaContext->gpu_properties[i], i);
 		if (error != cudaSuccess)
