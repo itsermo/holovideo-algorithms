@@ -395,6 +395,7 @@ bool DSCP4Render::initWindow(SDL_Window*& window, SDL_GLContext& glContext, int 
 	// Intel GPU bug does not like 0.0f for all values
 	glClearColor(0.000001f, 0.f, 0.f, 0.f); // Black Background
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	SDL_GL_SwapWindow(window);
 
@@ -570,7 +571,7 @@ void DSCP4Render::renderLoop()
 	float q = 0.f; //offset for rendering stereograms
 	SDL_Event event = { 0 };
 
-	camera_.eye = glm::vec3(0, 0, (renderOptions_->render_mode == DSCP4_RENDER_MODE_MODEL_VIEWING) || (renderOptions_->render_mode == DSCP4_RENDER_MODE_AERIAL_DISPLAY) ? 4.0f : .6f);
+	camera_.eye = glm::vec3(0, 0, (renderOptions_->render_mode == DSCP4_RENDER_MODE_MODEL_VIEWING) || (renderOptions_->render_mode == DSCP4_RENDER_MODE_AERIAL_DISPLAY) ? 4.0f : .67f);
 	camera_.center = glm::vec3(0, 0, 0);
 	camera_.up = glm::vec3(0, 1, 0);
 
@@ -1300,6 +1301,8 @@ void DSCP4Render::drawMesh(mesh_t& mesh)
 
 void DSCP4Render::drawAllMeshes()
 {
+	glEnable(GL_BLEND);
+
 	for (auto it = meshes_.begin(); it != meshes_.end(); it++)
 	{
 		// create the model matrix
@@ -1331,6 +1334,8 @@ void DSCP4Render::drawAllMeshes()
 		//draw the actual mesh
 		drawMesh(it->second);
 	}
+
+	glDisable(GL_BLEND);
 }
 
 void DSCP4Render::addMesh(const char *id, int numIndecies, int numVertices, float *vertices, float * normals, float *colors, unsigned int numVertexDimensions, unsigned int numColorChannels)
