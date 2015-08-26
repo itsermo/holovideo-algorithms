@@ -570,7 +570,7 @@ void DSCP4Render::renderLoop()
 	float q = 0.f; //offset for rendering stereograms
 	SDL_Event event = { 0 };
 
-	camera_.eye = glm::vec3(0, 0, (renderOptions_->render_mode == DSCP4_RENDER_MODE_MODEL_VIEWING) || (renderOptions_->render_mode == DSCP4_RENDER_MODE_AERIAL_DISPLAY) ? 4.0f : .5f);
+	camera_.eye = glm::vec3(0, 0, (renderOptions_->render_mode == DSCP4_RENDER_MODE_MODEL_VIEWING) || (renderOptions_->render_mode == DSCP4_RENDER_MODE_AERIAL_DISPLAY) ? 4.0f : .6f);
 	camera_.center = glm::vec3(0, 0, 0);
 	camera_.up = glm::vec3(0, 1, 0);
 
@@ -835,6 +835,8 @@ void DSCP4Render::generateStereogram()
 	std::lock_guard<std::mutex> lgl(lightingMutex_);
 	std::lock_guard<std::mutex> lgm(meshMutex_);
 
+	auto oldCamera = camera_;
+
 	for (unsigned int i = 0; i < fringeContext_.algorithm_options->num_views_x; i++)
 	{
 		glViewport(tile_x_res*(i%tile_dim), tile_y_res*(i / tile_dim), tile_x_res, tile_y_res);
@@ -842,7 +844,7 @@ void DSCP4Render::generateStereogram()
 		glMatrixMode(GL_PROJECTION);
 
 		const float ratio = static_cast<float>(tile_x_res) / static_cast<float>(tile_y_res);
-		const float q = (i - fringeContext_.algorithm_options->num_views_x * 0.5f) / static_cast<float>(fringeContext_.algorithm_options->num_views_x) * fringeContext_.algorithm_options->fov_y * DEG_TO_RAD;
+		const float q = tan((i - fringeContext_.algorithm_options->num_views_x * 0.5f) / static_cast<float>(fringeContext_.algorithm_options->num_views_x) * fringeContext_.algorithm_options->fov_y * DEG_TO_RAD);
 
 		projectionMatrix_ = buildOrthoXPerspYProjMat(-ratio, ratio, -1.0f, 1.0f, fringeContext_.algorithm_options->z_near, fringeContext_.algorithm_options->z_far, q);
 
@@ -854,6 +856,12 @@ void DSCP4Render::generateStereogram()
 		glShadeModel(renderOptions_->shader_model == DSCP4_SHADER_MODEL_SMOOTH ? GL_SMOOTH : GL_FLAT);
 
 		glMatrixMode(GL_MODELVIEW);
+		
+		//camera_.center.x += 0.05;
+		camera_.center.x = oldCamera.center.x + (fringeContext_.algorithm_options->z_far - fringeContext_.algorithm_options->z_near) * 0.5f *q;
+		camera_.eye.x = oldCamera.eye.x + (fringeContext_.algorithm_options->z_far - fringeContext_.algorithm_options->z_near) * 0.5f *q;
+
+		//camera_.center.x -= 0.01;
 
 		viewMatrix_ = glm::mat4() *
 			glm::lookAt(
@@ -903,6 +911,8 @@ void DSCP4Render::generateStereogram()
 			GL_RGBA, GL_UNSIGNED_BYTE, renderPreviewBuffer_);
 		glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
 	}
+
+	camera_ = oldCamera;
 
 }
 

@@ -85,7 +85,7 @@ fov_y = 30.0
 
 ; near and far clipping planes
 z_near = 0.00001
-z_far = 2.25
+z_far = 1.0
 
 ; chooses the fringe compute method, valid options are "cuda" or "opencl"
 ; if compiled with support for both, this value will be "opencl" by default
