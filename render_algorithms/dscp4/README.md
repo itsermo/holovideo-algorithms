@@ -261,3 +261,6 @@ libdscp4 has 4 modes of operation:
   fullscreen OpenGL window for every GPU.  Each window spans
   multiple heads per GPU (one window per GPU).  This requires
   Xinerama mode to be enabled in the X11 configuration.
+
+# License
+dscp4 code is licensed under the BSD 3-clause open source license
