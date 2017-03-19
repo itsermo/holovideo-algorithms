@@ -263,4 +263,4 @@ libdscp4 has 4 modes of operation:
   Xinerama mode to be enabled in the X11 configuration.
 
 # License
-dscp4 code is licensed under the (BSD 3-clause open source license)[LICENSE]
+dscp4 code is licensed under the [BSD 3-clause open source license](LICENSE)
