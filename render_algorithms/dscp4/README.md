@@ -79,7 +79,7 @@ Fedora/RedHat:
 
 	sudo yum update
  
- a) Install the dependenices using the command below:
+ b) Install the dependenices using the command below:
 
 Ubuntu/Debian:
  
