@@ -1,64 +1,22 @@
-== DSCP4 Holovideo Algorithm README ==
+# DSCP4 Holovideo Algorithm
 
- 1.) Prerequisites
- 2.) Dependencies
- 3.) Building
- 4.) Installing
- 5.) Configuring
- 6.) Running
- 7.) Uninstalling
- 
-== 1. PREREQUISITES ==
+Diffraction-specific panoramagram for full-color MIT/BYU Mark IV holovideo display
 
- This project requires:
-  * Cross-platform Make (CMake) v2.8.2+
-  * GNU Make or equivalent.
-  * GCC-4.8.2 C++11 capable compiler.
-	(CUDA 6.5 is only compatible with GCC <= 4.8)
-	(CUDA 7.0 supports GCC 4.9 but has removed kepler support)
-  * Boost C++ Libraries v1.54+ [HEADERS and LIBRARIES]
-    (system, filesystem, program_options)
-  * OpenGL 3.1 (must have GPU that has OpenGL 3.1 support)
-  * GLEW 1.11.0+ (OpenGL Extension Wrangler, required)
-  * GLM 0.9.6.1+ (header-only library for common OpenGL math functions,
-	such as matrix multiplication)
-  * SDL 2.0.1+ (takes care of window management, OpenGL render contexts)
-  * CUDA 6.5 (optional, fringe computation is done in CUDA)
-  * OpenCL 1.1 (optional, fringe computation done in OpenCL)
-  * Log4Cxx v0.10.0+ (optional, for logging errors and info)
-  * ASSIMP 3.1.1+ (optional, for importing 3D object files, like .ply files)
-  * zLib 1.2.2+ (optional, for PNG screenshots)
-  * libpng 1.2 (optional, for PNG screenshots)
-  * Qt 5.4 (optional, for building dscp4-qt, a GUI controller for libdscp4)
-  
+## Synopsis
+
+dscp4 is a real-time computer generated hologram (CGH) algorithm for full-color holovideo displays based on surface acoustic wave acousto-optic modulators.
+
  dscp4 is a CMAKE package, that is composed of three C++11 projects:
  
-  * libdscp4 - the render library that implements DSCP4 and computes fringe
+- libdscp4 - the render library that implements DSCP4 and computes fringe
                patterns. libdscp4 is built as a shared library with C-linkage.
                It generates libdscp4.so and dscp4.h files, which are installed
                to /usr/local/lib and /usr/local/include/dscp4 respectively.
                The dscp4.h file includes functions to initialize the renderer,
                change renderer settings, add 3d model vertices and color, and
                manipulate 3d models in the renderer.
-			   
-			   libdscp4 has 4 modes of operation:
-				* "model viewing" - Opens an OpenGL window and shows the
-				  models with normal, perspective projection.
-				* "stereogram view" - Opens an OpenGL window and shows models
-				  with orthographic shearing projection (aka panoramagrams).
-				  Use this mode to debug and see what panoramagram is
-				  generated before fringe computation.
-				* "aerial" - Opens a fullscreen window for every monitor,
-				  with each window displaying a horizontal parallax shift.
-				  This mode is for projector setups where discrete views are
-				  shown for each parallax shift.
-				* "holovideo" - Computes the fringe pattern from the
-				  panoramagram and writes the fringe pattern to a textured
-				  fullscreen OpenGL window for every GPU.  Each window spans
-				  multiple heads per GPU (one window per GPU).  This requires
-				  Xinerama mode to be enabled in the X11 configuration.
-				  
-  * dscp4    - the "test" program that loads 3D model files and feeds 3D model 
+	       
+- dscp4    - the "test" program that loads 3D model files and feeds 3D model 
                data to libdscp4 and controls the rendering through libdscp4.
                This program builds as an executable and is installed to
                /usr/local/bin, and can be run anywhere from the command line.
@@ -66,10 +24,36 @@
                stuff on the holovideo display, you'll have to use this
 			   or dscp4-qt, the GUI version.
 
-  * dscp4-qt - the GUI version of "dscp4" test program. This is built with Qt
+- dscp4-qt - the GUI version of "dscp4" test program. This is built with Qt
                and allows one to control all aspects of libdscp4 with a GUI,
                optional, but highly recommended install.
-		
+
+For more information on how this algorithm works, refer to the following publication:
+
+- S. Jolly, E. Dreshaj, and V. M. Bove, Jr., “Computation of Fresnel holograms and diffraction-specific coherent panoramagrams for full-color holographic displays based on anisotropic leaky-mode modulators,” Proc. SPIE Practical Holography XXIX, 9386, 2015. [PDF](http://obm.media.mit.edu/wp-content/uploads/sites/10/2012/09/PW2015.pdf)
+
+## Dependencies
+
+- Cross-platform Make (CMake) v2.8.2+
+- GNU Make or equivalent.
+- GCC-4.8.2 C++11 capable compiler.
+	(CUDA 6.5 is only compatible with GCC <= 4.8)
+	(CUDA 7.0 supports GCC 4.9 but has removed kepler support)
+- Boost C++ Libraries v1.54+ [HEADERS and LIBRARIES]
+    (system, filesystem, program_options)
+- OpenGL 3.1 (must have GPU that has OpenGL 3.1 support)
+- GLEW 1.11.0+ (OpenGL Extension Wrangler, required)
+- GLM 0.9.6.1+ (header-only library for common OpenGL math functions,
+	such as matrix multiplication)
+- SDL 2.0.1+ (takes care of window management, OpenGL render contexts)
+- CUDA 6.5 (optional, fringe computation is done in CUDA)
+- OpenCL 1.1 (optional, fringe computation done in OpenCL)
+- Log4Cxx v0.10.0+ (optional, for logging errors and info)
+- ASSIMP 3.1.1+ (optional, for importing 3D object files, like .ply files)
+- zLib 1.2.2+ (optional, for PNG screenshots)
+- libpng 1.2 (optional, for PNG screenshots)
+- Qt 5.4 (optional, for building dscp4-qt, a GUI controller for libdscp4)
+  	
  CMAKE is a cross-platform make tool that allows one to generate make projects
  for specific compilers.  For example, we can use CMAKE to generate a
  Visual Studio, Eclipse, XCode or standard GNU Make project which then can be
@@ -78,7 +62,7 @@
  This readme will show you how to generate a GNU Make project, that can be
  compiled and installed from the command line on Linux.
 
-== 2. DEPENDENCIES ==
+## Dependencies
 
  Installing the above dependencies can be done mostly via your package manager,
  for example, in Ubuntu, you would type "sudo apt-get install <package-name>".
@@ -86,24 +70,24 @@
  
  a) Sync your package manager with the latest packages:
 	
-	Ubuntu/Debian:
+Ubuntu/Debian:
 	
 	sudo apt-get update
 	sudo apt-get upgrade
 
-	Fedora/RedHat:
+Fedora/RedHat:
 
 	sudo yum update
  
  a) Install the dependenices using the command below:
 
-	Ubuntu/Debian:
+Ubuntu/Debian:
  
 	sudo apt-get install cmake g++ libboost-all-dev libglew-dev libpng-dev \
 	zlib1g-dev libglm-dev libsdl2-dev libassimp-dev liblog4cxx10-dev \
 	qt5base-dev
 
-	Fedora/RedHat:
+Fedora/RedHat:
 
 	sudo yum install gcc gcc-c++ automake autoconf cmake boost-devel \
 	glew-devel libpng-devel glm-devel SDL2-devel assimp-devel \
@@ -117,25 +101,25 @@
 	cd ~/Downloads
 	wget http://developer.download.nvidia.com/compute/cuda/6_5/rel/installers/cuda_6.5.14_linux_64.run
 
-    Open up the terminal, navigate to the download folder and run the .RUN file:
+Open up the terminal, navigate to the download folder and run the .RUN file:
 	
 	chmod +x cuda_6.5.14_linux_64.run
 	sudo ./cuda_6.5.14_linux_64.run
 
-    Say "NO" to installing accelerated graphics drivers, otherwise it may break
-    your current setup.
+Say "NO" to installing accelerated graphics drivers, otherwise it may break
+your current setup.
 	
-    The "chmod" command gives the file executable permission so it can be run,
-    running the file with "./" will execute and install the cuda libraries
+The "chmod" command gives the file executable permission so it can be run,
+running the file with "./" will execute and install the cuda libraries
   
-== 3. BUILDING ==
+## Building
  
- This project uses the Cross-platform Make (CMake) build system. However, we
- have conveniently provided a wrapper configure script and Makefile so that
- the typical build invocation of "./configure" followed by "make" will work.
- For a list of all possible build targets, use the command "make help".
+This project uses the Cross-platform Make (CMake) build system. However, we
+have conveniently provided a wrapper configure script and Makefile so that
+the typical build invocation of "./configure" followed by "make" will work.
+For a list of all possible build targets, use the command "make help".
  
- If you're comfortable with CMAKE, feel free to generate and compile like so:
+If you're comfortable with CMAKE, feel free to generate and compile like so:
  
 	cd build
 	cmake .. -DCMAKE_BUILD_TYPE=Release
@@ -146,26 +130,26 @@
  
  Here are some available options that can be used:
  
- -DBUILD_DSCP4_APP={YES|NO} (If this is NO, only the DSCP4 library will be
-                            built, and libdscp4.so dscp4.h will be installed.
-                            This is probably not what you want.)
+ 	-DBUILD_DSCP4_APP={YES|NO} (If this is NO, only the DSCP4 library will be
+			    built, and libdscp4.so dscp4.h will be installed.
+			    This is probably not what you want.)
 
- -DWITH_LIBLOG4CXX={YES|NO} (If, for whatever reason, you despise console output
-                            or can't install liblog4cxx, this can turn off all 
-                            dependencies to log4cxx and turn off logging)
+	-DWITH_LIBLOG4CXX={YES|NO} (If, for whatever reason, you despise console output
+			    or can't install liblog4cxx, this can turn off all 
+			    dependencies to log4cxx and turn off logging)
 
- -DWITH_TRACE_LOG={YES|NO}  (Toggles performance logging. Use with "-v 6" 
-							command option)
+	-DWITH_TRACE_LOG={YES|NO}  (Toggles performance logging. Use with "-v 6" 
+					command option)
 
- -DWITH_OPENCL={YES|NO}	    (Toggles OpenCL fringe computation capability)
+ 	-DWITH_OPENCL={YES|NO}	    (Toggles OpenCL fringe computation capability)
 
- -DWITH_CUDA={YES|NO}	    (Toggles NVIDIA CUDA fringe computation capability)
+ 	-DWITH_CUDA={YES|NO}	    (Toggles NVIDIA CUDA fringe computation capability)
 
- -DWITH_PNG={YES|NO}	    (Toggles screenshot capability)
+ 	-DWITH_PNG={YES|NO}	    (Toggles screenshot capability)
 
- -DBUILD_DSCP4_QT_APP=NO    (Turns off dscp4-qt app building)
+ 	-DBUILD_DSCP4_QT_APP=NO    (Turns off dscp4-qt app building)
  
- -DBUILD_COPY_MODELS=NO		(Turns off copying of 3D models on install)
+ 	-DBUILD_COPY_MODELS=NO		(Turns off copying of 3D models on install)
 
  These can be used like so:
 
@@ -178,7 +162,7 @@
 	cmake -DWITH_LIBLOG4CXX=NO ..
 	make
 							 
- == 4. INSTALLING ==
+## Installing
 
  Once the project has been built (see "BUILDING"), enter the following command:
 
@@ -198,13 +182,13 @@
 	in your programs menu.  You may need to log out and log in to see it
 	appear when you install dscp4 the first time.
  
- == 5. CONFIGURING ==
+ ## Configuring
  
  You can set many program, algorithm and display options by editing the file
  '/etc/dscp4/dscp4.conf'. Please have a look at this file before you do any
  editing of code.
  
- == 6. RUNNING ==
+ ## Running
  
  To run the program, just type 'dscp4' anywhere in the command line.
  For example:
@@ -235,10 +219,29 @@
   - SPACEBAR toggles the render window view mode from color to depth buffer
   - Q will close the render window
 
- == 7. UNINSTALLING ==
+## Uninstalling
  
  Simply running the following command from the CMAKE build path:
 	
 	sudo make uninstall
 
  Will delete all traces of dscp4 from your computer
+ 
+ ## Using
+ 
+ libdscp4 has 4 modes of operation:
+- "model viewing" - Opens an OpenGL window and shows the
+  models with normal, perspective projection.
+- "stereogram view" - Opens an OpenGL window and shows models
+  with orthographic shearing projection (aka panoramagrams).
+  Use this mode to debug and see what panoramagram is
+  generated before fringe computation.
+- "aerial" - Opens a fullscreen window for every monitor,
+  with each window displaying a horizontal parallax shift.
+  This mode is for projector setups where discrete views are
+  shown for each parallax shift.
+- "holovideo" - Computes the fringe pattern from the
+  panoramagram and writes the fringe pattern to a textured
+  fullscreen OpenGL window for every GPU.  Each window spans
+  multiple heads per GPU (one window per GPU).  This requires
+  Xinerama mode to be enabled in the X11 configuration.
