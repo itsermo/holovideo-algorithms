@@ -190,6 +190,8 @@ If you're comfortable with CMAKE, feel free to generate and compile like so:
  
  ## Running
  
+ - dscp4 (Console program)
+ 
  To run the program, just type 'dscp4' anywhere in the command line.
  For example:
  
@@ -219,17 +221,31 @@ If you're comfortable with CMAKE, feel free to generate and compile like so:
   - SPACEBAR toggles the render window view mode from color to depth buffer
   - Q will close the render window
 
+- dscp4-qt (GUI)
+
+dscp4-qt can be run from a terminal shell by running the command
+	dscp4-qt
+
+The CMAKE installer also creates a desktop file for Ubuntu and Fedora,
+which will show up on your list of applications with a colorful bunny
+icon titled "dscp4-qt".  Look for it in your search bar.
+
+dscp4-qt is a straightforward GUI that allows you to alter settings
+for the algorithm and run different modes, save screenshots, etc.
+
 ## Uninstalling
- 
- Simply running the following command from the CMAKE build path:
+Simply running the following command from the CMAKE build path:
 	
 	sudo make uninstall
 
- Will delete all traces of dscp4 from your computer
+Will delete all traces of dscp4 from your computer
  
- ## Using
+## Developing with libdscp4
+If you would like to feed your own 3D data for fringe computation,
+you can use the C-linkage API for libdscp4 to upload vertex, color
+and normals from your 3D data.  Refer to [dscp4.h](libdscp4/dscp4.h)
  
- libdscp4 has 4 modes of operation:
+libdscp4 has 4 modes of operation:
 - "model viewing" - Opens an OpenGL window and shows the
   models with normal, perspective projection.
 - "stereogram view" - Opens an OpenGL window and shows models
