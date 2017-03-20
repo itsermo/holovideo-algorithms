@@ -187,8 +187,10 @@ if(NOT WITH_CUDA AND NOT WITH_OPENCL)
 	message(WARNING "You haven't enabled support for OpenCL or CUDA, use the -DWITH_CUDA=YES and/or -DWITH_OPENCL=YES, otherwise you will not be able to compute holograms.")
 endif()
 
-if(WITH_CUDA AND (${CUDA_VERSION_MAJOR} GREATER 6))
-	message(WARNING "dscp4 set to not compile for sm_13 architecture.\nsm_13 has been deprecated and removed from CUDA 7 (No FX5800 support).\nYou must install CUDA 6.5 if you want to compile for kepler GPUs.")
+if(WITH_CUDA)
+	if(${CUDA_VERSION_MAJOR} GREATER 6))
+		message(WARNING "dscp4 set to not compile for sm_13 architecture.\nsm_13 has been deprecated and removed from CUDA 7 (No FX5800 support).\nYou must install CUDA 6.5 if you want to compile for kepler GPUs.")
+	endif()
 endif()
 
 if(NOT (CMAKE_BUILD_TYPE MATCHES Release))
