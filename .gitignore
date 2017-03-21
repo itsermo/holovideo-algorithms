@@ -1,0 +1,6 @@
+bin
+*~
+build*
+/render_algorithms/dscp4/lib
+/remote/scripts/holovideo-enable.sh
+/remote/scripts/holovideo-disable.sh
