@@ -1,0 +1,109 @@
+sudo: required
+dist: trusty
+
+# Set up notification options
+notifications: 
+  email:
+    recipients:
+      - ermal@media.mit.edu
+
+    # change is when the repo status goes from pass to fail or vice versa
+    on_success: change
+    on_failure: always
+
+# specify language
+language: cpp
+
+# specify language options
+compiler: gcc
+
+git:
+  depth: 3
+
+# configure which branches to run
+branches:
+  # whitelist
+  only:
+    - master
+    - /^deploy-.*$/ # regex ok
+  # blacklist
+  except:
+    - dontrunme
+    - test 
+
+# declare your environment variables
+env:
+  # global will stay the same across all matrix possibilities (will not create additional combinations to run)
+  global:
+    - SECRET_TOKEN=k399dkkgklsk
+  # matrix variables will create a new build for each specified variable
+  matrix:
+    - CMAKE_BUILD_TYPE=Release CUDA=6.5-14
+    - CMAKE_BUILD_TYPE=Release CUDA=7.0-28
+    - CMAKE_BUILD_TYPE=Release CUDA=7.5-18
+    - CMAKE_BUILD_TYPE=Release CUDA=8.0.44-1
+    - CMAKE_BUILD_TYPE=Debug CUDA=6.5-14
+    - CMAKE_BUILD_TYPE=Debug CUDA=7.0-28
+    - CMAKE_BUILD_TYPE=Debug CUDA=7.5-18
+    - CMAKE_BUILD_TYPE=Debug CUDA=8.0.44-1
+    
+
+# enable services (stuff like DBs, MQs)
+# services:
+
+## begin build steps
+####################
+
+before_install:
+  - sudo apt-get update -qq
+  - sudo apt-get install -qq cmake g++ libboost-all-dev libglew-dev libpng-dev zlib1g-dev libglm-dev libsdl2-dev libassimp-dev liblog4cxx10-dev qtbase5-dev
+
+install:
+  # Install the CUDA toolkit
+  - echo "Installing CUDA library"
+  - source .travis/install-cuda-trusty.sh
+
+#before_script:
+
+#  - bower install
+
+script:
+  - echo "Configuring DSCP4 cmake project"
+  - cd render_algorithms/dscp4/build/
+  - cmake .. -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+  - make
+
+after_success:
+  - echo "SUCCESSFUL BUILD"
+  
+before_deploy:
+# check that build passed successfully
+# add the \ afterwards to tell travis it's part of the same command thanks @markhuge
+#- test $TRAVIS_TEST_RESULT = 0 \
+#  && gulp build \
+#  && cd dist \
+#  && npm install --prod \
+#  && cd $TRAVIS_BUILD_DIR \
+#  && tar -zcvf amber-storm-$TRAVIS_BRANCH.tar.gz dist \
+#  && export PRODBUILDCOMPLETE=true
+
+
+## Deployment options
+####################
+
+#deploy:
+#  # specify the deployment provider
+#  provider: releases
+#  # options for provider
+#  api_key:
+#    secure: securekeyhere
+#  file: myrepo-$TRAVIS_BRANCH.tar.gz
+#  # conditions for deployment
+#  on:
+#    condition: $PRODBUILDCOMPLETE = true
+#    repo: myname/myrepo
+#    all_branches: true
+#    tags: true
+
+#after_deploy:
+#  - ssh git@mysite.biz "./deploy.sh $TRAVIS_BRANCH"
